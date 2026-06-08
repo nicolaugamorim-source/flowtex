@@ -20,38 +20,34 @@ import {
 export const DashboardMockup = () => {
   return (
     <div className="flex h-[700px] rounded-3xl border border-[#C8D8E6] overflow-hidden shadow-sm bg-[#F8FAFC]">
-      {/* SIDEBAR */}
-      <div className="w-64 border-r border-[#C8D8E6] bg-[#F8FAFC] flex flex-col py-6 px-5">
+      {/* SIDEBAR - COMPACT */}
+      <div className="w-20 border-r border-[#C8D8E6] bg-[#F8FAFC] flex flex-col items-center py-6 px-3">
         {/* Logo */}
-        <div className="mb-8 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#00D4A4] flex items-center justify-center">
-            <div className="w-4 h-4 rounded-full bg-[#0D1F2D]" />
+        <div className="mb-8 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-[#00D4A4] flex items-center justify-center hover:bg-[#00A882] transition-colors cursor-pointer">
+            <div className="w-5 h-5 rounded-full bg-[#0D1F2D]" />
           </div>
-          <span className="font-semibold text-[#0D1F2D] text-sm">Flowtex</span>
         </div>
 
-        {/* Navigation */}
-        <nav className="space-y-2 mb-8 flex-1">
-          <NavItem icon={<Home size={18} />} label="Home" active />
-          <NavItem icon={<CheckSquare size={18} />} label="Projects" />
-          <NavItem icon={<Mail size={18} />} label="Messages" />
-          <NavItem icon={<Calendar size={18} />} label="Calendar" />
+        {/* Navigation Icons */}
+        <nav className="space-y-3 mb-8 flex-1">
+          <NavIconItem icon={<Home size={20} />} active />
+          <NavIconItem icon={<CheckSquare size={20} />} />
+          <NavIconItem icon={<Mail size={20} />} />
+          <NavIconItem icon={<Calendar size={20} />} />
         </nav>
 
-        {/* Projects List */}
-        <div className="border-t border-[#C8D8E6] pt-4 mb-4">
-          <p className="text-xs font-medium text-[#4A6880] px-3 mb-3">ACTIVE PROJECTS</p>
-          <div className="space-y-2">
-            <ProjectItem name="Website Redesign" color="#00D4A4" active />
-            <ProjectItem name="Mobile App" color="#3B82F6" />
-            <ProjectItem name="API Integration" color="#F59E0B" />
-          </div>
+        {/* Projects Indicator Dots */}
+        <div className="border-t border-[#C8D8E6] pt-4 mb-4 space-y-2">
+          <div className="w-3 h-3 rounded-full bg-[#00D4A4]" title="Website Redesign" />
+          <div className="w-3 h-3 rounded-full bg-[#3B82F6]" title="Mobile App" />
+          <div className="w-3 h-3 rounded-full bg-[#F59E0B]" title="API Integration" />
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-2 border-t border-[#C8D8E6] pt-4">
-          <NavItem icon={<Settings size={18} />} label="Settings" />
-          <NavItem icon={<LogOut size={18} />} label="Sign out" />
+        <div className="space-y-3 border-t border-[#C8D8E6] pt-4 mt-auto">
+          <NavIconItem icon={<Settings size={20} />} />
+          <NavIconItem icon={<LogOut size={20} />} />
         </div>
       </div>
 
@@ -190,6 +186,23 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
   >
     {icon}
     {label}
+  </button>
+);
+
+interface NavIconItemProps {
+  icon: React.ReactNode;
+  active?: boolean;
+}
+
+const NavIconItem: React.FC<NavIconItemProps> = ({ icon, active }) => (
+  <button
+    className={`p-3 rounded-lg transition-colors ${
+      active
+        ? "bg-[#E0F7F2] text-[#00D4A4]"
+        : "text-[#2E4A62] hover:bg-[#E8EFF5]"
+    }`}
+  >
+    {icon}
   </button>
 );
 
