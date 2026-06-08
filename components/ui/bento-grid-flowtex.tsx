@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Lock, Brain, MessageSquare, Cpu, History, Plug } from "lucide-react"
+import { Lock, Brain, MessageSquare, Cpu, History, Plug, Globe } from "lucide-react"
 
 function TypeTester() {
   const [scale, setScale] = useState(1)
