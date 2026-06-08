@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Backgrounds - Light Mode */
+    --color-bg-base: #F8FAFC;
+    --color-bg-secondary: #F1F5F9;
+    --color-bg-card: #E8EFF5;
+    --color-bg-elevated: #DDE6EF;
+    --color-bg-subtle: #D0DCE8;
+
+    /* Borders */
+    --color-border-subtle: #E2EAF1;
+    --color-border-default: #C8D8E6;
+    --color-border-strong: #A8BDD0;
+
+    /* Text - Light Mode */
+    --color-text-primary: #0D1F2D;
+    --color-text-secondary: #2E4A62;
+    --color-text-muted: #4A6880;
+    --color-text-disabled: #7A96AA;
+
+    /* Accent - Teal */
+    --color-accent: #00D4A4;
+    --color-accent-hover: #00A882;
+    --color-accent-pressed: #007D62;
+    --color-accent-subtle: #E0F7F2;
+    --color-accent-glow: #00F5C0;
+
+    /* Semantic */
+    --color-success: #22C55E;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --color-info: #3B82F6;
+
+    /* Legacy aliases */
+    --bg-base: var(--color-bg-base);
+    --bg-surface: var(--color-bg-card);
+    --bg-elevated: var(--color-bg-elevated);
+    --border: var(--color-border-default);
+    --border-hover: var(--color-border-strong);
+    --primary: var(--color-accent);
+    --primary-hover: var(--color-accent-hover);
+    --primary-muted: rgba(0, 212, 164, 0.08);
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --text-muted: var(--color-text-muted);
+
+    /* Brand variables for glow */
+    --brand: 158 100% 41%;
+    --brand-foreground: 158 99% 52%;
+  }
+
+  html {
+    @apply scroll-smooth;
+    font-family: 'Satoshi', sans-serif;
+  }
+
+  body {
+    @apply bg-[#F8FAFC] text-[#0D1F2D];
+    font-weight: 400;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --font-sans: var(--font-inter);
+}
+
+@layer utilities {
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-500 {
+    animation-delay: 500ms;
+  }
+  .delay-700 {
+    animation-delay: 700ms;
+  }
+
+  .fade-top-lg {
+    mask-image: linear-gradient(to bottom,
+      transparent,
+      rgba(0, 0, 0, 1) 8rem
+    );
+  }
+
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)];
+  }
+
+  .gradient-brand {
+    @apply bg-gradient-to-br from-[#00D4A4] to-[#00A882];
+  }
+
+  .shadow-diffusion {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .shadow-diffusion-hover {
+    box-shadow: 0 40px 80px -20px rgba(0, 212, 164, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(0, 212, 164, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(0, 212, 164, 0);
+    }
+  }
+
+  .marquee {
+    animation: marquee 20s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
