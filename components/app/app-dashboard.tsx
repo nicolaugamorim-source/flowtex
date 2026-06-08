@@ -11,123 +11,211 @@ import {
   Calendar,
   Database,
   ArrowRight,
+  Send,
 } from "lucide-react";
 
 export const AppDashboard = () => {
   return (
-    <div className="p-8 flex-1 overflow-y-auto bg-[#F8FAFC]">
+    <div className="p-8 flex-1 overflow-y-auto bg-[#F8FAFC] flex flex-col gap-8">
       {/* Top Section - 2 Columns */}
-      <div className="grid grid-cols-4 gap-6 mb-6">
-        {/* Good Morning Card - 1/4 width */}
-        <div className="col-span-1 bg-gradient-to-br from-[#E0F7F2] to-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 flex flex-col justify-between">
-          <div>
-            <p className="text-[#4A6880] text-sm font-medium mb-1">Welcome back</p>
-            <h2 className="text-[#0D1F2D] text-2xl font-semibold">Good morning,</h2>
-            <p className="text-[#2E4A62] text-lg font-medium">Nicolau</p>
-          </div>
-          <div className="mt-6 flex items-center gap-2 text-[#00D4A4] text-sm font-medium cursor-pointer hover:gap-3 transition-all">
-            View profile <ArrowRight size={16} />
-          </div>
+      <div className="grid grid-cols-2 gap-8 h-1/2 items-center">
+        {/* Good Morning Text - 1/2 width */}
+        <div className="flex flex-col items-center justify-center h-full min-h-96">
+          <p className="text-[#0D1F2D] text-6xl font-bold leading-tight text-center">
+            Good morning,<br />Nicolau
+          </p>
         </div>
 
-        {/* App Status Card - 3/4 width */}
-        <div className="col-span-3 bg-white rounded-2xl border border-[#C8D8E6] p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-[#4A6880] text-sm font-medium mb-1">App Status</p>
-              <h3 className="text-[#0D1F2D] text-xl font-semibold">All Systems Operational</h3>
-              <p className="text-[#2E4A62] text-sm mt-1">✓ All integrations connected and synced</p>
+        {/* Card 4: Today & Tomorrow */}
+        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col">
+          <div className="flex flex-row gap-6 h-full">
+            {/* Today Column */}
+            <div className="flex-1 flex flex-col gap-3">
+              <h3 className="text-[#0D1F2D] text-xl font-semibold">Today</h3>
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#22C55E] animate-pulse" />
-              <span className="text-[#22C55E] text-sm font-medium">Live</span>
-            </div>
-          </div>
 
-          {/* Integration Status Grid */}
-          <div className="grid grid-cols-4 gap-3 mt-6">
-            <StatusBadge icon={<Mail size={16} />} label="Gmail" status="Connected" />
-            <StatusBadge icon={<Calendar size={16} />} label="Calendar" status="Connected" />
-            <StatusBadge icon={<Database size={16} />} label="Notion" status="Connected" />
-            <StatusBadge icon={<Database size={16} />} label="Drive" status="Connected" />
+            {/* Divider */}
+            <div className="w-px bg-[#C8D8E6]"></div>
+
+            {/* Tomorrow Column */}
+            <div className="flex-1 flex flex-col gap-3">
+              <h3 className="text-[#0D1F2D] text-xl font-semibold">Tomorrow</h3>
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Section - 3 Cards */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Card 1: Context Summary */}
-        <div className="bg-white rounded-2xl border border-[#C8D8E6] p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-lg bg-[#E0F7F2]">
-              <Zap size={18} className="text-[#00D4A4]" />
+      <div className="grid grid-cols-3 gap-8 h-1/2">
+        {/* Card 1: Just happened */}
+        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col gap-3">
+          <h3 className="text-[#0D1F2D] text-xl font-semibold">Just happened</h3>
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
+              <div className="flex-shrink-0">
+                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">14:32</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <p className="font-semibold text-[#0D1F2D] truncate">Website Redesign</p>
+                <span className="text-xs bg-[#00D4A4] text-[#0D1F2D] font-medium px-2 py-1 rounded-md w-fit">Completed</span>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                JS
+              </div>
             </div>
-            <h3 className="text-[#0D1F2D] font-semibold">Your Context</h3>
+            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
+              <div className="flex-shrink-0">
+                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">13:45</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <p className="font-semibold text-[#0D1F2D] truncate">Design Review</p>
+                <span className="text-xs bg-[#3B82F6] text-[#0D1F2D] font-medium px-2 py-1 rounded-md w-fit">Updated</span>
+              </div>
+              <div className="flex gap-1 items-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  MD
+                </div>
+                <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold -ml-2 border-2 border-[#DDE6EF]">
+                  S
+                </div>
+              </div>
+            </div>
+            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
+              <div className="flex-shrink-0">
+                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">12:15</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <p className="font-semibold text-[#0D1F2D] truncate">API Integration</p>
+                <span className="text-xs bg-[#22C55E] text-[#0D1F2D] font-medium px-2 py-1 rounded-md w-fit">Added</span>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                S
+              </div>
+            </div>
+            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
+              <div className="flex-shrink-0">
+                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">11:20</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <p className="font-semibold text-[#0D1F2D] truncate">Database Update</p>
+                <span className="text-xs bg-[#00D4A4] text-[#0D1F2D] font-medium px-2 py-1 rounded-md w-fit">Completed</span>
+              </div>
+              <div className="flex gap-1 items-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                  JS
+                </div>
+                <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold -ml-2 border-2 border-[#DDE6EF]">
+                  MD
+                </div>
+              </div>
+            </div>
+            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
+              <div className="flex-shrink-0">
+                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">10:50</p>
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <p className="font-semibold text-[#0D1F2D] truncate">Meeting Notes</p>
+                <span className="text-xs bg-[#F59E0B] text-[#0D1F2D] font-medium px-2 py-1 rounded-md w-fit">Modified</span>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                MD
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-3 text-sm">
-            <ContextItem label="Active Projects" value="7" />
-            <ContextItem label="Team Members" value="5" />
-            <ContextItem label="Pending Tasks" value="12" />
-            <ContextItem label="This Week Calls" value="8" />
-          </div>
-
-          <button className="w-full mt-4 px-4 py-2 rounded-lg border border-[#C8D8E6] text-[#0D1F2D] text-sm font-medium hover:bg-[#F8FAFC] transition-colors">
-            View Full Context
-          </button>
         </div>
 
-        {/* Card 2: Recent Activity */}
-        <div className="bg-white rounded-2xl border border-[#C8D8E6] p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-lg bg-[#E0F7F2]">
-              <Clock size={18} className="text-[#00D4A4]" />
+        {/* Card 2: Who's on what */}
+        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col gap-4">
+          <h3 className="text-[#0D1F2D] text-xl font-semibold">Who's on what</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                JS
+              </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-semibold text-[#0D1F2D]">John Smith</p>
+                <p className="text-xs text-[#4A6880]">Working on: API Design</p>
+              </div>
             </div>
-            <h3 className="text-[#0D1F2D] font-semibold">Recent Activity</h3>
+            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
+              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                MD
+              </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-semibold text-[#0D1F2D]">Mary Johnson</p>
+                <p className="text-xs text-[#4A6880]">Working on: Offline</p>
+              </div>
+            </div>
+            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                S
+              </div>
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-semibold text-[#0D1F2D]">Sarah</p>
+                <p className="text-xs text-[#4A6880]">Working on: Testing</p>
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-3">
-            <ActivityItem
-              title="Called with Acme Team"
-              time="2 hours ago"
-              type="meeting"
-            />
-            <ActivityItem
-              title="Project proposal sent"
-              time="5 hours ago"
-              type="email"
-            />
-            <ActivityItem
-              title="Updated Website Redesign"
-              time="Yesterday"
-              type="task"
-            />
-          </div>
-
-          <button className="w-full mt-4 px-4 py-2 rounded-lg border border-[#C8D8E6] text-[#0D1F2D] text-sm font-medium hover:bg-[#F8FAFC] transition-colors">
-            View Timeline
-          </button>
         </div>
 
-        {/* Card 3: Quick Actions */}
-        <div className="bg-white rounded-2xl border border-[#C8D8E6] p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-lg bg-[#E0F7F2]">
-              <Zap size={18} className="text-[#00D4A4]" />
+        {/* Card 3: Talk with your team */}
+        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col">
+          <h3 className="text-[#0D1F2D] text-xl font-semibold mb-4">Talk with your team</h3>
+          <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+            <div className="flex justify-end">
+              <div className="flex flex-col items-end gap-1">
+                <p className="text-xs text-[#4A6880] font-medium">You</p>
+                <div className="bg-[#00D4A4] text-[#0D1F2D] px-3 py-2 rounded-lg text-sm max-w-xs">
+                  Hi team, when is the meeting scheduled?
+                </div>
+              </div>
             </div>
-            <h3 className="text-[#0D1F2D] font-semibold">Quick Actions</h3>
+            <div className="flex justify-start">
+              <div className="flex flex-col items-start gap-2 w-full">
+                <p className="text-xs text-[#4A6880] font-medium">Sarah</p>
+                <div className="bg-white text-[#0D1F2D] p-3 rounded-lg text-sm max-w-xs border border-[#C8D8E6] w-full">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar size={18} className="text-blue-500" />
+                    <p className="text-xs text-[#4A6880] font-medium">Google Calendar</p>
+                  </div>
+                  <div className="bg-[#E8EFF5] p-3 rounded border border-[#C8D8E6] mb-3">
+                    <p className="font-semibold text-sm mb-1">Team Meeting</p>
+                    <p className="text-xs text-[#2E4A62] mb-2">Thursday 10:30 - 11:30 AM</p>
+                    <p className="text-xs text-[#4A6880]">Topic: Team Sync & Planning</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="flex-1 px-2 py-1.5 text-xs rounded border border-[#C8D8E6] text-[#0D1F2D] hover:bg-[#F8FAFC] transition-colors">
+                      View in Calendar
+                    </button>
+                    <button className="flex-1 px-2 py-1.5 text-xs rounded bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-colors font-medium">
+                      Join
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <QuickAction label="Schedule a meeting" />
-            <QuickAction label="Send email to team" />
-            <QuickAction label="Create new project" />
-            <QuickAction label="Add task" />
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="flex-1 px-4 py-3 rounded-lg border border-[#C8D8E6] bg-[#DDE6EF] text-[#0D1F2D] placeholder-[#4A6880] focus:outline-none focus:border-[#00D4A4] focus:ring-1 focus:ring-[#00D4A4]"
+            />
+            <button className="p-2 rounded-lg text-[#0D1F2D] hover:bg-[#DDE6EF] hover:text-[#00D4A4] transition-colors">
+              <Send size={20} />
+            </button>
           </div>
-
-          <button className="w-full mt-4 px-4 py-2 rounded-lg bg-[#00D4A4] text-[#0D1F2D] text-sm font-medium hover:bg-[#00A882] transition-colors">
-            Ask Flowtex
-          </button>
         </div>
       </div>
     </div>
@@ -141,7 +229,7 @@ interface StatusBadgeProps {
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ icon, label, status }) => (
-  <div className="bg-[#F8FAFC] rounded-lg p-3 border border-[#C8D8E6] flex flex-col items-center gap-2">
+  <div className="bg-[#DDE6EF] rounded-lg p-3 border border-[#C8D8E6] flex flex-col items-center gap-2">
     <div className="text-[#2E4A62]">{icon}</div>
     <p className="text-[#0D1F2D] text-xs font-medium text-center">{label}</p>
     <p className="text-[#4A6880] text-xs">{status}</p>
