@@ -71,7 +71,7 @@ export function CTASection({
 
         {/* Action Button */}
         <Button
-          variant={action.variant || "default"}
+          variant={(action.variant === "glow" ? "default" : action.variant) || "default"}
           size="lg"
           className="animate-fade-in-up delay-500"
           asChild
