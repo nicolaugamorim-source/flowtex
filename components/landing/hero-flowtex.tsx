@@ -341,6 +341,7 @@ const ExternalLinkIcon: React.FC<SVGProps<SVGSVGElement>> = (props) => (
 
 import { siGmail, siGooglecalendar, siNotion, siGoogledrive, siAnthropic } from 'simple-icons';
 import { DashboardMockup } from '@/components/dashboard/dashboard-mockup';
+import { AppDashboardMockup } from '@/components/dashboard/app-dashboard-mockup';
 
 interface NavLinkProps {
     href?: string;
@@ -681,8 +682,14 @@ const HeroFlowtex: React.FC = () => {
             <div className="pointer-events-auto">
                 <Dock items={[
                     { label: "Flowtex", onClick: () => {}, isLogo: true },
-                    { label: "How it works", onClick: () => {} },
-                    { label: "Early Access", onClick: () => {} },
+                    { label: "How it works", onClick: () => {
+                        const section = document.getElementById('how-it-works');
+                        section?.scrollIntoView({ behavior: 'smooth' });
+                    } },
+                    { label: "Pricing", onClick: () => {
+                        const pricingSection = document.getElementById('pricing');
+                        pricingSection?.scrollIntoView({ behavior: 'smooth' });
+                    } },
                     { label: "Get early access", onClick: () => {}, isButton: true }
                 ]} />
             </div>
@@ -700,11 +707,11 @@ const HeroFlowtex: React.FC = () => {
                 variants={headlineVariants}
                 initial="hidden"
                 animate="visible"
-                className="text-2xl sm:text-3xl lg:text-[42px] text-[#0D1F2D] leading-tight max-w-4xl mb-4"
+                className="text-3xl sm:text-4xl lg:text-6xl text-[#0D1F2D] leading-tight max-w-5xl mb-4"
                 style={{ fontWeight: 700 }}
             >
-                Your team loses context in{' '}
-                <span className="inline-block h-[1.2em] sm:h-[1.2em] lg:h-[1.2em] overflow-hidden align-bottom">
+                Your team loses context in
+                <span className="block h-[1.2em] sm:h-[1.2em] lg:h-[1.2em] overflow-hidden align-bottom mt-2">
                     <RotatingText
                         texts={['every app switch.', 'every Notion update.', 'every AI session.', 'every decision on a call.', 'every new team member.']}
                         mainClassName="text-[#00D4A4] mx-1"
@@ -765,8 +772,8 @@ const HeroFlowtex: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="flex-1 hidden lg:flex items-center justify-center self-center min-w-0"
             >
-                <div className="w-full max-w-5xl mr-0 hover:shadow-lg transition-all duration-300">
-                    <DashboardMockup />
+                <div className="w-full max-w-4xl mr-0 hover:shadow-lg transition-all duration-300">
+                    <AppDashboardMockup />
                 </div>
             </motion.div>
 

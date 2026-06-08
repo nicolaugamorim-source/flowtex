@@ -60,22 +60,18 @@ export function Footer({
           </ul>
         </div>
         <div className="border-t border-[#C8D8E6] mt-6 pt-6 md:mt-4 md:pt-8 lg:grid lg:grid-cols-10">
-          <nav className="lg:mt-0 lg:col-[4/11]">
-            <ul className="list-none flex flex-wrap -my-1 -mx-2 lg:justify-end">
+          <div className="lg:mt-0 lg:col-[4/11]">
+            <ul className="list-none flex flex-wrap -my-1 -mx-3 lg:justify-end">
               {mainLinks.map((link, i) => (
-                <li key={i} className="my-1 mx-2 shrink-0">
+                <li key={i} className="my-1 mx-3 shrink-0">
                   <a
                     href={link.href}
-                    className="text-sm text-[#00D4A4] underline-offset-4 hover:underline"
+                    className="text-sm text-[#4A6880] underline-offset-4 hover:underline"
                   >
                     {link.label}
                   </a>
                 </li>
               ))}
-            </ul>
-          </nav>
-          <div className="mt-6 lg:mt-0 lg:col-[4/11]">
-            <ul className="list-none flex flex-wrap -my-1 -mx-3 lg:justify-end">
               {legalLinks.map((link, i) => (
                 <li key={i} className="my-1 mx-3 shrink-0">
                   <a

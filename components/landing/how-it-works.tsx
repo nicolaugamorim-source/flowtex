@@ -59,9 +59,43 @@ export function HowItWorks() {
                 <h3 className="text-xl lg:text-2xl font-semibold text-[#0D1F2D] mb-3">
                   {step.headline}
                 </h3>
-                <p className="text-base text-[#2E4A62] leading-relaxed">
+                <p className="text-base text-[#2E4A62] leading-relaxed mb-6">
                   {step.body}
                 </p>
+
+                {/* Test text for first card */}
+                {i === 0 && <p className="mb-4 text-sm text-[#0D1F2D]">ola</p>}
+
+                {/* Bubbles Section */}
+                <div className="space-y-4">
+                  {/* How it works */}
+                  <div className="border-t border-[#C8D8E6] pt-4">
+                    <p className="text-xs font-semibold text-[#4A6880] mb-3 uppercase tracking-wide">How it works</p>
+                    <div className="flex flex-col gap-2">
+                      <div className="bg-blue-100 rounded-lg px-4 py-3 flex items-center relative overflow-hidden w-fit">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 animate-pulse"></div>
+                        <p className="text-sm font-semibold text-blue-800 relative z-10">Processing request...</p>
+                      </div>
+                      <div className="bg-[#00D4A4] rounded-lg px-4 py-3 w-fit">
+                        <p className="text-sm font-semibold text-[#0D1F2D]">Ready</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Up and running */}
+                  <div className="border-t border-[#C8D8E6] pt-4">
+                    <p className="text-xs font-semibold text-[#4A6880] mb-3 uppercase tracking-wide">Up and running</p>
+                    <div className="flex flex-col gap-2">
+                      <div className="bg-purple-100 rounded-lg px-4 py-3 flex items-center relative overflow-hidden w-fit">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-100 via-purple-200 to-purple-100 animate-pulse"></div>
+                        <p className="text-sm font-semibold text-purple-800 relative z-10">Initializing...</p>
+                      </div>
+                      <div className="bg-[#00D4A4] rounded-lg px-4 py-3 w-fit">
+                        <p className="text-sm font-semibold text-[#0D1F2D]">Complete</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}

@@ -63,9 +63,10 @@ export function CTASection({
 
         {/* Description */}
         {description && (
-          <p className="text-lg text-[#2E4A62] animate-fade-in-up delay-300 max-w-2xl">
-            {description}
-          </p>
+          <p
+            className="text-lg text-[#2E4A62] animate-fade-in-up delay-300 max-w-2xl"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
         )}
 
         {/* Action Button */}
