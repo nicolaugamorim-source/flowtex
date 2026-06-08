@@ -340,6 +340,7 @@ const ExternalLinkIcon: React.FC<SVGProps<SVGSVGElement>> = (props) => (
 );
 
 import { siGmail, siGooglecalendar, siNotion, siGoogledrive, siAnthropic } from 'simple-icons';
+import { DashboardMockup } from '@/components/dashboard/dashboard-mockup';
 
 interface NavLinkProps {
     href?: string;
@@ -764,7 +765,9 @@ const HeroFlowtex: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="flex-1 hidden lg:flex items-center justify-center self-center min-w-0"
             >
-                <div className="h-[350px] w-[95%] max-w-2xl ml-auto bg-[#E8EFF5] border border-[#C8D8E6] rounded-2xl hover:shadow-lg transition-all duration-300" />
+                <div className="w-[95%] max-w-2xl ml-auto hover:shadow-lg transition-all duration-300">
+                    <DashboardMockup />
+                </div>
             </motion.div>
 
         </main>
