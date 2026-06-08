@@ -19,8 +19,8 @@ const pricingPlans = [
       "Project & client dashboard",
     ],
     description: "",
-    buttonText: "Get early access",
-    href: "/sign-up",
+    buttonText: "Join waitlist",
+    href: "#hero",
     isPopular: false,
   },
   {
@@ -37,8 +37,8 @@ const pricingPlans = [
       "Real-time project visibility for the whole team",
     ],
     description: "",
-    buttonText: "Get your team in sync",
-    href: "/sign-up",
+    buttonText: "Join waitlist",
+    href: "#hero",
     isPopular: true,
   },
   {
@@ -54,8 +54,8 @@ const pricingPlans = [
       "Custom onboarding",
     ],
     description: "",
-    buttonText: "Talk to us",
-    href: "/contact",
+    buttonText: "Join waitlist",
+    href: "#hero",
     isPopular: false,
   },
 ];
@@ -80,8 +80,8 @@ export default function Home() {
           title="Where work flows.<br />Your team starts here."
           description="Stop losing context. Start building<br />with a workspace that already knows your project."
           action={{
-            text: "Start building now",
-            href: "/sign-up",
+            text: "Join waitlist",
+            href: "#hero",
             variant: "default"
           }}
         />

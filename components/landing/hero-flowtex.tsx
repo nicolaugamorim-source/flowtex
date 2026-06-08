@@ -25,6 +25,7 @@ import {
     type Variants,
 } from 'framer-motion';
 import { Dock } from '@/components/ui/dock-two';
+import { createClient } from "@supabase/supabase-js";
 
 function cn(...classes: (string | undefined | null | boolean)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -426,11 +427,58 @@ const HeroFlowtex: React.FC = () => {
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
    const [isScrolled, setIsScrolled] = useState<boolean>(false);
+   const [email, setEmail] = useState<string>("");
+   const [emailLoading, setEmailLoading] = useState<boolean>(false);
+   const [emailSubmitted, setEmailSubmitted] = useState<boolean>(false);
+   const [emailError, setEmailError] = useState<string>("");
 
    const { scrollY } = useScroll();
    useMotionValueEvent(scrollY, "change", (latest) => {
        setIsScrolled(latest > 10);
    });
+
+   const supabase = useMemo(() => {
+       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+       if (!url || !key || url.includes("your_") || key.includes("your_")) {
+           return null;
+       }
+
+       return createClient(url, key);
+   }, []);
+
+   const handleEmailSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
+       e.preventDefault();
+       setEmailLoading(true);
+       setEmailError("");
+
+       if (!supabase) {
+           setEmailError("Waitlist is not yet configured. Please try again later.");
+           setEmailLoading(false);
+           return;
+       }
+
+       try {
+           const { error: insertError } = await supabase
+               .from("waitlist")
+               .insert([{ email, created_at: new Date().toISOString() }]);
+
+           if (insertError) {
+               setEmailError("Failed to add email. Please try again.");
+               console.error("Supabase error:", insertError);
+           } else {
+               setEmailSubmitted(true);
+               setEmail("");
+               setTimeout(() => setEmailSubmitted(false), 5000);
+           }
+       } catch (err) {
+           setEmailError("An error occurred. Please try again.");
+           console.error("Error:", err);
+       } finally {
+           setEmailLoading(false);
+       }
+   }, [email, supabase]);
 
    const dotsRef = useRef<Dot[]>([]);
    const gridRef = useRef<Record<string, number[]>>({});
@@ -676,7 +724,7 @@ const HeroFlowtex: React.FC = () => {
     };
 
   return (
-    <div className="relative bg-[#F8FAFC] text-[#2E4A62] min-h-screen flex flex-col overflow-x-hidden">
+    <div id="hero" className="relative bg-[#F8FAFC] text-[#2E4A62] min-h-screen flex flex-col overflow-x-hidden">
         <div className="fixed top-0 w-full flex items-center justify-center py-2 z-50 pointer-events-none" style={{boxSizing: 'border-box'}}>
             <div className="pointer-events-auto">
                 <Dock items={[
@@ -689,7 +737,10 @@ const HeroFlowtex: React.FC = () => {
                         const pricingSection = document.getElementById('pricing');
                         pricingSection?.scrollIntoView({ behavior: 'smooth' });
                     } },
-                    { label: "Get early access", onClick: () => {}, isButton: true }
+                    { label: "Join waitlist", onClick: () => {
+                        const heroSection = document.getElementById('hero');
+                        heroSection?.scrollIntoView({ behavior: 'smooth' });
+                    }, isButton: true }
                 ]} />
             </div>
         </div>
@@ -743,26 +794,48 @@ const HeroFlowtex: React.FC = () => {
                 initial="hidden"
                 animate="visible"
                 className="flex flex-col sm:flex-row items-center gap-2 justify-center w-full mb-12"
-                onSubmit={(e: FormEvent<HTMLFormElement>) => e.preventDefault()}
+                onSubmit={handleEmailSubmit}
             >
                 <input
                     type="email"
                     placeholder="Your work email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={emailLoading || emailSubmitted}
                     aria-label="Work Email"
-                    className="flex-grow w-full sm:w-auto px-4 py-2 rounded-md bg-[#F8FAFC] border border-[#C8D8E6] text-[#0D1F2D] placeholder-[#7A96AA] focus:outline-none focus:ring-2 focus:ring-[#00D4A4] focus:border-transparent transition-all"
+                    className="flex-grow w-full sm:w-auto px-4 py-2 rounded-md bg-[#F8FAFC] border border-[#C8D8E6] text-[#0D1F2D] placeholder-[#7A96AA] focus:outline-none focus:ring-2 focus:ring-[#00D4A4] focus:border-transparent transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <motion.button
                     type="submit"
-                    className="w-full sm:w-auto bg-[#00D4A4] text-[#0D1F2D] px-5 py-2 rounded-md text-sm hover:bg-[#00A882] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md flex-shrink-0"
+                    disabled={emailLoading || emailSubmitted}
+                    className="w-full sm:w-auto bg-[#00D4A4] text-[#0D1F2D] px-5 py-2 rounded-md text-sm hover:bg-[#00A882] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ fontWeight: 500 }}
                     whileHover={{ scale: 1.03, y: -1 }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                    Get early access — $29/mo
+                    {emailLoading ? "Joining..." : emailSubmitted ? "✓ Joined!" : "Join waitlist"}
                 </motion.button>
             </motion.form>
+            {emailError && (
+                <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-600 text-sm"
+                >
+                    {emailError}
+                </motion.p>
+            )}
+            {emailSubmitted && (
+                <motion.p
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-green-600 text-sm"
+                >
+                    Thanks! Check your email for confirmation.
+                </motion.p>
+            )}
             </div>
 
             <motion.div
