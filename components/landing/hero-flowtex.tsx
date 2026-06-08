@@ -765,7 +765,7 @@ const HeroFlowtex: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="flex-1 hidden lg:flex items-center justify-center self-center min-w-0"
             >
-                <div className="w-[95%] max-w-2xl ml-auto hover:shadow-lg transition-all duration-300">
+                <div className="w-full max-w-5xl mr-0 hover:shadow-lg transition-all duration-300">
                     <DashboardMockup />
                 </div>
             </motion.div>

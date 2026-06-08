@@ -19,7 +19,7 @@ import {
 
 export const DashboardMockup = () => {
   return (
-    <div className="flex h-[600px] rounded-3xl border border-[#C8D8E6] overflow-hidden shadow-sm bg-[#F8FAFC]">
+    <div className="flex h-[700px] rounded-3xl border border-[#C8D8E6] overflow-hidden shadow-sm bg-[#F8FAFC]">
       {/* SIDEBAR */}
       <div className="w-64 border-r border-[#C8D8E6] bg-[#F8FAFC] flex flex-col py-6 px-5">
         {/* Logo */}
