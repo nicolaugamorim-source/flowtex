@@ -21,7 +21,6 @@ import {
     type Transition,
     type VariantLabels,
     type Target,
-    type AnimationControls,
     type TargetAndTransition,
     type Variants,
 } from 'framer-motion';
