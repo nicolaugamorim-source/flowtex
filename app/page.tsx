@@ -91,7 +91,6 @@ export default function Home() {
         brandName="Flowtex"
         socialLinks={[]}
         mainLinks={[
-          { href: "/pricing", label: "Pricing" },
           { href: "/contact", label: "Contact" },
         ]}
         legalLinks={[
