@@ -745,7 +745,7 @@ const HeroFlowtex: React.FC = () => {
                 variants={formVariants}
                 initial="hidden"
                 animate="visible"
-                className="flex flex-col sm:flex-row items-center gap-4 justify-center w-full mb-12"
+                className="flex flex-col sm:flex-row items-start gap-4 justify-start w-full mb-12"
             >
                 <motion.a
                     href="#pricing"
