@@ -27,11 +27,10 @@ export default function SignupPage() {
   return (
     <SignUpPage
       title={
-        <div>
-          <span className="text-[#0D1F2D]">Join</span>
-          <br />
+        <span>
+          <span className="text-[#0D1F2D]">Join </span>
           <span className="text-[#00D4A4]">Flowtex</span>
-        </div>
+        </span>
       }
       description="Create your account and unlock early access to the workspace that remembers everything."
       heroImageSrc="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80"
