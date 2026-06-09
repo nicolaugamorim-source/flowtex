@@ -63,7 +63,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-6">
             <div>
-              <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-[#0D1F2D]">{title}</h1>
+              <h1 className="text-4xl md:text-5xl font-normal leading-tight text-[#0D1F2D]">{title}</h1>
               <p className="text-[#7A96AA] mt-2">{description}</p>
             </div>
 
