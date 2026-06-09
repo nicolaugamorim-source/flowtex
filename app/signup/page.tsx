@@ -45,7 +45,7 @@ export default function SignupPage() {
 
   return (
     <SignInPage
-      title="Welcome to Flowtex"
+      title="Join Flowtex"
       description=""
       heroImageSrc="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&q=80"
       testimonials={testimonials}
