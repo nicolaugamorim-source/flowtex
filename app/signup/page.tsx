@@ -27,7 +27,7 @@ export default function SignupPage() {
   return (
     <SignUpPage
       title="Join Flowtex"
-      description="Create your account and unlock early access to the workspace that remembers everything."
+      description=""
       heroImageSrc="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80"
       onSignUp={handleSignUp}
       onGoogleSignUp={handleGoogleSignUp}

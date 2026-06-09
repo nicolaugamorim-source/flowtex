@@ -46,7 +46,7 @@ export default function LoginPage() {
   return (
     <SignInPage
       title="Welcome to Flowtex"
-      description="Sign in to access your workspace and continue where you left off."
+      description=""
       heroImageSrc="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&q=80"
       testimonials={testimonials}
       onSignIn={handleSignIn}
