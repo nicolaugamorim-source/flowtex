@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { AppMockupHero } from '@/components/ui/app-mockup-hero';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 48 48">
@@ -38,8 +37,8 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]">
-      <section className="flex-1 flex items-center justify-center p-6 md:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <section className="flex items-center justify-center p-6 md:p-8">
         <div className="w-full max-w-md">
         <div className="flex flex-col gap-6">
           <div>
@@ -174,10 +173,6 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
           </p>
         </div>
         </div>
-      </section>
-
-      <section className="hidden md:flex flex-1 items-center justify-center p-6">
-        <AppMockupHero />
       </section>
     </div>
   );
