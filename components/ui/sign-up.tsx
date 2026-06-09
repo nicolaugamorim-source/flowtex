@@ -25,14 +25,13 @@ const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 export const SignUpPage: React.FC<SignUpPageProps> = ({
-  title = <span className="font-light text-[#0D1F2D] tracking-tight">Create Account</span>,
+  title = <span className="font-light text-[#0D1F2D] tracking-tight">Join Flowtex</span>,
   description = "",
   onSignUp,
   onGoogleSignUp,
   onSignIn,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
@@ -45,18 +44,6 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
             </div>
 
             <form className="space-y-4" onSubmit={onSignUp}>
-              <div>
-                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Full Name</label>
-                <GlassInputWrapper>
-                  <input
-                    name="fullName"
-                    type="text"
-                    placeholder="John Doe"
-                    className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
-                  />
-                </GlassInputWrapper>
-              </div>
-
               <div>
                 <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Email Address</label>
                 <GlassInputWrapper>
@@ -94,40 +81,14 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
                 </GlassInputWrapper>
               </div>
 
-              <div>
-                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Confirm Password</label>
-                <GlassInputWrapper>
-                  <div className="relative">
-                    <input
-                      name="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
-                      className="w-full h-11 bg-transparent text-sm p-3 pr-10 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-3 flex items-center"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                      ) : (
-                        <Eye className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                      )}
-                    </button>
-                  </div>
-                </GlassInputWrapper>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  name="agree"
-                  id="agree"
-                  className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4]"
-                />
-                <label htmlFor="agree" className="text-[#2E4A62]">
-                  I agree to the Terms and Privacy Policy
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="agree"
+                    className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4]"
+                  />
+                  <span className="text-[#2E4A62]">I agree to Terms</span>
                 </label>
               </div>
 
