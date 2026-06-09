@@ -59,6 +59,21 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]">
+      {heroImageSrc && (
+        <section className="hidden md:flex flex-1 relative p-4">
+          <div
+            className="absolute inset-4 rounded-2xl bg-cover bg-center shadow-lg"
+            style={{ backgroundImage: `url(${heroImageSrc})` }}
+          ></div>
+          {testimonials.length > 0 && (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
+              <TestimonialCard testimonial={testimonials[0]} delay="" />
+              {testimonials[1] && <div className="hidden xl:flex"><TestimonialCard testimonial={testimonials[1]} delay="" /></div>}
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="flex-1 flex items-center justify-center p-6 md:p-8">
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-6">
@@ -157,21 +172,6 @@ export const SignInPage: React.FC<SignInPageProps> = ({
           </div>
         </div>
       </section>
-
-      {heroImageSrc && (
-        <section className="hidden md:flex flex-1 relative p-4">
-          <div
-            className="absolute inset-4 rounded-2xl bg-cover bg-center shadow-lg"
-            style={{ backgroundImage: `url(${heroImageSrc})` }}
-          ></div>
-          {testimonials.length > 0 && (
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
-              <TestimonialCard testimonial={testimonials[0]} delay="" />
-              {testimonials[1] && <div className="hidden xl:flex"><TestimonialCard testimonial={testimonials[1]} delay="" /></div>}
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
 };
