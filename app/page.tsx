@@ -19,8 +19,8 @@ const pricingPlans = [
       "Project & client dashboard",
     ],
     description: "",
-    buttonText: "Get Early Access",
-    href: "#hero",
+    buttonText: "Get early access",
+    href: "/signup",
     isPopular: false,
   },
   {
@@ -37,8 +37,8 @@ const pricingPlans = [
       "Real-time project visibility for the whole team",
     ],
     description: "",
-    buttonText: "Get Early Access",
-    href: "#hero",
+    buttonText: "Get your team in sync",
+    href: "/signup",
     isPopular: true,
   },
   {
@@ -54,8 +54,8 @@ const pricingPlans = [
       "Custom onboarding",
     ],
     description: "",
-    buttonText: "Get Early Access",
-    href: "#hero",
+    buttonText: "Talk to us",
+    href: "/contact",
     isPopular: false,
   },
 ];
