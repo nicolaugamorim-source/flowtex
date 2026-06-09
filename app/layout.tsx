@@ -16,6 +16,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Flowtex - Your AI Second Brain for Founders",
   description: "Connect all your tools and give your AI the full context of your business. Flowtex is your AI second brain.",
+  openGraph: {
+    title: "Flowtex - Your AI Second Brain for Founders",
+    description: "Connect all your tools and give your AI the full context of your business. Flowtex is your AI second brain.",
+    images: [
+      {
+        url: "/logo.svg",
+        width: 512,
+        height: 512,
+        alt: "Flowtex Logo",
+      },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
