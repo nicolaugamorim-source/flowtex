@@ -65,12 +65,6 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             className="absolute inset-4 rounded-2xl bg-cover bg-center shadow-lg"
             style={{ backgroundImage: `url(${heroImageSrc})` }}
           ></div>
-          {testimonials.length > 0 && (
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 px-8 w-full justify-center">
-              <TestimonialCard testimonial={testimonials[0]} delay="" />
-              {testimonials[1] && <div className="hidden xl:flex"><TestimonialCard testimonial={testimonials[1]} delay="" /></div>}
-            </div>
-          )}
         </section>
       )}
 
