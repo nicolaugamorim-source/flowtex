@@ -46,132 +46,132 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
               <p className="text-[#7A96AA] mt-2">{description}</p>
             </div>
 
-          <form className="space-y-4" onSubmit={onSignUp}>
-            <div>
-              <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Full Name</label>
-              <GlassInputWrapper>
-                <input
-                  name="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
-                />
-              </GlassInputWrapper>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Email Address</label>
-              <GlassInputWrapper>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
-                />
-              </GlassInputWrapper>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Password</label>
-              <GlassInputWrapper>
-                <div className="relative">
+            <form className="space-y-4" onSubmit={onSignUp}>
+              <div>
+                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Full Name</label>
+                <GlassInputWrapper>
                   <input
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    className="w-full bg-transparent text-sm p-3 pr-10 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
+                    name="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                    ) : (
-                      <Eye className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                    )}
-                  </button>
-                </div>
-              </GlassInputWrapper>
-            </div>
+                </GlassInputWrapper>
+              </div>
 
-            <div>
-              <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Confirm Password</label>
-              <GlassInputWrapper>
-                <div className="relative">
+              <div>
+                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Email Address</label>
+                <GlassInputWrapper>
                   <input
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
-                    className="w-full bg-transparent text-sm p-3 pr-10 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-3 flex items-center"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                    ) : (
-                      <Eye className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
-                    )}
-                  </button>
-                </div>
-              </GlassInputWrapper>
-            </div>
+                </GlassInputWrapper>
+              </div>
 
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                name="agree"
-                id="agree"
-                className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4] mt-1"
-              />
-              <label htmlFor="agree" className="text-sm text-[#2E4A62]">
-                I agree to the{' '}
-                <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
-                  Privacy Policy
-                </a>
-              </label>
+              <div>
+                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Password</label>
+                <GlassInputWrapper>
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create a password"
+                      className="w-full h-11 bg-transparent text-sm p-3 pr-10 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
+                      )}
+                    </button>
+                  </div>
+                </GlassInputWrapper>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Confirm Password</label>
+                <GlassInputWrapper>
+                  <div className="relative">
+                    <input
+                      name="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirm your password"
+                      className="w-full h-11 bg-transparent text-sm p-3 pr-10 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-[#7A96AA] hover:text-[#2E4A62]" />
+                      )}
+                    </button>
+                  </div>
+                </GlassInputWrapper>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  name="agree"
+                  id="agree"
+                  className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4] mt-1"
+                />
+                <label htmlFor="agree" className="text-sm text-[#2E4A62]">
+                  I agree to the{' '}
+                  <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
+                    Terms of Service
+                  </a>{' '}
+                  and{' '}
+                  <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full h-11 rounded-lg bg-[#00D4A4] font-semibold text-[#0D1F2D] hover:bg-[#00A882] transition-colors"
+              >
+                Create Account
+              </button>
+            </form>
+
+            <div className="relative flex items-center justify-center">
+              <span className="w-full border-t border-[#C8D8E6]"></span>
+              <span className="px-4 text-sm text-[#7A96AA] bg-[#F8FAFC] absolute">Or continue with</span>
             </div>
 
             <button
-              type="submit"
-              className="w-full rounded-lg bg-[#00D4A4] py-3 font-semibold text-[#0D1F2D] hover:bg-[#00A882] transition-colors mt-6"
+              onClick={onGoogleSignUp}
+              className="w-full h-11 flex items-center justify-center gap-3 border border-[#C8D8E6] rounded-lg hover:bg-white/50 transition-colors font-semibold text-[#2E4A62]"
             >
-              Create Account
+              <GoogleIcon />
+              Continue with Google
             </button>
-          </form>
 
-          <div className="relative flex items-center justify-center">
-            <span className="w-full border-t border-[#C8D8E6]"></span>
-            <span className="px-4 text-sm text-[#7A96AA] bg-[#F8FAFC] absolute">Or continue with</span>
+            <p className="text-center text-sm text-[#7A96AA]">
+              Already have an account?{' '}
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); onSignIn?.(); }}
+                className="text-[#00D4A4] hover:underline transition-colors font-semibold"
+              >
+                Sign in
+              </a>
+            </p>
           </div>
-
-          <button
-            onClick={onGoogleSignUp}
-            className="w-full flex items-center justify-center gap-3 border border-[#C8D8E6] rounded-lg py-3 hover:bg-white/50 transition-colors font-semibold text-[#2E4A62]"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-
-          <p className="text-center text-sm text-[#7A96AA]">
-            Already have an account?{' '}
-            <a
-              href="#"
-              onClick={(e) => { e.preventDefault(); onSignIn?.(); }}
-              className="text-[#00D4A4] hover:underline transition-colors font-semibold"
-            >
-              Sign in
-            </a>
-          </p>
-        </div>
         </div>
       </section>
     </div>
