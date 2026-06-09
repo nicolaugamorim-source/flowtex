@@ -13,7 +13,6 @@ const GoogleIcon = () => (
 interface SignUpPageProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
-  heroImageSrc?: string;
   onSignUp?: (event: React.FormEvent<HTMLFormElement>) => void;
   onGoogleSignUp?: () => void;
   onSignIn?: () => void;
@@ -27,8 +26,7 @@ const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
 
 export const SignUpPage: React.FC<SignUpPageProps> = ({
   title = <span className="font-light text-[#0D1F2D] tracking-tight">Create Account</span>,
-  description = "Join Flowtex and get early access",
-  heroImageSrc,
+  description = "",
   onSignUp,
   onGoogleSignUp,
   onSignIn,
@@ -46,7 +44,7 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
               <p className="text-[#7A96AA] mt-2">{description}</p>
             </div>
 
-            <form className="space-y-5" onSubmit={onSignUp}>
+            <form className="space-y-4" onSubmit={onSignUp}>
               <div>
                 <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Full Name</label>
                 <GlassInputWrapper>
@@ -121,28 +119,21 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
                 </GlassInputWrapper>
               </div>
 
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   name="agree"
                   id="agree"
-                  className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4] mt-1"
+                  className="w-4 h-4 rounded border-[#C8D8E6] accent-[#00D4A4]"
                 />
-                <label htmlFor="agree" className="text-sm text-[#2E4A62]">
-                  I agree to the{' '}
-                  <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
-                    Terms of Service
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-[#00D4A4] hover:underline font-semibold">
-                    Privacy Policy
-                  </a>
+                <label htmlFor="agree" className="text-[#2E4A62]">
+                  I agree to the Terms and Privacy Policy
                 </label>
               </div>
 
               <button
                 type="submit"
-                className="w-full h-11 rounded-lg bg-[#00D4A4] font-semibold text-[#0D1F2D] hover:bg-[#00A882] transition-colors"
+                className="w-full rounded-lg bg-[#00D4A4] py-3 font-semibold text-[#0D1F2D] hover:bg-[#00A882] transition-colors mt-6"
               >
                 Create Account
               </button>
@@ -155,7 +146,7 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
 
             <button
               onClick={onGoogleSignUp}
-              className="w-full h-11 flex items-center justify-center gap-3 border border-[#C8D8E6] rounded-lg hover:bg-white/50 transition-colors font-semibold text-[#2E4A62]"
+              className="w-full flex items-center justify-center gap-3 border border-[#C8D8E6] rounded-lg py-3 hover:bg-white/50 transition-colors font-semibold text-[#2E4A62]"
             >
               <GoogleIcon />
               Continue with Google
