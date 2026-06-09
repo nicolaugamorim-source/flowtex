@@ -20,7 +20,7 @@ const pricingPlans = [
     ],
     description: "",
     buttonText: "Get early access",
-    href: "/signup",
+    href: "/login",
     isPopular: false,
   },
   {
@@ -38,7 +38,7 @@ const pricingPlans = [
     ],
     description: "",
     buttonText: "Get your team in sync",
-    href: "/signup",
+    href: "/login",
     isPopular: true,
   },
   {
