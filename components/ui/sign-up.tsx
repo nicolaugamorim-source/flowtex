@@ -13,6 +13,7 @@ const GoogleIcon = () => (
 interface SignUpPageProps {
   title?: React.ReactNode;
   description?: React.ReactNode;
+  heroImageSrc?: string;
   onSignUp?: (event: React.FormEvent<HTMLFormElement>) => void;
   onGoogleSignUp?: () => void;
   onSignIn?: () => void;
@@ -27,6 +28,7 @@ const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
 export const SignUpPage: React.FC<SignUpPageProps> = ({
   title = <span className="font-light text-[#0D1F2D] tracking-tight">Create Account</span>,
   description = "Join Flowtex and get early access",
+  heroImageSrc,
   onSignUp,
   onGoogleSignUp,
   onSignIn,
@@ -35,8 +37,9 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-6">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]">
+      <section className="flex-1 flex items-center justify-center p-6 md:p-8">
+        <div className="w-full max-w-md">
         <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight text-[#0D1F2D]">{title}</h1>
@@ -169,7 +172,17 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
             </a>
           </p>
         </div>
-      </div>
+        </div>
+      </section>
+
+      {heroImageSrc && (
+        <section className="hidden md:flex flex-1 relative p-4">
+          <div
+            className="absolute inset-4 rounded-2xl bg-cover bg-center shadow-lg"
+            style={{ backgroundImage: `url(${heroImageSrc})` }}
+          ></div>
+        </section>
+      )}
     </div>
   );
 };
