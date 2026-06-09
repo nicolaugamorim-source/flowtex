@@ -705,6 +705,16 @@ const HeroFlowtex: React.FC = () => {
 
             <div className="flex-1 flex flex-col mt-8 min-w-0">
 
+            <motion.div
+                variants={bannerVariants}
+                initial="hidden"
+                animate="visible"
+                className="inline-flex items-center gap-2 mb-6 w-fit"
+            >
+                <div className="w-2 h-2 rounded-full bg-[#00D4A4]"></div>
+                <span className="text-sm font-semibold text-[#00D4A4] uppercase tracking-wide">Early Access Available</span>
+            </motion.div>
+
 <motion.h1
                 variants={headlineVariants}
                 initial="hidden"
