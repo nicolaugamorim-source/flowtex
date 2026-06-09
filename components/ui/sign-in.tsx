@@ -75,7 +75,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     name="email"
                     type="email"
                     placeholder="you@example.com"
-                    className="w-full bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
+                    className="w-full h-11 bg-transparent text-sm p-3 rounded-lg focus:outline-none text-[#0D1F2D] placeholder-[#7A96AA]"
                   />
                 </GlassInputWrapper>
               </div>
