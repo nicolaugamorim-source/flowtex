@@ -1,0 +1,42 @@
+"use client";
+
+import { SignUpPage } from "@/components/ui/sign-up";
+import { useRouter } from "next/navigation";
+
+export default function SignupPage() {
+  const router = useRouter();
+
+  const handleSignUp = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    console.log("Sign Up submitted:", data);
+    // Create account logic here
+    setTimeout(() => router.push("/login"), 1000);
+  };
+
+  const handleGoogleSignUp = () => {
+    console.log("Google Sign Up clicked");
+    // Implement Google OAuth here
+  };
+
+  const handleSignIn = () => {
+    router.push("/login");
+  };
+
+  return (
+    <SignUpPage
+      title={
+        <div>
+          <span className="text-[#0D1F2D]">Join</span>
+          <br />
+          <span className="text-[#00D4A4]">Flowtex</span>
+        </div>
+      }
+      description="Create your account and unlock early access to the workspace that remembers everything."
+      onSignUp={handleSignUp}
+      onGoogleSignUp={handleGoogleSignUp}
+      onSignIn={handleSignIn}
+    />
+  );
+}
