@@ -40,11 +40,11 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
       <section className="flex items-center justify-center p-6 md:p-8">
         <div className="w-full max-w-md">
-        <div className="flex flex-col gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight text-[#0D1F2D] text-center">{title}</h1>
-            <p className="text-[#7A96AA] mt-2">{description}</p>
-          </div>
+          <div className="flex flex-col gap-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold leading-tight text-[#0D1F2D] text-center">{title}</h1>
+              <p className="text-[#7A96AA] mt-2">{description}</p>
+            </div>
 
           <form className="space-y-4" onSubmit={onSignUp}>
             <div>
