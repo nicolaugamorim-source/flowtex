@@ -39,7 +39,7 @@ export default function SignupPage() {
     router.push("/forgot-password");
   };
 
-  const handleSignIn = () => {
+  const handleGoToLogin = () => {
     router.push("/login");
   };
 
@@ -52,7 +52,7 @@ export default function SignupPage() {
       onSignIn={handleSignUp}
       onGoogleSignIn={handleGoogleSignUp}
       onResetPassword={handleResetPassword}
-      onCreateAccount={handleSignIn}
+      onCreateAccount={handleGoToLogin}
     />
   );
 }

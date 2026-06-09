@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   const handleCreateAccount = () => {
-    // TODO: Implement signup flow
+    router.push("/signup");
   };
 
   return (
