@@ -46,7 +46,7 @@ export const SignUpPage: React.FC<SignUpPageProps> = ({
               <p className="text-[#7A96AA] mt-2">{description}</p>
             </div>
 
-            <form className="space-y-4" onSubmit={onSignUp}>
+            <form className="space-y-5" onSubmit={onSignUp}>
               <div>
                 <label className="text-sm font-semibold text-[#2E4A62] block mb-2">Full Name</label>
                 <GlassInputWrapper>
