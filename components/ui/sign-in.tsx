@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { AppDashboardMockup } from '@/components/dashboard/app-dashboard-mockup';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 48 48">
@@ -59,14 +60,11 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]">
-      {heroImageSrc && (
-        <section className="hidden md:flex flex-1 relative p-4">
-          <div
-            className="absolute inset-4 rounded-2xl bg-cover bg-center shadow-lg"
-            style={{ backgroundImage: `url(${heroImageSrc})` }}
-          ></div>
-        </section>
-      )}
+      <section className="hidden md:flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <AppDashboardMockup />
+        </div>
+      </section>
 
       <section className="flex-1 flex items-center justify-center p-6 md:p-8">
         <div className="w-full max-w-md">
