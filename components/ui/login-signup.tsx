@@ -53,6 +53,7 @@ export function SignupForm() {
   const [name, setName] = useState("");
   const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -61,23 +62,27 @@ export function SignupForm() {
 
   const validateInputs = () => {
     if (!name.trim()) {
-      setError("Preenche o teu nome");
+      setError("Please fill in your name");
       return false;
     }
     if (!team.trim()) {
-      setError("Preenche o nome da equipa");
+      setError("Please fill in your team name");
       return false;
     }
     if (!email.trim()) {
-      setError("Preenche o email");
+      setError("Please fill in your email");
       return false;
     }
     if (!password) {
-      setError("Preenche a password");
+      setError("Please fill in your password");
       return false;
     }
     if (password.length < 6) {
-      setError("Password deve ter pelo menos 6 caracteres");
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    if (!agreeTerms) {
+      setError("You must agree to the Terms and Conditions");
       return false;
     }
     return true;
@@ -95,9 +100,9 @@ export function SignupForm() {
 
     if (signUpError) {
       console.error("Sign up error:", signUpError);
-      setError((signUpError as any).message || "Erro ao criar conta");
+      setError((signUpError as any).message || "Error creating account");
     } else {
-      router.push("/login");
+      router.push("/pricing");
     }
 
     setLoading(false);
@@ -227,7 +232,12 @@ export function SignupForm() {
             </div>
 
             <div className="flex items-center gap-2 pt-1 justify-center">
-              <Checkbox id="agree" />
+              <Checkbox
+                id="agree"
+                checked={agreeTerms}
+                onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
+                required
+              />
               <Label htmlFor="agree" className="text-gray-900">
                 I agree to{" "}
                 <a href="/terms" className="text-[#00D4A4] underline hover:text-[#00A882]">
@@ -237,7 +247,7 @@ export function SignupForm() {
             </div>
 
             <Button type="submit" className="w-full text-center mt-6" disabled={loading}>
-              {loading ? "Criando conta..." : "Create account"}
+              {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
