@@ -2,6 +2,7 @@
 
 import { signUp, signIn } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { ErrorMessage } from "./error-message";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,21 +54,49 @@ export function SignupForm() {
   const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const toggleVisibility = () => setIsVisible((prevState) => !prevState);
 
+  const validateInputs = () => {
+    if (!name.trim()) {
+      setError("Preenche o teu nome");
+      return false;
+    }
+    if (!team.trim()) {
+      setError("Preenche o nome da equipa");
+      return false;
+    }
+    if (!email.trim()) {
+      setError("Preenche o email");
+      return false;
+    }
+    if (!password) {
+      setError("Preenche a password");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password deve ter pelo menos 6 caracteres");
+      return false;
+    }
+    return true;
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (!validateInputs()) return;
+
     setLoading(true);
 
-    const { error } = await signUp(email, password, name, team);
+    const { error: signUpError } = await signUp(email, password, name, team);
 
-    if (error) {
-      console.error("Sign up error:", error);
-      alert("Erro ao criar conta: " + (error as any).message);
+    if (signUpError) {
+      console.error("Sign up error:", signUpError);
+      setError((signUpError as any).message || "Erro ao criar conta");
     } else {
-      alert("Conta criada com sucesso!");
       router.push("/login");
     }
 
@@ -97,6 +126,7 @@ export function SignupForm() {
           </div>
 
           <form onSubmit={handleSignUp} className="space-y-4 w-full max-w-xs">
+            {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
             <div>
               <Label htmlFor="name" className="text-gray-900 block text-left">Full Name</Label>
               <div className="relative mt-2.5">
@@ -228,21 +258,37 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const toggleVisibility = () => setIsVisible((prevState) => !prevState);
 
+  const validateInputs = () => {
+    if (!email.trim()) {
+      setError("Preenche o email");
+      return false;
+    }
+    if (!password) {
+      setError("Preenche a password");
+      return false;
+    }
+    return true;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (!validateInputs()) return;
+
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    const { error: signInError } = await signIn(email, password);
 
-    if (error) {
-      console.error("Sign in error:", error);
-      alert("Erro ao fazer login: " + (error as any).message);
+    if (signInError) {
+      console.error("Sign in error:", signInError);
+      setError((signInError as any).message || "Email ou password incorretos");
     } else {
-      alert("Login realizado com sucesso!");
       router.push("/");
     }
 
@@ -272,6 +318,7 @@ export function LoginForm() {
           </div>
 
           <form onSubmit={handleSignIn} className="space-y-4 w-full max-w-xs">
+            {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
             <div>
               <Label htmlFor="login-email" className="text-gray-900 block text-left">Email</Label>
               <div className="relative mt-2.5">
