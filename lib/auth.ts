@@ -5,7 +5,7 @@ export async function signUp(
   password: string,
   fullName: string,
   teamName: string
-) {
+): Promise<{ user: any; error: any }> {
   try {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -28,12 +28,17 @@ export async function signUp(
 
       return { user: authData.user, error: null };
     }
+
+    return { user: null, error: "Erro desconhecido" };
   } catch (error) {
     return { user: null, error };
   }
 }
 
-export async function signIn(email: string, password: string) {
+export async function signIn(
+  email: string,
+  password: string
+): Promise<{ user: any; error: any }> {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
