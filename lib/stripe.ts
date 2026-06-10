@@ -7,9 +7,9 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 export const PLANS = {
   starter: {
     id: "starter",
-    name: "Starter",
-    price: 29,
-    description: "Perfect for getting started",
+    name: "Solo",
+    price: 9,
+    description: "Perfect for individuals",
     features: [
       "Up to 3 budgets",
       "Basic analytics",
@@ -20,13 +20,13 @@ export const PLANS = {
   },
   pro: {
     id: "pro",
-    name: "Pro",
-    price: 79,
-    description: "For serious budgeting",
+    name: "Team",
+    price: 25,
+    description: "For teams and businesses",
     features: [
       "Unlimited budgets",
       "Advanced analytics",
-      "Up to 5 user accounts",
+      "Up to 10 user accounts",
       "Priority email support",
       "Custom categories",
     ],
@@ -36,16 +36,17 @@ export const PLANS = {
   enterprise: {
     id: "enterprise",
     name: "Enterprise",
-    price: 199,
-    description: "For teams and businesses",
+    price: null,
+    description: "For large organizations",
     features: [
-      "Everything in Pro",
+      "Everything in Team",
       "Unlimited user accounts",
       "API access",
-      "24/7 phone support",
+      "24/7 dedicated support",
       "Custom integrations",
-      "Dedicated account manager",
+      "SLA guarantee",
     ],
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID,
+    stripePriceId: undefined,
+    isContactOnly: true,
   },
 };

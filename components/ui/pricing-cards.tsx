@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PLANS } from "@/lib/stripe";
 import { Check } from "lucide-react";
+import Link from "next/link";
 
 interface PricingCardsProps {
   isLoggedIn?: boolean;
@@ -35,6 +36,7 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
     <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
       {Object.values(PLANS).map((plan) => {
         const isPopular = 'popular' in plan && plan.popular;
+        const isContactOnly = 'isContactOnly' in plan && plan.isContactOnly;
         return (
         <div
           key={plan.id}
@@ -56,27 +58,48 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
           <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
 
           <div className="mb-6">
-            <span className="text-4xl font-bold text-gray-900">
-              ${plan.price}
-            </span>
-            <span className="text-gray-600">/month</span>
+            {isContactOnly ? (
+              <div className="text-3xl font-bold text-gray-900">
+                Custom pricing
+              </div>
+            ) : (
+              <>
+                <span className="text-4xl font-bold text-gray-900">
+                  ${plan.price}
+                </span>
+                <span className="text-gray-600">/month</span>
+              </>
+            )}
           </div>
 
-          <button
-            onClick={() => handleCheckout(plan.id)}
-            disabled={loading === plan.id || !isLoggedIn}
-            className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 ${
-              isPopular
-                ? "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                : "bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50"
-            }`}
-          >
-            {loading === plan.id
-              ? "Loading..."
-              : !isLoggedIn
-              ? "Sign up to subscribe"
-              : "Subscribe Now"}
-          </button>
+          {isContactOnly ? (
+            <Link
+              href="/contact"
+              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 block text-center ${
+                isPopular
+                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
+              }`}
+            >
+              Contact Sales
+            </Link>
+          ) : (
+            <button
+              onClick={() => handleCheckout(plan.id)}
+              disabled={loading === plan.id || !isLoggedIn}
+              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 ${
+                isPopular
+                  ? "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  : "bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50"
+              }`}
+            >
+              {loading === plan.id
+                ? "Loading..."
+                : !isLoggedIn
+                ? "Sign up to subscribe"
+                : "Subscribe Now"}
+            </button>
+          )}
 
           <ul className="space-y-4">
             {plan.features.map((feature) => (
