@@ -66,6 +66,27 @@ export async function signOut() {
   }
 }
 
+export async function signInWithGoogle(): Promise<{ error: any }> {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+
+    if (error) throw error;
+
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+}
+
 export async function getCurrentUser() {
   try {
     const {
