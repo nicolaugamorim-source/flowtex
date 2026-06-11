@@ -13,32 +13,48 @@ export function AppGuard({ children }: AppGuardProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    async function checkAuth() {
+    // Check current session on mount
+    const checkSession = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          // Redirect to login if not authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          setHasAccess(true);
+        } else {
           router.push("/login");
-          return;
         }
-
-        // For now, if user is logged in, they have access
-        // In the future, check subscription/plan status
-        setHasAccess(true);
       } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("Session check error:", error);
         router.push("/login");
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    checkAuth();
+    checkSession();
+
+    // Listen for auth state changes to keep session persistent
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          setHasAccess(true);
+        } else {
+          setUser(null);
+          setHasAccess(false);
+          if (event !== 'SIGNED_OUT') {
+            router.push("/login");
+          }
+        }
+      }
+    );
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [router]);
 
   if (isLoading) {
