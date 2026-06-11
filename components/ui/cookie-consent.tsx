@@ -228,7 +228,7 @@ function CookieBanner({
               <Button
                 onClick={onAcceptAll}
                 size="sm"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[#0D1F2D] text-white hover:bg-[#0D1F2D]/90 transition-all hover:shadow-md"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-all hover:shadow-md font-semibold"
               >
                 Accept All
               </Button>
@@ -361,7 +361,7 @@ function CookieCustomizeDialog({
               </Button>
               <Button
                 onClick={handleSaveClick}
-                className="min-w-[140px] bg-[#0D1F2D] text-white hover:bg-[#0D1F2D]/90 transition-all hover:shadow-md"
+                className="min-w-[140px] bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-all hover:shadow-md font-semibold"
               >
                 {showSaveSuccess ? "✓ Saved" : "Save Preferences"}
               </Button>
