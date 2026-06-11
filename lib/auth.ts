@@ -46,9 +46,6 @@ export async function signUp(
 
       if (profileError) throw profileError;
 
-      // Ativa free trial de 14 dias
-      await activateFreeTrial(authData.user.id, 14);
-
       // Gera token de verificação de email
       await generateEmailVerificationToken(authData.user.id, email);
 
