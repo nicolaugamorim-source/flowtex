@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { CookieButton } from "@/components/ui/cookie-button"
 
 interface FooterProps {
   logo: React.ReactNode
@@ -20,6 +21,7 @@ interface FooterProps {
     text: string
     license?: string
   }
+  showCookieButton?: boolean
 }
 
 export function Footer({
@@ -29,6 +31,7 @@ export function Footer({
   mainLinks,
   legalLinks,
   copyright,
+  showCookieButton = true,
 }: FooterProps) {
   return (
     <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-[#F8FAFC]">
@@ -82,6 +85,11 @@ export function Footer({
                   </a>
                 </li>
               ))}
+              {showCookieButton && (
+                <li className="my-1 mx-3 shrink-0">
+                  <CookieButton />
+                </li>
+              )}
             </ul>
           </div>
           <div className="mt-6 text-sm leading-6 text-[#4A6880] whitespace-nowrap lg:mt-0 lg:row-[1/3] lg:col-[1/4]">
