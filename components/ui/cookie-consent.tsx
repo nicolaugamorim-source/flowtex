@@ -53,11 +53,6 @@ const DEFAULT_COOKIE_CATEGORIES: CookieCategory[] = [
     name: "Analytics Cookies",
     description: "Track anonymous usage to improve our services.",
   },
-  {
-    id: "marketing",
-    name: "Marketing Cookies",
-    description: "Enable personalized ads across websites.",
-  },
 ];
 
 const STORAGE_KEY = "cookie_preferences";
@@ -252,7 +247,6 @@ function getCategoryIcon(index: number) {
   const icons = [
     <Lock key="lock" className="h-4 w-4 text-[#0D1F2D]" />,
     <BarChart3 key="chart" className="h-4 w-4 text-[#0D1F2D]" />,
-    <Target key="target" className="h-4 w-4 text-[#0D1F2D]" />,
   ];
   return icons[index] || <CookieIcon className="h-4 w-4 text-[#0D1F2D]" />;
 }
