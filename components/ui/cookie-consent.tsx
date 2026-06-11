@@ -106,12 +106,14 @@ function CookieConsent({
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
       localStorage.setItem(CONSENT_KEY, "true");
+      console.log("✅ Cookie preferences saved:", prefs);
     } catch (error) {
       console.error("Error saving cookie preferences:", error);
     }
 
     setShowBanner(false);
     setShowCustomizeDialog(false);
+    setPreferences(prefs);
     onAccept?.(prefs);
   }, [onAccept]);
 
@@ -265,6 +267,14 @@ function CookieCustomizeDialog({
   onSave,
   onRejectAll,
 }: CookieCustomizeDialogProps) {
+  const [showSaveSuccess, setShowSaveSuccess] = React.useState(false);
+
+  const handleSaveClick = () => {
+    onSave();
+    setShowSaveSuccess(true);
+    setTimeout(() => setShowSaveSuccess(false), 2000);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card/95 backdrop-blur-lg z-[200] sm:max-w-[500px] p-0 gap-0 border-border/50 shadow-2xl">
@@ -331,20 +341,32 @@ function CookieCustomizeDialog({
           ))}
         </div>
         <DialogFooter className="p-6 border-t border-border/50 bg-muted/30">
-          <div className="flex w-full flex-col-reverse sm:flex-row sm:justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={onRejectAll}
-              className="min-w-[120px] transition-all hover:shadow-md"
-            >
-              Reject All
-            </Button>
-            <Button
-              onClick={onSave}
-              className="min-w-[140px] transition-all hover:shadow-md"
-            >
-              Save Preferences
-            </Button>
+          <div className="flex w-full flex-col-reverse sm:flex-row sm:justify-between gap-3 items-center">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={onRejectAll}
+                className="min-w-[120px] transition-all hover:shadow-md"
+              >
+                Reject All
+              </Button>
+              <Button
+                onClick={handleSaveClick}
+                className="min-w-[140px] transition-all hover:shadow-md"
+              >
+                {showSaveSuccess ? "✓ Saved" : "Save Preferences"}
+              </Button>
+            </div>
+            {showSaveSuccess && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="text-sm text-green-600 font-medium"
+              >
+                Preferences saved successfully
+              </motion.div>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
