@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthHandler } from "./auth-handler";
 import { CookieProvider } from "@/lib/cookie-context";
 import { CookieConsent } from "@/components/ui/cookie-consent";
+import "@/lib/cookie-reset";
 import "./globals.css";
 
 const geist = Geist({

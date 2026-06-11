@@ -205,30 +205,30 @@ function CookieBanner({
             className
           )}
         >
-          <div className="m-3 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl shadow-2xl">
+          <div className="m-3 bg-white border border-gray-200 rounded-xl shadow-lg">
             <div className="flex items-center gap-3 p-6 pb-4">
-              <div className="bg-primary/10 p-2 rounded-lg">
-                <CookieIcon className="h-5 w-5 text-primary" />
+              <div className="bg-indigo-50 p-2 rounded-lg">
+                <CookieIcon className="h-5 w-5 text-indigo-600" />
               </div>
-              <h2 className="text-lg font-semibold">Cookie Preferences</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Cookie Preferences</h2>
             </div>
             <div className="px-6 pb-4">
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              <p className="text-sm text-gray-600 leading-relaxed mb-4">
                 We use cookies to enhance your experience, personalize content, and analyze traffic.
               </p>
               <Link
                 href={cookiePolicyUrl}
-                className="text-xs inline-flex items-center text-primary hover:underline group font-medium transition-colors"
+                className="text-xs inline-flex items-center text-indigo-600 hover:underline group font-medium transition-colors"
               >
                 Cookie Policy
                 <ChevronRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
-            <div className="p-4 flex flex-col sm:flex-row gap-3 border-t border-border/50 bg-muted/30">
+            <div className="p-4 flex flex-col sm:flex-row gap-3 border-t border-gray-200 bg-gray-50">
               <Button
                 onClick={onAcceptAll}
                 size="sm"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm transition-all hover:shadow-md"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-all hover:shadow-md"
               >
                 Accept All
               </Button>
@@ -236,7 +236,7 @@ function CookieBanner({
                 onClick={onCustomize}
                 size="sm"
                 variant="outline"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm transition-all hover:shadow-md"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm border-gray-300 text-gray-900 hover:bg-gray-100 transition-all hover:shadow-md"
               >
                 Customize
               </Button>
@@ -277,10 +277,10 @@ function CookieCustomizeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card/95 backdrop-blur-lg z-[200] sm:max-w-[500px] p-0 gap-0 border-border/50 shadow-2xl">
-        <DialogHeader className="p-6 pb-4 border-b border-border/50">
-          <DialogTitle className="text-xl font-semibold">Manage Cookies</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+      <DialogContent className="bg-white z-[200] sm:max-w-[500px] p-0 gap-0 border-gray-200 shadow-xl">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200">
+          <DialogTitle className="text-xl font-semibold text-gray-900">Manage Cookies</DialogTitle>
+          <DialogDescription className="text-gray-600">
             Customize your cookie preferences below.
           </DialogDescription>
         </DialogHeader>
@@ -294,28 +294,28 @@ function CookieCustomizeDialog({
               className={cn(
                 "p-4 border rounded-xl transition-all duration-200",
                 preferences[index]
-                  ? "border-primary/30 bg-primary/5 shadow-sm"
-                  : "border-border/50 hover:border-border/70"
+                  ? "border-indigo-300 bg-indigo-50 shadow-sm"
+                  : "border-gray-200 hover:border-gray-300"
               )}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "p-2 rounded-lg transition-colors",
-                    preferences[index] ? "bg-primary/10" : "bg-muted"
+                    preferences[index] ? "bg-indigo-100" : "bg-gray-100"
                   )}>
-                    {category.icon || <CookieIcon className="h-4 w-4" />}
+                    {category.icon || <CookieIcon className="h-4 w-4 text-indigo-600" />}
                   </div>
                   <Label
                     htmlFor={`cookie-${index}`}
-                    className="font-semibold text-base cursor-pointer"
+                    className="font-semibold text-base cursor-pointer text-gray-900"
                   >
                     {category.name}
                     {category.isEssential && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
                               Required
                             </span>
                           </TooltipTrigger>
@@ -334,25 +334,25 @@ function CookieCustomizeDialog({
                   disabled={category.isEssential}
                 />
               </div>
-              <p className="text-sm mt-3 text-muted-foreground leading-relaxed">
+              <p className="text-sm mt-3 text-gray-600 leading-relaxed">
                 {category.description}
               </p>
             </motion.div>
           ))}
         </div>
-        <DialogFooter className="p-6 border-t border-border/50 bg-muted/30">
+        <DialogFooter className="p-6 border-t border-gray-200 bg-gray-50">
           <div className="flex w-full flex-col-reverse sm:flex-row sm:justify-between gap-3 items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={onRejectAll}
-                className="min-w-[120px] transition-all hover:shadow-md"
+                className="min-w-[120px] border-gray-300 text-gray-900 hover:bg-gray-100 transition-all hover:shadow-md"
               >
                 Reject All
               </Button>
               <Button
                 onClick={handleSaveClick}
-                className="min-w-[140px] transition-all hover:shadow-md"
+                className="min-w-[140px] bg-indigo-600 text-white hover:bg-indigo-700 transition-all hover:shadow-md"
               >
                 {showSaveSuccess ? "✓ Saved" : "Save Preferences"}
               </Button>
