@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { CookieIcon, ChevronRight } from "lucide-react";
+import { CookieIcon, ChevronRight, Lock, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -208,7 +208,7 @@ function CookieBanner({
           <div className="m-3 bg-[#F8FAFC] border border-[#C8D8E6] rounded-xl shadow-lg">
             <div className="flex items-center gap-3 p-6 pb-4">
               <div className="bg-[#E0F7F2] p-2 rounded-lg">
-                <CookieIcon className="h-5 w-5 text-[#00D4A4]" />
+                <CookieIcon className="h-5 w-5 text-[#0D1F2D]" />
               </div>
               <h2 className="text-lg font-semibold text-[#0D1F2D]">Cookie Preferences</h2>
             </div>
@@ -218,7 +218,7 @@ function CookieBanner({
               </p>
               <Link
                 href={cookiePolicyUrl}
-                className="text-xs inline-flex items-center text-[#00D4A4] hover:underline group font-medium transition-colors"
+                className="text-xs inline-flex items-center text-[#0D1F2D] hover:underline group font-medium transition-colors"
               >
                 Cookie Policy
                 <ChevronRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-0.5" />
@@ -228,7 +228,7 @@ function CookieBanner({
               <Button
                 onClick={onAcceptAll}
                 size="sm"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[#00D4A4] text-white hover:bg-[#00A882] transition-all hover:shadow-md"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[#0D1F2D] text-white hover:bg-[#0D1F2D]/90 transition-all hover:shadow-md"
               >
                 Accept All
               </Button>
@@ -246,6 +246,15 @@ function CookieBanner({
       )}
     </AnimatePresence>
   );
+}
+
+function getCategoryIcon(index: number) {
+  const icons = [
+    <Lock key="lock" className="h-4 w-4 text-[#0D1F2D]" />,
+    <BarChart3 key="chart" className="h-4 w-4 text-[#0D1F2D]" />,
+    <Target key="target" className="h-4 w-4 text-[#0D1F2D]" />,
+  ];
+  return icons[index] || <CookieIcon className="h-4 w-4 text-[#0D1F2D]" />;
 }
 
 interface CookieCustomizeDialogProps {
@@ -304,7 +313,7 @@ function CookieCustomizeDialog({
                     "p-2 rounded-lg transition-colors",
                     preferences[index] ? "bg-[#E0F7F2]" : "bg-[#F1F5F9]"
                   )}>
-                    {category.icon || <CookieIcon className="h-4 w-4 text-[#00D4A4]" />}
+                    {category.icon || getCategoryIcon(index)}
                   </div>
                   <Label
                     htmlFor={`cookie-${index}`}
@@ -352,7 +361,7 @@ function CookieCustomizeDialog({
               </Button>
               <Button
                 onClick={handleSaveClick}
-                className="min-w-[140px] bg-[#00D4A4] text-white hover:bg-[#00A882] transition-all hover:shadow-md"
+                className="min-w-[140px] bg-[#0D1F2D] text-white hover:bg-[#0D1F2D]/90 transition-all hover:shadow-md"
               >
                 {showSaveSuccess ? "✓ Saved" : "Save Preferences"}
               </Button>
