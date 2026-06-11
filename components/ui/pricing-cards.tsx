@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { PLANS } from "@/lib/stripe";
 import { Check } from "lucide-react";
 import Link from "next/link";
 
@@ -9,26 +7,56 @@ interface PricingCardsProps {
   isLoggedIn?: boolean;
 }
 
+const PLANS = {
+  starter: {
+    id: "starter",
+    name: "Solo",
+    price: 9,
+    description: "Perfect for individuals",
+    features: [
+      "Up to 3 budgets",
+      "Basic analytics",
+      "1 user account",
+      "Email support",
+    ],
+  },
+  pro: {
+    id: "pro",
+    name: "Team",
+    price: 25,
+    description: "For teams and businesses",
+    features: [
+      "Unlimited budgets",
+      "Advanced analytics",
+      "Up to 10 user accounts",
+      "Priority email support",
+      "Custom categories",
+    ],
+    popular: true,
+  },
+  enterprise: {
+    id: "enterprise",
+    name: "Enterprise",
+    price: null,
+    description: "For large organizations",
+    features: [
+      "Everything in Team",
+      "Unlimited user accounts",
+      "API access",
+      "24/7 dedicated support",
+      "Custom integrations",
+      "SLA guarantee",
+    ],
+    isContactOnly: true,
+  },
+};
+
 export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
-  const [loading, setLoading] = useState<string | null>(null);
-
-  const handleCheckout = async (planId: string) => {
-    setLoading(planId);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
-      });
-
-      const data = await response.json();
-      if (data.sessionId) {
-        window.location.href = `https://checkout.stripe.com/pay/${data.sessionId}`;
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-    } finally {
-      setLoading(null);
+  const handleSubscribe = () => {
+    if (!isLoggedIn) {
+      window.location.href = "/login";
+    } else {
+      window.location.href = "/contact";
     }
   };
 
@@ -85,19 +113,16 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
             </Link>
           ) : (
             <button
-              onClick={() => handleCheckout(plan.id)}
-              disabled={loading === plan.id || !isLoggedIn}
+              onClick={handleSubscribe}
               className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 ${
                 isPopular
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                  : "bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50"
+                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
               }`}
             >
-              {loading === plan.id
-                ? "Loading..."
-                : !isLoggedIn
-                ? "Sign up to subscribe"
-                : "Subscribe Now"}
+              {!isLoggedIn
+                ? "Sign up to get started"
+                : "Get started"}
             </button>
           )}
 
