@@ -14,42 +14,71 @@ export function AppGuard({ children }: AppGuardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
+    let redirectTimeout: NodeJS.Timeout;
 
-    // Listen for auth state changes first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+    const initAuth = async () => {
+      try {
+        // First, try to get existing session
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (!isMounted) return;
 
-        console.log("Auth state changed:", event, session?.user?.email);
-
         if (session?.user) {
+          console.log("✅ Session found:", session.user.email);
           setUser(session.user);
           setHasAccess(true);
-          setSessionChecked(true);
           setIsLoading(false);
-        } else {
-          setUser(null);
-          setHasAccess(false);
-          setSessionChecked(true);
-          setIsLoading(false);
+          return;
+        }
 
-          if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
-            router.push("/login");
-          } else if (event === 'INITIAL_SESSION' || event === null) {
-            // Initial session check - no user
-            router.push("/login");
+        // If no session, wait for auth state changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, newSession) => {
+            if (!isMounted) return;
+
+            console.log("🔄 Auth event:", event, newSession?.user?.email);
+
+            if (newSession?.user) {
+              setUser(newSession.user);
+              setHasAccess(true);
+              setIsLoading(false);
+            } else {
+              setHasAccess(false);
+              setIsLoading(false);
+
+              // Only redirect after a small delay to ensure session is really gone
+              redirectTimeout = setTimeout(() => {
+                if (isMounted && !newSession?.user) {
+                  console.log("❌ No session, redirecting to login");
+                  router.push("/login");
+                }
+              }, 500);
+            }
           }
+        );
+
+        return () => {
+          subscription?.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Auth init error:", error);
+        if (isMounted) {
+          setIsLoading(false);
+          redirectTimeout = setTimeout(() => {
+            if (isMounted) router.push("/login");
+          }, 500);
         }
       }
-    );
+    };
+
+    initAuth();
 
     return () => {
       isMounted = false;
-      subscription?.unsubscribe();
+      if (redirectTimeout) clearTimeout(redirectTimeout);
     };
   }, [router]);
 
