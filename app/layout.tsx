@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { AuthHandler } from "./auth-handler";
 import "./globals.css";
 
 const geist = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}>
       <body className="min-h-full flex flex-col bg-[#080810] overflow-x-hidden">
+        <AuthHandler />
         {children}
         <Analytics />
         <SpeedInsights />
