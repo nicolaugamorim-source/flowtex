@@ -1,4 +1,6 @@
 import { supabase } from "./supabase";
+import { checkFraudRisk, logFraudAttempt, generateEmailVerificationToken } from "./fraud-detection";
+import { activateFreeTrial } from "./access-control";
 
 export async function signUp(
   email: string,
@@ -7,17 +9,31 @@ export async function signUp(
   teamName: string
 ): Promise<{ user: any; error: any }> {
   try {
+    // Verifica fraude
+    const fraudCheck = await checkFraudRisk(email);
+
+    if (fraudCheck.flagged) {
+      return {
+        user: null,
+        error: {
+          message: "Account creation blocked due to security concerns. Please contact support.",
+          code: "FRAUD_DETECTED",
+        },
+      };
+    }
+
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/verify-email`,
       },
     });
 
     if (authError) throw authError;
 
     if (authData.user) {
+      // Cria profile com verificação
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
@@ -25,9 +41,27 @@ export async function signUp(
           full_name: fullName,
           team_name: teamName,
           email,
+          email_verified: false,
         });
 
       if (profileError) throw profileError;
+
+      // Ativa free trial de 14 dias
+      await activateFreeTrial(authData.user.id, 14);
+
+      // Gera token de verificação de email
+      await generateEmailVerificationToken(authData.user.id, email);
+
+      // Log da tentativa
+      await logFraudAttempt(
+        authData.user.id,
+        email,
+        "signup",
+        undefined,
+        undefined,
+        fraudCheck.riskScore,
+        fraudCheck.flagged
+      );
 
       return { user: authData.user, error: null };
     }
