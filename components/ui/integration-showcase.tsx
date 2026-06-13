@@ -29,16 +29,10 @@ export interface IntegrationShowcaseProps {
 const HighlightedTitle = ({ text }: { text: string }) => {
   const parts = text.split(/~/);
   return (
-    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#0D1F2D]">
-      {parts.map((part, index) =>
-        index === 1 ? (
-          <span key={index} className="text-[#00D4A4]">
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
+    <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[#0D1F2D]">
+      {parts.map((part, index) => (
+        <span key={index}>{part}</span>
+      ))}
     </h2>
   );
 };
