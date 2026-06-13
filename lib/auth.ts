@@ -97,23 +97,45 @@ export async function signOut() {
   }
 }
 
-export async function signInWithGoogle(): Promise<{ error: any }> {
+export async function signInWithGoogle(requestIntegrations: boolean = false): Promise<{ error: any }> {
   try {
+    // Always request Calendar and Gmail scopes
+    const scopes = "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar";
+
+    const redirectUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`;
+
+    console.log("🔐 SignInWithGoogle called");
+    console.log("  - scopes:", scopes);
+    console.log("  - redirectTo:", redirectUrl);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`,
+        redirectTo: redirectUrl,
+        scopes: scopes,
         queryParams: {
-          access_type: "offline",
           prompt: "consent",
+          access_type: "offline",
         },
       },
     });
 
-    if (error) throw error;
+    console.log("🔐 Supabase OAuth response:");
+    console.log("  - Error:", error);
 
+    if (error) {
+      console.error("❌ OAuth Error Details:", {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+      });
+      throw error;
+    }
+
+    console.log("✅ OAuth request sent successfully");
     return { error: null };
   } catch (error) {
+    console.error("❌ SignInWithGoogle error:", error);
     return { error };
   }
 }
@@ -126,5 +148,56 @@ export async function getCurrentUser() {
     return user;
   } catch (error) {
     return null;
+  }
+}
+
+export async function upsertProfileFromGoogle() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+
+    console.log("📝 Upserting user:", { id: user.id, email: user.email, fullName });
+
+    // Check if user exists
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+
+    if (existingUser) {
+      console.log("✅ User exists, updating...");
+      // Update existing user
+      const { error } = await supabase
+        .from("users")
+        .update({
+          full_name: fullName,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+    } else {
+      console.log("✨ Creating new user...");
+      // Create new user
+      const { error } = await supabase
+        .from("users")
+        .insert({
+          id: user.id,
+          full_name: fullName,
+          email: user.email,
+          team_name: "My Team",
+        });
+
+      if (error) throw error;
+    }
+
+    console.log("✅ User upserted successfully");
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("❌ Error upserting user:", error);
+    return { success: false, error };
   }
 }

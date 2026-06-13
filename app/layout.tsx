@@ -5,6 +5,9 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthHandler } from "./auth-handler";
 import { CookieProvider } from "@/lib/cookie-context";
 import { CookieConsent } from "@/components/ui/cookie-consent";
+import { AICommandProvider } from "@/lib/ai-command-context";
+import { AICommandModal } from "@/components/ui/ai-command-modal";
+import { GoogleProvider } from "@/lib/google-context";
 import "@/lib/cookie-reset";
 import "./globals.css";
 
@@ -48,13 +51,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}>
       <body className="min-h-full flex flex-col bg-[#080810] overflow-x-hidden">
-        <CookieProvider>
-          <AuthHandler />
-          {children}
-          <CookieConsent />
-          <Analytics />
-          <SpeedInsights />
-        </CookieProvider>
+        <GoogleProvider>
+          <AICommandProvider>
+            <CookieProvider>
+              <AuthHandler />
+              {children}
+              <CookieConsent />
+              <AICommandModal />
+              <Analytics />
+              <SpeedInsights />
+            </CookieProvider>
+          </AICommandProvider>
+        </GoogleProvider>
       </body>
     </html>
   );

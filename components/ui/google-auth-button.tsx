@@ -12,7 +12,7 @@ export function GoogleAuthButton() {
     setLoading(true);
     setError(null);
 
-    const { error: signInError } = await signInWithGoogle();
+    const { error: signInError } = await signInWithGoogle(true);
 
     if (signInError) {
       console.error("Google sign in error:", signInError);

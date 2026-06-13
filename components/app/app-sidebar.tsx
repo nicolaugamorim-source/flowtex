@@ -2,8 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  Menu,
-  X,
   Home,
   CheckSquare,
   Mail,
@@ -11,7 +9,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ChevronRight,
+  PanelLeftClose,
+  PanelRightClose,
 } from "lucide-react";
 
 interface AppSidebarProps {
@@ -49,7 +48,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className = "" }) => {
           onClick={() => setIsExpanded(!isExpanded)}
           className="p-1.5 hover:bg-[#E8EFF5] rounded-lg transition-colors"
         >
-          {isExpanded ? <Menu size={20} /> : <ChevronRight size={20} />}
+          {isExpanded ? <PanelLeftClose size={20} /> : <PanelRightClose size={20} />}
         </button>
       </div>
 
