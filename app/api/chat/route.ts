@@ -458,6 +458,26 @@ export async function POST(request: NextRequest) {
     // Call Claude API with tools
     console.log('Calling Claude API with message:', message);
 
+    // Build recent context (last email/calendar action)
+    let recentContext = '';
+    if (conversationHistory && conversationHistory.length > 0) {
+      // Look for recent email or calendar mentions in conversation
+      const lastAssistantMessage = conversationHistory.reverse().find((msg: any) => msg.role === 'assistant');
+      if (lastAssistantMessage?.content) {
+        // Extract email details if mentioned
+        if (lastAssistantMessage.content.includes('Email from:') || lastAssistantMessage.content.includes('FULL:')) {
+          recentContext = `\n\nRECENT EMAIL CONTEXT:
+Remember the email you just read. Use this context for any follow-up actions the user requests.
+When user asks to "reply", "confirm", "reschedule", or similar - apply the email context you have.`;
+        }
+        // Extract calendar details if mentioned
+        if (lastAssistantMessage.content.includes('meeting') || lastAssistantMessage.content.includes('event')) {
+          recentContext += `\n\nRECENT CALENDAR CONTEXT:
+You know the meeting details from the email/previous context. Use this information for rescheduling or related actions.`;
+        }
+      }
+    }
+
     // Build action-specific system prompt
     let actionContext = '';
     if (activeAction === 'schedule') {
@@ -474,6 +494,26 @@ export async function POST(request: NextRequest) {
       system: `You are Flowtex, an intelligent workspace assistant for solopreneurs and small teams.
 
 You have access to the user's Gmail, Google Calendar, and Notion. You already know their project context, clients, and team.
+
+CONTEXT AWARENESS & SMART INFERENCE:
+- You have full context from recent emails, calendar events, and conversations
+- When the user refers to something you just read (an email, meeting, etc.), use that context immediately
+- DO NOT ask for information you can infer from context. Examples:
+  * If you just read "Flow wants to reschedule Tuesday meeting to Wednesday", and user says "reschedule it":
+    → You KNOW: old date=Tuesday, new date=Wednesday, email recipient=Flow/support.flowapp@gmail.com
+    → Do NOT ask "which meeting?" or "what date?" - you have the context
+  * If user says "send confirmation email" after reading meeting reschedule request:
+    → You KNOW what to confirm and who to send to (from the email)
+    → Just do it, don't ask for details
+- Make intelligent assumptions based on conversation flow
+- Extract implicit information: if meeting details are clear from context, use them
+- Be proactive: suggest next logical steps based on what you just learned
+
+Email Context Memory:
+- When you read an email, remember: sender, subject, date, content, any requests/action items
+- In follow-up messages, reference this context naturally
+- If user action relates to an email you just read, apply that context immediately
+- Extract: Who sent it? What do they want? What action is needed? Who should you reply to?
 
 Date Parsing Rules:
 - If user says "dia 15", use current month if day 15 hasn't passed, else next month
@@ -532,7 +572,7 @@ Rules:
 - If a command is ambiguous, ask one short clarifying question before acting.
 - Never re-ask for context already provided.
 - ALWAYS respond in the exact same language the user writes in. If they write in English, respond in English. If Portuguese, respond in Portuguese. If Spanish, respond in Spanish. Match their language perfectly.
-- Keep responses short — one to three sentences maximum unless detail is explicitly needed.${calendarsInfo}${calendarContext}${actionContext}`,
+- Keep responses short — one to three sentences maximum unless detail is explicitly needed.${recentContext}${calendarsInfo}${calendarContext}${actionContext}`,
       tools: tools as any,
       messages: messages,
     });
