@@ -64,10 +64,10 @@ export const IntegrationShowcase = React.forwardRef<
   };
 
   return (
-    <section ref={ref} className={cn('w-full py-16 sm:py-24', className)}>
+    <section ref={ref} className={cn('w-full py-32 sm:py-40', className)}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className={illustrationSrc ? "grid grid-cols-1 items-start gap-x-12 gap-y-10 lg:grid-cols-2" : "text-center"}>
+        <div className={illustrationSrc ? "grid grid-cols-1 items-start gap-x-12 gap-y-10 lg:grid-cols-2" : "text-center mb-32"}>
           <div className={illustrationSrc ? "max-w-xl" : "mx-auto"}>
             <HighlightedTitle text={title} />
             {subtitle && (
@@ -89,7 +89,7 @@ export const IntegrationShowcase = React.forwardRef<
 
         {/* Integrations Grid */}
         <motion.div
-          className="mt-20 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
