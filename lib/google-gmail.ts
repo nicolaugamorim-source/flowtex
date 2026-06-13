@@ -74,7 +74,7 @@ export async function getEmails(accessToken: string, maxResults: number = 10, qu
           from: getHeader('From'),
           to: getHeader('To'),
           subject: getHeader('Subject'),
-          body: body.substring(0, 2000), // First 2000 chars
+          body: body.substring(0, 5000), // First 5000 chars (fuller content)
           date: getHeader('Date'),
         });
       } catch (error) {
@@ -121,6 +121,45 @@ export async function sendEmail(
 
 export async function searchEmails(accessToken: string, query: string, maxResults: number = 5) {
   return getEmails(accessToken, maxResults, query);
+}
+
+export async function getFullEmailContent(accessToken: string, messageId: string): Promise<EmailMessage | null> {
+  try {
+    const auth = await getGmailClient(accessToken);
+
+    const fullMessage = await gmail.users.messages.get({
+      auth,
+      userId: 'me',
+      id: messageId,
+      format: 'full',
+    });
+
+    const headers = fullMessage.data.payload?.headers || [];
+    const getHeader = (name: string) => headers.find(h => h.name === name)?.value || '';
+
+    let body = '';
+    if (fullMessage.data.payload?.parts) {
+      const textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/plain');
+      if (textPart?.body?.data) {
+        body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+      }
+    } else if (fullMessage.data.payload?.body?.data) {
+      body = Buffer.from(fullMessage.data.payload.body.data, 'base64').toString('utf-8');
+    }
+
+    return {
+      id: messageId,
+      threadId: fullMessage.data.threadId || '',
+      from: getHeader('From'),
+      to: getHeader('To'),
+      subject: getHeader('Subject'),
+      body: body, // Full content without limit
+      date: getHeader('Date'),
+    };
+  } catch (error) {
+    console.error('Error fetching full email:', error);
+    return null;
+  }
 }
 
 export async function deleteEmail(accessToken: string, messageId: string) {

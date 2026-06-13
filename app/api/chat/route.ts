@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getUpcomingEvents, createEvent, getCalendarsList, findAndDeleteEvent, rescheduleEvent } from '@/lib/google-calendar';
-import { getEmails, sendEmail, searchEmails, deleteEmail, markAsRead } from '@/lib/google-gmail';
+import { getEmails, sendEmail, searchEmails, deleteEmail, markAsRead, getFullEmailContent } from '@/lib/google-gmail';
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { supabase } from '@/lib/supabase';
 
@@ -426,6 +426,20 @@ export async function POST(request: NextRequest) {
         },
       },
       {
+        name: 'read_email_full',
+        description: 'Read the complete content of a specific email. Use this to get the full message when you need to analyze or summarize an email in detail.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            email_id: {
+              type: 'string',
+              description: 'The ID of the email to read (you get this from search_emails results)',
+            },
+          },
+          required: ['email_id'],
+        },
+      },
+      {
         name: 'delete_email',
         description: 'Delete an email by searching for it first, then deleting it.',
         input_schema: {
@@ -803,6 +817,38 @@ Be concise and just confirm what was scheduled.`,
           console.error('Error details:', errorMsg);
           return NextResponse.json({
             content: `Erro ao criar o evento no calendário: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'read_email_full' && validAccessToken) {
+        const { email_id } = toolUse.input;
+
+        console.log('📖 Reading full email content:', email_id);
+
+        try {
+          const email = await getFullEmailContent(validAccessToken, email_id);
+
+          if (!email) {
+            return NextResponse.json({
+              content: userLanguage === 'pt' ? 'Não consegui ler esse email.' : 'I couldn\'t read that email.',
+              role: 'assistant',
+            });
+          }
+
+          // Return full email content to Claude
+          return NextResponse.json({
+            content: `Email lido com sucesso:\n\n**De:** ${email.from}\n**Assunto:** ${email.subject}\n**Data:** ${email.date}\n\n**Conteúdo:**\n${email.body}`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error reading full email:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Erro ao ler email: ${errorMsg}`
+              : `Error reading email: ${errorMsg}`,
             role: 'assistant',
           });
         }
