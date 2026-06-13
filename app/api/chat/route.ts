@@ -830,16 +830,33 @@ Be concise and just confirm what was scheduled.`,
         try {
           const email = await getFullEmailContent(validAccessToken, email_id);
 
-          if (!email) {
+          if (!email || !email.body) {
+            console.log('⚠️ Email or body is empty:', email);
             return NextResponse.json({
-              content: userLanguage === 'pt' ? 'Não consegui ler esse email.' : 'I couldn\'t read that email.',
+              content: userLanguage === 'pt'
+                ? 'Desculpa, o email não tem conteúdo ou não consegui ler.'
+                : 'Sorry, the email has no content or I couldn\'t read it.',
               role: 'assistant',
             });
           }
 
-          // Return full email content to Claude
+          // Return full email content to Claude with clear formatting
+          const emailContent = `
+📧 EMAIL COMPLETO:
+
+De: ${email.from}
+Para: ${email.to}
+Assunto: ${email.subject}
+Data: ${email.date}
+
+---
+
+${email.body}
+
+---`;
+
           return NextResponse.json({
-            content: `Email lido com sucesso:\n\n**De:** ${email.from}\n**Assunto:** ${email.subject}\n**Data:** ${email.date}\n\n**Conteúdo:**\n${email.body}`,
+            content: emailContent,
             role: 'assistant',
           });
         } catch (error) {
@@ -847,8 +864,8 @@ Be concise and just confirm what was scheduled.`,
           const errorMsg = error instanceof Error ? error.message : String(error);
           return NextResponse.json({
             content: userLanguage === 'pt'
-              ? `Erro ao ler email: ${errorMsg}`
-              : `Error reading email: ${errorMsg}`,
+              ? `Erro ao ler email completo: ${errorMsg}`
+              : `Error reading full email: ${errorMsg}`,
             role: 'assistant',
           });
         }
@@ -945,15 +962,21 @@ Include the main points and action items if any. Do not add headers or markdown 
             }
           }
 
-          // Format emails as bubbles for display (fallback for other queries)
+          // Format emails as bubbles for display with full email info
           const emailBubbles = emails.map((email) => ({
             type: 'email' as const,
             title: email.subject,
             subtitle: email.from,
+            description: email.body.substring(0, 200) + (email.body.length > 200 ? '...' : ''),
             metadata: [
               {
                 label: userLanguage === 'pt' ? 'Data' : 'Date',
                 value: email.date.split(/\s+\d{2}:\d{2}:\d{2}/)[0], // Remove time and timezone
+                color: 'default' as const,
+              },
+              {
+                label: 'ID',
+                value: email.id,
                 color: 'default' as const,
               },
             ],
@@ -963,10 +986,15 @@ Include the main points and action items if any. Do not add headers or markdown 
             },
           }));
 
+          // Also pass full email data to Claude in the system message
+          const emailsContext = emails.map(e =>
+            `Email ID: ${e.id}\nFrom: ${e.from}\nSubject: ${e.subject}\nDate: ${e.date}\nPreview: ${e.body.substring(0, 500)}...`
+          ).join('\n\n---\n\n');
+
           return NextResponse.json({
             content: userLanguage === 'pt'
-              ? `Encontrei ${emails.length} email(s):`
-              : `Found ${emails.length} email(s):`,
+              ? `Encontrei ${emails.length} email(s):\n\n${emailsContext}`
+              : `Found ${emails.length} email(s):\n\n${emailsContext}`,
             role: 'assistant',
             bubbles: emailBubbles,
           });

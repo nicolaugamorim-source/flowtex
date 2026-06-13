@@ -125,6 +125,7 @@ export async function searchEmails(accessToken: string, query: string, maxResult
 
 export async function getFullEmailContent(accessToken: string, messageId: string): Promise<EmailMessage | null> {
   try {
+    console.log('📖 Fetching full email content for ID:', messageId);
     const auth = await getGmailClient(accessToken);
 
     const fullMessage = await gmail.users.messages.get({
@@ -134,18 +135,41 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       format: 'full',
     });
 
+    if (!fullMessage.data) {
+      console.error('❌ No message data returned');
+      return null;
+    }
+
     const headers = fullMessage.data.payload?.headers || [];
     const getHeader = (name: string) => headers.find(h => h.name === name)?.value || '';
 
     let body = '';
+
+    // Try to extract text content
     if (fullMessage.data.payload?.parts) {
-      const textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/plain');
+      // Multi-part email - look for text/plain first, then text/html
+      let textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/plain');
+      if (!textPart) {
+        textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/html');
+      }
+
       if (textPart?.body?.data) {
-        body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+        try {
+          body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+        } catch (e) {
+          console.error('Error decoding part:', e);
+        }
       }
     } else if (fullMessage.data.payload?.body?.data) {
-      body = Buffer.from(fullMessage.data.payload.body.data, 'base64').toString('utf-8');
+      // Simple email
+      try {
+        body = Buffer.from(fullMessage.data.payload.body.data, 'base64').toString('utf-8');
+      } catch (e) {
+        console.error('Error decoding body:', e);
+      }
     }
+
+    console.log('✅ Email fetched successfully, body length:', body.length);
 
     return {
       id: messageId,
@@ -153,11 +177,11 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       from: getHeader('From'),
       to: getHeader('To'),
       subject: getHeader('Subject'),
-      body: body, // Full content without limit
+      body: body || '[No content found]', // Full content without limit
       date: getHeader('Date'),
     };
   } catch (error) {
-    console.error('Error fetching full email:', error);
+    console.error('❌ Error fetching full email:', error);
     return null;
   }
 }
