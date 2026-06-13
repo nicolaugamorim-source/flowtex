@@ -123,6 +123,31 @@ export async function searchEmails(accessToken: string, query: string, maxResult
   return getEmails(accessToken, maxResults, query);
 }
 
+function extractTextFromParts(parts: any[]): string {
+  let text = '';
+
+  for (const part of parts) {
+    // Direct text content
+    if (part.body?.data) {
+      try {
+        const decoded = Buffer.from(part.body.data, 'base64').toString('utf-8');
+        if (decoded.trim()) {
+          text += decoded + '\n';
+        }
+      } catch (e) {
+        console.error('Error decoding part:', e);
+      }
+    }
+
+    // Nested parts (multipart)
+    if (part.parts && part.parts.length > 0) {
+      text += extractTextFromParts(part.parts);
+    }
+  }
+
+  return text;
+}
+
 export async function getFullEmailContent(accessToken: string, messageId: string): Promise<EmailMessage | null> {
   try {
     console.log('📖 Fetching full email content for ID:', messageId);
@@ -145,29 +170,50 @@ export async function getFullEmailContent(accessToken: string, messageId: string
 
     let body = '';
 
-    // Try to extract text content
+    // Strategy 1: Look for text/plain part
     if (fullMessage.data.payload?.parts) {
-      // Multi-part email - look for text/plain first, then text/html
       let textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/plain');
-      if (!textPart) {
-        textPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/html');
-      }
-
       if (textPart?.body?.data) {
         try {
           body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
+          console.log('✅ Found text/plain part');
         } catch (e) {
-          console.error('Error decoding part:', e);
+          console.error('Error decoding text/plain:', e);
+        }
+      }
+
+      // Strategy 2: If no text/plain, look for HTML
+      if (!body) {
+        const htmlPart = fullMessage.data.payload.parts.find(part => part.mimeType === 'text/html');
+        if (htmlPart?.body?.data) {
+          try {
+            body = Buffer.from(htmlPart.body.data, 'base64').toString('utf-8');
+            console.log('✅ Found text/html part');
+          } catch (e) {
+            console.error('Error decoding text/html:', e);
+          }
+        }
+      }
+
+      // Strategy 3: Recursively extract from nested parts
+      if (!body) {
+        body = extractTextFromParts(fullMessage.data.payload.parts);
+        if (body) {
+          console.log('✅ Extracted from nested parts');
         }
       }
     } else if (fullMessage.data.payload?.body?.data) {
-      // Simple email
+      // Simple email without parts
       try {
         body = Buffer.from(fullMessage.data.payload.body.data, 'base64').toString('utf-8');
+        console.log('✅ Found simple body');
       } catch (e) {
         console.error('Error decoding body:', e);
       }
     }
+
+    // Clean up excessive newlines
+    body = body.replace(/\n\n\n+/g, '\n\n').trim();
 
     console.log('✅ Email fetched successfully, body length:', body.length);
 
@@ -177,7 +223,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       from: getHeader('From'),
       to: getHeader('To'),
       subject: getHeader('Subject'),
-      body: body || '[No content found]', // Full content without limit
+      body: body || '[Email vazio ou conteúdo não encontrado]',
       date: getHeader('Date'),
     };
   } catch (error) {
