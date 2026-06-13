@@ -18,9 +18,9 @@ export interface Integration {
  */
 export interface IntegrationShowcaseProps {
   title: string;
-  subtitle: string;
-  illustrationSrc: string;
-  illustrationAlt: string;
+  subtitle?: string;
+  illustrationSrc?: string;
+  illustrationAlt?: string;
   integrations: Integration[];
   className?: string;
 }
@@ -84,20 +84,24 @@ export const IntegrationShowcase = React.forwardRef<
     <section ref={ref} className={cn('w-full py-16 sm:py-24', className)}>
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="grid grid-cols-1 items-start gap-x-12 gap-y-10 lg:grid-cols-2">
-          <div className="max-w-xl">
+        <div className={illustrationSrc ? "grid grid-cols-1 items-start gap-x-12 gap-y-10 lg:grid-cols-2" : "text-center"}>
+          <div className={illustrationSrc ? "max-w-xl" : "mx-auto"}>
             <HighlightedTitle text={title} />
-            <p className="mt-4 text-lg text-[#4A6880] leading-relaxed">
-              {subtitle}
-            </p>
+            {subtitle && (
+              <p className="mt-4 text-lg text-[#4A6880] leading-relaxed">
+                {subtitle}
+              </p>
+            )}
           </div>
-          <div className="flex items-center justify-center lg:justify-center">
-            <img
-              src={illustrationSrc}
-              alt={illustrationAlt}
-              className="w-64 h-auto object-contain"
-            />
-          </div>
+          {illustrationSrc && (
+            <div className="flex items-center justify-center lg:justify-center">
+              <img
+                src={illustrationSrc}
+                alt={illustrationAlt}
+                className="w-64 h-auto object-contain"
+              />
+            </div>
+          )}
         </div>
 
         {/* Integrations Grid */}

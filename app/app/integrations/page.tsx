@@ -65,9 +65,6 @@ export default function IntegrationsPage() {
     <div className="w-full bg-white">
       <IntegrationShowcase
         title="Integrate with your ~favorite~ tools"
-        subtitle="Connect Flowtex with 100+ apps to automate your workflow and sync data seamlessly."
-        illustrationSrc="https://illustrations.popsy.co/gray/brainstorming.svg"
-        illustrationAlt="Integration tools illustration"
         integrations={integrationsData}
       />
     </div>
