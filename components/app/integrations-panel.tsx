@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Calendar, Database, CheckCircle2, XCircle } from "lucide-react";
+import { IntegrationCard } from "@/components/ui/integration-card";
+import { Mail, Calendar, Database } from "lucide-react";
 
 interface Integration {
   notion_api_key?: string;
@@ -94,72 +94,68 @@ export function IntegrationsPanel() {
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="text-center py-8 text-[#4A6880]">Loading integrations...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Gmail & Calendar */}
-      <Card className="border-[#E2EAF1]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-[#00D4A4]" />
-            Google Integration
-          </CardTitle>
-          <CardDescription>Connect Gmail and Google Calendar</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
-            <div className="flex items-center gap-3">
-              <Mail className="h-4 w-4 text-[#4A6880]" />
-              <span className="text-sm font-medium">Gmail</span>
+      {/* Google Integration Card */}
+      <IntegrationCard
+        name="Google"
+        description="Connect Gmail and Google Calendar to manage emails and schedules"
+        icon={<Mail className="h-6 w-6 text-[#00D4A4]" />}
+        isConnected={integrations.google_connected || false}
+      >
+        <div className="space-y-3">
+          {/* Gmail Status */}
+          <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-[#4A6880]" />
+                <span className="text-sm font-medium text-[#0D1F2D]">Gmail</span>
+              </div>
+              <span className="text-xs px-2 py-1 rounded bg-[#00D4A4]/10 text-[#00D4A4] font-medium">
+                {integrations.gmail_connected ? "Active" : "Inactive"}
+              </span>
             </div>
-            {integrations.gmail_connected ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            ) : (
-              <XCircle className="h-5 w-5 text-[#4A6880]/50" />
-            )}
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-[#4A6880]" />
-              <span className="text-sm font-medium">Google Calendar</span>
+          {/* Calendar Status */}
+          <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-[#4A6880]" />
+                <span className="text-sm font-medium text-[#0D1F2D]">Google Calendar</span>
+              </div>
+              <span className="text-xs px-2 py-1 rounded bg-[#00D4A4]/10 text-[#00D4A4] font-medium">
+                {integrations.calendar_connected ? "Active" : "Inactive"}
+              </span>
             </div>
-            {integrations.calendar_connected ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-            ) : (
-              <XCircle className="h-5 w-5 text-[#4A6880]/50" />
-            )}
           </div>
 
-          <p className="text-xs text-[#4A6880]">
-            {integrations.google_connected
-              ? "Connected! Your Gmail and Calendar are integrated."
-              : "Click below to authorize Gmail and Calendar access."}
-          </p>
-
+          {/* CTA Button */}
           <Button
             onClick={handleGoogleAuth}
-            className="w-full bg-[#00D4A4] hover:bg-[#00C494] text-white"
+            className="w-full bg-[#00D4A4] hover:bg-[#00C494] text-white font-medium transition-all duration-300"
           >
-            {integrations.google_connected ? "Reconnect Google" : "Connect Google"}
+            {integrations.google_connected ? "Reconnect Google" : "Connect with Google"}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </IntegrationCard>
 
-      {/* Notion */}
-      <Card className="border-[#E2EAF1]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-[#00D4A4]" />
-            Notion Integration
-          </CardTitle>
-          <CardDescription>Connect your Notion workspace</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Notion Integration Card */}
+      <IntegrationCard
+        name="Notion"
+        description="Sync your Notion databases with your workspace"
+        icon={<Database className="h-6 w-6 text-[#00D4A4]" />}
+        isConnected={!!integrations.notion_api_key}
+      >
+        <div className="space-y-3">
+          {/* API Key Input */}
           <div className="space-y-2">
-            <Label htmlFor="notion-key" className="text-[#0D1F2D]">Notion API Key</Label>
+            <Label htmlFor="notion-key" className="text-sm font-medium text-[#0D1F2D]">
+              API Key
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="notion-key"
@@ -167,43 +163,45 @@ export function IntegrationsPanel() {
                 placeholder="Enter your Notion API key"
                 value={notionKey}
                 onChange={(e) => setNotionKey(e.target.value)}
-                className="border-[#E2EAF1]"
+                className="border-[#E2EAF1] focus:border-[#00D4A4] focus:ring-[#00D4A4]/20 text-[#0D1F2D]"
               />
               <Button
                 onClick={saveNotionKey}
                 disabled={saving || !notionKey}
-                className="bg-[#00D4A4] hover:bg-[#00C494] text-white"
+                className="bg-[#00D4A4] hover:bg-[#00C494] text-white font-medium transition-all duration-300 disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save"}
               </Button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-4 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
-            {integrations.notion_api_key ? (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                <span className="text-sm text-[#0D1F2D]">Connected</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-5 w-5 text-[#4A6880]/50" />
-                <span className="text-sm text-[#4A6880]">Not connected</span>
-              </>
-            )}
-          </div>
-
-          <div className="text-xs text-[#4A6880] space-y-2">
-            <p>How to get your Notion API key:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Go to <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="text-[#00D4A4] hover:underline">notion.so/my-integrations</a></li>
+          {/* Instructions */}
+          <div className="p-3 bg-[#F8FAFC] rounded-lg border border-[#E2EAF1]">
+            <p className="text-xs font-semibold text-[#0D1F2D] mb-2">How to get your API key:</p>
+            <ol className="text-xs text-[#4A6880] space-y-1 list-decimal list-inside">
+              <li>Go to <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="text-[#00D4A4] hover:underline font-medium">notion.so/my-integrations</a></li>
               <li>Create a new integration</li>
               <li>Copy the "Internal Integration Token"</li>
               <li>Paste it above and click Save</li>
             </ol>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </IntegrationCard>
+
+      {/* Coming Soon Section */}
+      <div className="pt-4 border-t border-[#E2EAF1]">
+        <h3 className="text-sm font-semibold text-[#0D1F2D] mb-4">Coming Soon</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50">
+          <div className="p-4 rounded-lg border border-[#E2EAF1] bg-[#F8FAFC]">
+            <p className="text-sm font-medium text-[#0D1F2D]">Slack</p>
+            <p className="text-xs text-[#4A6880] mt-1">Send notifications to Slack</p>
+          </div>
+          <div className="p-4 rounded-lg border border-[#E2EAF1] bg-[#F8FAFC]">
+            <p className="text-sm font-medium text-[#0D1F2D]">Zapier</p>
+            <p className="text-xs text-[#4A6880] mt-1">Connect to 5000+ apps</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
