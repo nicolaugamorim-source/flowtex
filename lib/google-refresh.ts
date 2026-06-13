@@ -15,11 +15,14 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
       return null;
     }
 
-    // Create OAuth2 client
+    // Create OAuth2 client with dynamic redirect URI
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const redirectUri = `${appUrl}/auth/callback`;
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/callback'
+      redirectUri
     );
 
     // Set the refresh token

@@ -4,10 +4,14 @@ import { OAuth2Client } from 'google-auth-library';
 const calendar = google.calendar('v3');
 
 export async function getCalendarClient(accessToken: string): Promise<any> {
+  // Get redirect URI from environment, with fallback
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const redirectUri = `${appUrl}/auth/callback`;
+
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/callback'
+    redirectUri
   );
 
   oauth2Client.setCredentials({
