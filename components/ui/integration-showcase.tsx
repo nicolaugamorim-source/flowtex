@@ -64,12 +64,8 @@ export const IntegrationShowcase = React.forwardRef<
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.5,
-        type: "tween",
-      },
     },
-  };
+  } as const;
 
   return (
     <section ref={ref} className={cn('w-full py-32 sm:py-40', className)}>
