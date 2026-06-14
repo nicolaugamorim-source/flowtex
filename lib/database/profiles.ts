@@ -53,18 +53,23 @@ export async function createOrUpdateProfile(
       if (error) throw error;
       console.log('✅ Profile updated for user:', userId);
     } else {
-      // Create new profile
+      // Create new profile with 14-day trial
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 14);
+
       const { error } = await supabase
         .from('profiles')
         .insert({
           id: userId,
           ...data,
+          subscription_status: 'trial',
+          subscription_expires_at: trialEndDate.toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
 
       if (error) throw error;
-      console.log('✅ Profile created for user:', userId);
+      console.log('✅ Profile created for user with 14-day trial:', userId);
     }
 
     return { success: true };
