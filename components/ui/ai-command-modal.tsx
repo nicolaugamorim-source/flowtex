@@ -128,7 +128,7 @@ export function AICommandModal() {
                                   title={bubble.title}
                                   subtitle={bubble.subtitle}
                                   description={bubble.description}
-                                  metadata={bubble.metadata}
+                                  metadata={bubble.metadata as any}
                                   badge={bubble.badge}
                                   actions={bubble.actions}
                                 />
