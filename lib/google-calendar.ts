@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+import { isTokenExpiredError, refreshGoogleAccessToken } from './google-token-refresh';
 
 const calendar = google.calendar('v3');
 
@@ -21,6 +22,29 @@ export async function getCalendarClient(accessToken: string): Promise<any> {
   return oauth2Client;
 }
 
+/**
+ * Wrapper to handle token refresh on 401 errors
+ */
+async function withTokenRefresh<T>(
+  userId: string,
+  accessToken: string,
+  fn: (token: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await fn(accessToken);
+  } catch (error: any) {
+    if (isTokenExpiredError(error) && userId) {
+      console.log('🔄 Token expired, attempting refresh...');
+      const newToken = await refreshGoogleAccessToken(userId);
+      if (newToken) {
+        console.log('✅ Token refreshed, retrying request...');
+        return await fn(newToken);
+      }
+    }
+    throw error;
+  }
+}
+
 export interface GoogleCalendar {
   id: string;
   summary: string;
@@ -28,67 +52,79 @@ export interface GoogleCalendar {
   primary?: boolean;
 }
 
-export async function getCalendarsList(accessToken: string): Promise<GoogleCalendar[]> {
+export async function getCalendarsList(accessToken: string, userId?: string): Promise<GoogleCalendar[]> {
   try {
-    const auth = await getCalendarClient(accessToken);
+    return await withTokenRefresh(
+      userId || '',
+      accessToken,
+      async (token) => {
+        const auth = await getCalendarClient(token);
 
-    const response = await calendar.calendarList.list({
-      auth,
-      maxResults: 50,
-    });
+        const response = await calendar.calendarList.list({
+          auth,
+          maxResults: 50,
+        });
 
-    return (response.data.items || []).map((item: any) => ({
-      id: item.id,
-      summary: item.summary,
-      description: item.description,
-      primary: item.primary,
-    }));
+        return (response.data.items || []).map((item: any) => ({
+          id: item.id,
+          summary: item.summary,
+          description: item.description,
+          primary: item.primary,
+        }));
+      }
+    );
   } catch (error) {
     console.error('Error fetching calendars list:', error);
     return [];
   }
 }
 
-export async function getUpcomingEvents(accessToken: string, maxResults: number = 10) {
+export async function getUpcomingEvents(accessToken: string, maxResults: number = 10, userId?: string) {
   try {
-    const auth = await getCalendarClient(accessToken);
+    return await withTokenRefresh(
+      userId || '',
+      accessToken,
+      async (token) => {
+        const auth = await getCalendarClient(token);
 
-    // First get all calendars
-    const calendarsResponse = await calendar.calendarList.list({
-      auth,
-      maxResults: 50,
-    });
-
-    const calendars = calendarsResponse.data.items || [];
-    const allEvents: any[] = [];
-
-    // Fetch events from each calendar
-    for (const cal of calendars) {
-      try {
-        const response = await calendar.events.list({
+        // First get all calendars
+        const calendarsResponse = await calendar.calendarList.list({
           auth,
-          calendarId: cal.id!,
-          timeMin: new Date().toISOString(),
-          maxResults: 100,
-          singleEvents: true,
-          orderBy: 'startTime',
+          maxResults: 50,
         });
 
-        const events = response.data.items || [];
-        allEvents.push(...events);
-      } catch (error) {
-        console.error(`Error fetching events from calendar ${cal.id}:`, error);
+        const calendars = calendarsResponse.data.items || [];
+        const allEvents: any[] = [];
+
+        // Fetch events from each calendar
+        for (const cal of calendars) {
+          try {
+            const response = await calendar.events.list({
+              auth,
+              calendarId: cal.id!,
+              timeMin: new Date().toISOString(),
+              maxResults: 100,
+              singleEvents: true,
+              orderBy: 'startTime',
+            });
+
+            const events = response.data.items || [];
+            allEvents.push(...events);
+          } catch (error) {
+            console.error(`Error fetching events from calendar ${cal.id}:`, error);
+          }
+        }
+
+        // Sort by start time and limit results
+        allEvents.sort((a, b) => {
+          const aTime = new Date(a.start?.dateTime || a.start?.date).getTime();
+          const bTime = new Date(b.start?.dateTime || b.start?.date).getTime();
+          return aTime - bTime;
+        });
+
+        return allEvents.slice(0, maxResults);
       }
-    }
-
-    // Sort by start time and limit results
-    allEvents.sort((a, b) => {
-      const aTime = new Date(a.start?.dateTime || a.start?.date).getTime();
-      const bTime = new Date(b.start?.dateTime || b.start?.date).getTime();
-      return aTime - bTime;
-    });
-
-    return allEvents.slice(0, maxResults);
+    );
   } catch (error) {
     console.error('Error fetching calendar events:', error);
     return [];

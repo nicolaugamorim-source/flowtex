@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
     let calendars: any[] = [];
     if (validAccessToken) {
       try {
-        const events = await getUpcomingEvents(validAccessToken, 50);
+        const events = await getUpcomingEvents(validAccessToken, 50, userId);
         if (events.length > 0) {
           const eventsList = events
             .map((event: any) => {
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch available calendars
-        calendars = await getCalendarsList(validAccessToken);
+        calendars = await getCalendarsList(validAccessToken, userId);
         if (calendars.length > 0) {
           const calendarsList = calendars
             .map((cal) => `- "${cal.summary}" (${cal.id})${cal.primary ? ' [PRIMARY]' : ''}`)
