@@ -390,8 +390,8 @@ export async function POST(request: NextRequest) {
         },
       },
       {
-        name: 'send_email',
-        description: 'Send an email to a recipient.',
+        name: 'draft_email',
+        description: 'Draft an email for user review. IMPORTANT: Always draft the email first, then the user will see a draft bubble with Confirm and Remake buttons. Only send after the user confirms.',
         input_schema: {
           type: 'object',
           properties: {
@@ -451,6 +451,119 @@ export async function POST(request: NextRequest) {
             },
           },
           required: ['query'],
+        },
+      },
+      {
+        name: 'search_notion',
+        description: 'Search for pages in Notion by keyword or title. Returns matching pages.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Search query (e.g., "Sales", "Projetos", "Trabalho")',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'create_notion_page',
+        description: 'Create a new page in a Notion database. Requires the parent database ID.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            parent_id: {
+              type: 'string',
+              description: 'The database ID where the page will be created (usually found after searching)',
+            },
+            title: {
+              type: 'string',
+              description: 'Title of the new page',
+            },
+            status: {
+              type: 'string',
+              description: 'Status property (optional, e.g., "Em andamento", "Concluído", "Planejado")',
+            },
+            description: {
+              type: 'string',
+              description: 'Additional description (optional)',
+            },
+          },
+          required: ['parent_id', 'title'],
+        },
+      },
+      {
+        name: 'query_notion_database',
+        description: 'Query a Notion database and list its contents.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            database_id: {
+              type: 'string',
+              description: 'The database ID to query',
+            },
+          },
+          required: ['database_id'],
+        },
+      },
+      {
+        name: 'navigate_notion_path',
+        description: 'Navigate through a hierarchical path in Notion (e.g., "Mente do Nicolau > Trabalho > Projetos"). Returns the ID of the final destination.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            path: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of path segments (e.g., ["Mente do Nicolau", "Trabalho", "Projetos"])',
+            },
+          },
+          required: ['path'],
+        },
+      },
+      {
+        name: 'list_notion_pages',
+        description: 'List all your top-level pages and databases in Notion.',
+        input_schema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'delete_notion_page',
+        description: 'Delete a page from Notion by its ID. This action cannot be undone.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            page_id: {
+              type: 'string',
+              description: 'The ID of the page to delete',
+            },
+            page_name: {
+              type: 'string',
+              description: 'The name of the page (for confirmation message)',
+            },
+          },
+          required: ['page_id', 'page_name'],
+        },
+      },
+      {
+        name: 'update_notion_page_status',
+        description: 'Update the status property of a Notion page (e.g., change "Em andamento" to "Concluído")',
+        input_schema: {
+          type: 'object',
+          properties: {
+            page_id: {
+              type: 'string',
+              description: 'The ID of the page to update',
+            },
+            status: {
+              type: 'string',
+              description: 'The new status value (e.g., "Em andamento", "Concluído", "Planejado")',
+            },
+          },
+          required: ['page_id', 'status'],
         },
       },
     ];
@@ -520,6 +633,25 @@ Date Parsing Rules:
 - If user says "15 de julho", use current year if July 15 hasn't passed, else next year
 - Always use the current/next applicable year
 - Default times: 14:00-16:00 if not specified
+
+Notion Rules:
+- When user asks "what are my pages?", "list my pages", "show me my pages", etc. → Use list_notion_pages to show them
+- Always proactively list pages when the user seems to be exploring their Notion workspace
+
+Notion Navigation Rules:
+- Recognize hierarchical paths in ANY of these formats:
+  * Using ">": "mente do nicolau > trabalho > projetos"
+  * Using ",": "mente do nicolau, trabalho, projetos"
+  * Using natural language: "mente do nicolau depois trabalho depois projetos"
+  * Or: "mente do nicolau after trabalho after projetos" (English)
+  * Or: "mente do nicolau em seguida trabalho em seguida projetos" (Portuguese)
+- Be flexible with typos: "nicolu" → "Nicolau", "trablahro" → "Trabalho"
+- When you detect a path (with >, comma, or "depois"/"after"/"em seguida"), extract it and use navigate_notion_path
+- Example: User says "add to mente do nicolau, trabalho, projetos"
+  * Extract path: ["mente do nicolau", "trabalho", "projetos"]
+  * Call navigate_notion_path with this array
+  * Then create_notion_page with the returned ID
+- This allows you to create pages deep inside hierarchical structures
 
 Calendar Selection Rules:
 - ALWAYS analyze the event content to determine its type (work, personal, study, vacation, birthday, etc.)
@@ -1050,32 +1182,26 @@ Include the main points and action items if any. Do not add headers or markdown 
         }
       }
 
-      if (toolUse && toolUse.name === 'send_email' && validAccessToken) {
+      if (toolUse && toolUse.name === 'draft_email') {
         const { to, subject, body } = toolUse.input;
 
-        console.log('📧 Sending email to:', to);
+        console.log('📧 Drafting email for:', to);
 
-        try {
-          const result = await sendEmail(validAccessToken, to, subject, body);
-
-          if (result.success) {
-            return NextResponse.json({
-              content: userLanguage === 'pt'
-                ? `✅ Email enviado com sucesso para ${to}`
-                : `✅ Email sent successfully to ${to}`,
-              role: 'assistant',
-            });
-          }
-        } catch (error) {
-          console.error('Error sending email:', error);
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
-            content: userLanguage === 'pt'
-              ? `Erro ao enviar email: ${errorMsg}`
-              : `Error sending email: ${errorMsg}`,
-            role: 'assistant',
-          });
-        }
+        // Return draft bubble instead of sending
+        return NextResponse.json({
+          content: userLanguage === 'pt'
+            ? 'Aqui está o draft do email. Revisa e confirma para enviar:'
+            : 'Here is the email draft. Review and confirm to send:',
+          role: 'assistant',
+          bubbles: [
+            {
+              type: 'email_draft',
+              to,
+              subject,
+              body,
+            },
+          ],
+        });
       }
 
       if (toolUse && toolUse.name === 'delete_email' && validAccessToken) {
@@ -1110,6 +1236,301 @@ Include the main points and action items if any. Do not add headers or markdown 
             content: userLanguage === 'pt'
               ? `Erro ao deletar email: ${errorMsg}`
               : `Error deleting email: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      // Notion tools
+      if (toolUse && toolUse.name === 'search_notion' && userId) {
+        const { query } = toolUse.input;
+        const { searchNotionPages } = await import('@/lib/notion');
+
+        console.log('Searching Notion for:', query);
+
+        try {
+          const pages = await searchNotionPages(userId, query);
+
+          if (pages.length === 0) {
+            return NextResponse.json({
+              content: userLanguage === 'pt'
+                ? `Não encontrei nada com "${query}". Qual é o nome exato da página/database que queres?`
+                : `I didn't find anything with "${query}". What's the exact name of the page/database?`,
+              role: 'assistant',
+            });
+          }
+
+          // Show top 5 closest matches and ask for confirmation
+          const topMatches = pages.slice(0, 5);
+          const matchesList = topMatches
+            .map((p: any, idx: number) => {
+              const title = p.properties?.title?.[0]?.plain_text || p.title?.[0]?.plain_text || 'Untitled';
+              const icon = p.icon?.emoji || '📄';
+              return `${idx + 1}. ${icon} ${title}`;
+            })
+            .join('\n');
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Encontrei essas opções. Qual é a que queres?\n${matchesList}`
+              : `I found these options. Which one is it?\n${matchesList}`,
+            role: 'assistant',
+            _notionResults: pages.map((p: any) => ({
+              id: p.id,
+              title: p.properties?.title?.[0]?.plain_text || p.title?.[0]?.plain_text || 'Untitled',
+            })),
+          });
+        } catch (error) {
+          console.error('Error searching Notion:', error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? 'Erro ao buscar no Notion. Certifique-se de que o Notion está conectado.'
+              : 'Error searching Notion. Make sure Notion is connected.',
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'create_notion_page' && userId) {
+        const { parent_id, title, status, description } = toolUse.input;
+        const { createNotionPage } = await import('@/lib/notion');
+
+        console.log('Creating Notion page:', { parent_id, title });
+
+        try {
+          const properties: Record<string, any> = {};
+
+          if (status) {
+            properties['Status'] = {
+              status: {
+                name: status,
+              },
+            };
+          }
+
+          const page = await createNotionPage(userId, parent_id, title, properties);
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Página "${title}" criada com sucesso no Notion.`
+              : `Page "${title}" created successfully in Notion.`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error creating Notion page:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Erro ao criar página: ${errorMsg}`
+              : `Error creating page: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'query_notion_database' && userId) {
+        const { database_id } = toolUse.input;
+        const { getNotionDatabase } = await import('@/lib/notion');
+
+        console.log('Querying Notion database:', database_id);
+
+        try {
+          const items = await getNotionDatabase(userId, database_id);
+
+          if (items.length === 0) {
+            return NextResponse.json({
+              content: userLanguage === 'pt'
+                ? 'Este database está vazio.'
+                : 'This database is empty.',
+              role: 'assistant',
+            });
+          }
+
+          const itemsList = items
+            .slice(0, 10)
+            .map((item: any) => `- ${item.properties?.title?.[0]?.plain_text || item.id}`)
+            .join('\n');
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Encontrei ${items.length} item(ns):\n${itemsList}${items.length > 10 ? '...' : ''}`
+              : `Found ${items.length} item(s):\n${itemsList}${items.length > 10 ? '...' : ''}`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error querying Notion database:', error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? 'Erro ao consultar o database.'
+              : 'Error querying database.',
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'list_notion_pages' && userId) {
+        const { listNotionRootPages } = await import('@/lib/notion');
+
+        console.log('Listing Notion root pages');
+
+        try {
+          const pages = await listNotionRootPages(userId);
+
+          if (pages.length === 0) {
+            return NextResponse.json({
+              content: userLanguage === 'pt'
+                ? 'Não encontrei nenhuma página no Notion.'
+                : 'No pages found in your Notion.',
+              role: 'assistant',
+            });
+          }
+
+          // Extract and filter pages with proper titles
+          const pagesWithTitles = pages
+            .map((p: any) => {
+              // Try multiple ways to extract the title
+              const title = p.properties?.title?.[0]?.plain_text ||
+                           (typeof p.title === 'string' ? p.title : null) ||
+                           p.title?.[0]?.plain_text ||
+                           p.child_page?.title ||
+                           p.child_database?.title ||
+                           null;
+
+              // Skip pages that are just IDs with no meaningful title
+              if (!title || title.match(/^[a-f0-9-]{36}$/)) {
+                return null;
+              }
+
+              const icon = p.icon?.emoji || '📄';
+              return { title, icon, id: p.id };
+            })
+            .filter((p): p is { title: string; icon: string; id: string } => p !== null)
+            .slice(0, 10); // Limit to top 10
+
+          // Format response as clean list
+          const formattedList = pagesWithTitles
+            .map(p => `- ${p.icon} ${p.title}`)
+            .join('\n');
+
+          const heading = userLanguage === 'pt'
+            ? 'Aqui estão suas principais páginas do Notion:'
+            : 'Here are your main Notion pages:';
+
+          return NextResponse.json({
+            content: `${heading}\n${formattedList}`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error listing Notion pages:', error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? 'Erro ao listar páginas do Notion.'
+              : 'Error listing Notion pages.',
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'navigate_notion_path') {
+        const { path } = toolUse.input;
+        const { navigateNotionPath } = await import('@/lib/notion');
+
+        console.log('Navigating Notion path:', path, 'userId:', userId);
+
+        if (!userId) {
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? 'Erro: não consegui identificar seu usuário. Tenta fazer login novamente.'
+              : 'Error: Could not identify your user. Try logging in again.',
+            role: 'assistant',
+          });
+        }
+
+        try {
+          const result = await navigateNotionPath(userId, path);
+
+          if (!result) {
+            return NextResponse.json({
+              content: userLanguage === 'pt'
+                ? `Não consegui encontrar o caminho: ${path.join(' > ')}`
+                : `I couldn't find the path: ${path.join(' > ')}`,
+              role: 'assistant',
+            });
+          }
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Encontrei: "${result.title}"`
+              : `Found: "${result.title}"`,
+            role: 'assistant',
+            _notionPathResult: result,
+          });
+        } catch (error) {
+          console.error('Error navigating Notion path:', error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? 'Erro ao navegar no Notion.'
+              : 'Error navigating Notion.',
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'delete_notion_page' && userId) {
+        const { page_id, page_name } = toolUse.input;
+        const { deleteNotionPage } = await import('@/lib/notion');
+
+        console.log('Deleting Notion page:', page_id);
+
+        try {
+          await deleteNotionPage(userId, page_id);
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Página "${page_name}" removida com sucesso.`
+              : `Page "${page_name}" deleted successfully.`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error deleting Notion page:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Erro ao deletar página: ${errorMsg}`
+              : `Error deleting page: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'update_notion_page_status' && userId) {
+        const { page_id, status } = toolUse.input;
+        const { updateNotionPage } = await import('@/lib/notion');
+
+        console.log('Updating Notion page status:', page_id, status);
+
+        try {
+          await updateNotionPage(userId, page_id, {
+            Status: {
+              status: {
+                name: status,
+              },
+            },
+          });
+
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Status atualizado para "${status}".`
+              : `Status updated to "${status}".`,
+            role: 'assistant',
+          });
+        } catch (error) {
+          console.error('Error updating Notion page status:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return NextResponse.json({
+            content: userLanguage === 'pt'
+              ? `Erro ao atualizar status: ${errorMsg}`
+              : `Error updating status: ${errorMsg}`,
             role: 'assistant',
           });
         }

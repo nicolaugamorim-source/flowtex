@@ -12,10 +12,12 @@ export interface IntegrationCardProps {
   isConnected: boolean;
   children: React.ReactNode;
   className?: string;
+  onConnect?: () => void;
+  isLoading?: boolean;
 }
 
 export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardProps>(
-  ({ name, description, icon, isConnected, children, className }, ref) => {
+  ({ name, description, icon, isConnected, children, className, onConnect, isLoading }, ref) => {
     return (
       <motion.div
         ref={ref}
@@ -68,6 +70,17 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
           <div className="space-y-3">
             {children}
           </div>
+
+          {/* Connect Button */}
+          {onConnect && !isConnected && (
+            <button
+              onClick={onConnect}
+              disabled={isLoading}
+              className="w-full mt-4 px-4 py-2 bg-[#00D4A4] hover:bg-[#00C494] disabled:bg-[#00D4A4]/50 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              {isLoading ? 'Connecting...' : 'Connect'}
+            </button>
+          )}
         </div>
 
         {/* Accent line on top for connected state */}

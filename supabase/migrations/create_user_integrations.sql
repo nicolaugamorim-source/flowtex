@@ -1,11 +1,15 @@
 -- Create user_integrations table
 CREATE TABLE IF NOT EXISTS user_integrations (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  notion_api_key text,
+  -- Notion Integration
+  notion_access_token text,
+  notion_connected boolean DEFAULT false,
+  -- Google Integration
   google_access_token text,
   google_refresh_token text,
   gmail_connected boolean DEFAULT false,
   calendar_connected boolean DEFAULT false,
+  -- Timestamps
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now()
 );
@@ -25,6 +29,11 @@ CREATE POLICY "Users can update their own integrations"
 CREATE POLICY "Users can insert their own integrations"
   ON user_integrations FOR INSERT
   WITH CHECK (auth.uid() = id);
+
+-- Allow service role to manage all integrations
+CREATE POLICY "Service role can manage integrations"
+  ON user_integrations FOR ALL
+  USING (auth.role() = 'service_role');
 
 -- Create updated_at trigger
 CREATE OR REPLACE FUNCTION update_user_integrations_timestamp()

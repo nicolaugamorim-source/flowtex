@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { IntegrationShowcase, Integration } from "@/components/ui/integration-showcase";
+import { IntegrationCard } from "@/components/ui/integration-card";
+import { Database } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const integrationsData: Integration[] = [
   {
@@ -16,11 +20,103 @@ const integrationsData: Integration[] = [
 ];
 
 export default function IntegrationsPage() {
+  const [notionConnected, setNotionConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    checkNotionStatus();
+  }, []);
+
+  async function checkNotionStatus() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/integrations/notion/status', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await response.json();
+      setNotionConnected(data.connected || false);
+    } catch (error) {
+      console.error('Error checking Notion status:', error);
+      setNotionConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleNotionConnect = async () => {
+    setConnecting(true);
+    try {
+      // Get the access token from Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        console.error('No session found');
+        setConnecting(false);
+        return;
+      }
+
+      const response = await fetch('/api/auth/notion/prepare', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        console.error('Failed to get auth URL:', data.error);
+        setConnecting(false);
+      }
+    } catch (error) {
+      console.error('Error preparing Notion OAuth:', error);
+      setConnecting(false);
+    }
+  };
+
+  const handleIntegrationClick = (name: string) => {
+    if (name === 'Notion') {
+      handleNotionConnect();
+    }
+  };
+
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white min-h-screen flex flex-col">
       <IntegrationShowcase
-        title="Integrate with your ~favorite~ tools"
+        title="Integrate with your ~favorite tools~"
         integrations={integrationsData}
+        onIntegrationClick={handleIntegrationClick}
+        renderCustomCard={(integration) => {
+          if (integration.name === 'Notion') {
+            return (
+              <IntegrationCard
+                key={integration.name}
+                name={integration.name}
+                description={integration.description}
+                icon={<Database className="h-6 w-6 text-[#00D4A4]" />}
+                isConnected={notionConnected}
+                isLoading={connecting}
+                onConnect={handleNotionConnect}
+              >
+                <div className="text-sm text-[#4A6880]">
+                  {notionConnected ? 'Your Notion workspace is connected' : 'Click Connect to link your Notion workspace'}
+                </div>
+              </IntegrationCard>
+            );
+          }
+          return null;
+        }}
       />
     </div>
   );

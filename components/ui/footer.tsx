@@ -37,14 +37,19 @@ export function Footer({
     <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-[#F8FAFC]">
       <div className="px-4 lg:px-8">
         <div className="md:flex md:items-start md:justify-between">
-          <a
-            href="/"
-            className="flex items-center gap-x-2"
-            aria-label={brandName}
-          >
-            {logo}
-            <span className="font-bold text-xl text-[#0D1F2D]">{brandName}</span>
-          </a>
+          <div className="flex items-center gap-x-4 flex-wrap">
+            <a
+              href="/"
+              className="flex items-center gap-x-2"
+              aria-label={brandName}
+            >
+              {logo}
+              <span className="font-bold text-xl text-[#0D1F2D]">{brandName}</span>
+            </a>
+            <a href="https://smollaunch.com" target="_blank" rel="noopener">
+              <img src="https://smollaunch.com/badges/featured.svg" alt="Flowtex — Featured on Smol Launch" loading="lazy" width="250" height="60" />
+            </a>
+          </div>
           <ul className="flex list-none mt-6 md:mt-0 space-x-3">
             {socialLinks.map((link, i) => (
               <li key={i}>
