@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getUpcomingEvents, createEvent, getCalendarsList, findAndDeleteEvent, rescheduleEvent } from '@/lib/google-calendar';
 import { getEmails, sendEmail, searchEmails, deleteEmail, markAsRead, getFullEmailContent } from '@/lib/google-gmail';
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
+import { saveChatMessage, getChatHistory, buildAIContextString } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
 
 const client = new Anthropic({
@@ -224,12 +225,13 @@ export async function POST(request: NextRequest) {
     // Ensure we have a valid access token (will refresh automatically if userId available)
     const validAccessToken = await ensureValidGoogleToken(googleAccessToken, userId);
 
-    // Fetch user's language preference from database
+    // Fetch user's language preference and AI context from database
     let userLanguage = 'en'; // default
+    let aiContextString = '';
     if (userId) {
       try {
         const { data: user } = await supabase
-          .from('users')
+          .from('profiles')
           .select('language')
           .eq('id', userId)
           .single();
@@ -240,6 +242,25 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.log('Could not fetch user language, using default');
+      }
+
+      // Load AI context for better responses
+      try {
+        aiContextString = await buildAIContextString(userId);
+      } catch (error) {
+        console.log('Could not fetch AI context');
+      }
+    }
+
+    // Save user message to database
+    if (userId) {
+      try {
+        await saveChatMessage(userId, {
+          role: 'user',
+          content: message,
+        });
+      } catch (error) {
+        console.log('Could not save user message to database');
       }
     }
 
@@ -704,7 +725,7 @@ Rules:
 - If a command is ambiguous, ask one short clarifying question before acting.
 - Never re-ask for context already provided.
 - ALWAYS respond in the exact same language the user writes in. If they write in English, respond in English. If Portuguese, respond in Portuguese. If Spanish, respond in Spanish. Match their language perfectly.
-- Keep responses short — one to three sentences maximum unless detail is explicitly needed.${recentContext}${calendarsInfo}${calendarContext}${actionContext}`,
+- Keep responses short — one to three sentences maximum unless detail is explicitly needed.${recentContext}${aiContextString}${calendarsInfo}${calendarContext}${actionContext}`,
       tools: tools as any,
       messages: messages,
     });
@@ -1613,6 +1634,20 @@ Include the main points and action items if any. Do not add headers or markdown 
           color: 'success' as const,
         },
       }));
+    }
+
+    // Save assistant response to database
+    if (userId) {
+      try {
+        await saveChatMessage(userId, {
+          role: 'assistant',
+          content: responseContent,
+          input_tokens: response.usage?.input_tokens || 0,
+          output_tokens: response.usage?.output_tokens || 0,
+        });
+      } catch (error) {
+        console.log('Could not save assistant message to database');
+      }
     }
 
     return NextResponse.json(response_data);

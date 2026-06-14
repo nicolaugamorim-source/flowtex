@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createOrUpdateProfile, saveGoogleIntegration } from "@/lib/database";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -34,45 +35,31 @@ export async function GET(request: NextRequest) {
       if (exchangeError) throw exchangeError;
 
       const userId = data.user?.id;
+      const userEmail = data.user?.email;
+      const fullName = data.user?.user_metadata?.full_name || userEmail?.split("@")[0] || "User";
+
       if (userId) {
-        // Extract Google refresh token from session
-        // Supabase stores the OAuth provider data in session.user.identities
+        // Create or update user profile
+        await createOrUpdateProfile(userId, {
+          full_name: fullName,
+          email: userEmail,
+          email_verified: data.user?.email_confirmed_at ? true : false,
+        });
+
+        // Extract Google OAuth data
         const googleIdentity = data.user?.identities?.find((id: any) => id.provider === 'google');
+        const googleAccessToken = googleIdentity?.identity_data?.access_token;
         const googleRefreshToken = googleIdentity?.identity_data?.refresh_token;
 
-        // Save Google refresh token to database for long-term access
-        if (googleRefreshToken) {
-          const { error: updateTokenError } = await supabase
-            .from("users")
-            .update({
-              google_refresh_token: googleRefreshToken,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", userId);
+        // Save Google integration
+        if (googleAccessToken) {
+          await saveGoogleIntegration(userId, {
+            access_token: googleAccessToken,
+            refresh_token: googleRefreshToken,
+            scope: "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar",
+          });
 
-          if (updateTokenError) {
-            console.error("❌ Error saving refresh token:", updateTokenError);
-          } else {
-            console.log("✅ Google refresh token saved to database");
-          }
-        }
-
-        // If coming from integrations page, update user_integrations
-        if (isIntegrations) {
-          const { error: updateError } = await supabase
-            .from("user_integrations")
-            .upsert({
-              id: userId,
-              gmail_connected: true,
-              calendar_connected: true,
-              updated_at: new Date().toISOString(),
-            }, {
-              onConflict: "id"
-            });
-
-          if (updateError) {
-            console.error("Error updating integrations:", updateError);
-          }
+          console.log("✅ Google integration saved");
         }
       }
 

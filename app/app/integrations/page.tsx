@@ -5,6 +5,7 @@ import { IntegrationShowcase, Integration } from "@/components/ui/integration-sh
 import { IntegrationCard } from "@/components/ui/integration-card";
 import { Database } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { getIntegration } from "@/lib/database";
 
 const integrationsData: Integration[] = [
   {
@@ -21,32 +22,35 @@ const integrationsData: Integration[] = [
 
 export default function IntegrationsPage() {
   const [notionConnected, setNotionConnected] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
-    checkNotionStatus();
+    checkIntegrationsStatus();
   }, []);
 
-  async function checkNotionStatus() {
+  async function checkIntegrationsStatus() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (!session?.access_token) {
+      if (!user?.id) {
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/integrations/notion/status', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-      const data = await response.json();
-      setNotionConnected(data.connected || false);
+      // Check Notion integration from database
+      const notionIntegration = await getIntegration(user.id, 'notion');
+      setNotionConnected(notionIntegration?.is_active === true);
+
+      // Check Google integration from database
+      const googleIntegration = await getIntegration(user.id, 'google');
+      setGoogleConnected(googleIntegration?.is_active === true);
     } catch (error) {
-      console.error('Error checking Notion status:', error);
+      console.error('Error checking integrations status:', error);
       setNotionConnected(false);
+      setGoogleConnected(false);
     } finally {
       setLoading(false);
     }

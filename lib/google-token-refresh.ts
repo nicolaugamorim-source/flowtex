@@ -1,29 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
+import { getIntegration, updateIntegrationToken } from '@/lib/database';
 
 /**
  * Refresh Google access token using refresh token
  */
 export async function refreshGoogleAccessToken(userId: string): Promise<string | null> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Get Google integration from database
+    const googleIntegration = await getIntegration(userId, 'google');
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error('❌ Missing Supabase credentials');
-      return null;
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    // Get refresh token from database
-    const { data: user, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('google_refresh_token')
-      .eq('id', userId)
-      .single();
-
-    if (userError || !user?.google_refresh_token) {
-      console.error('❌ No refresh token found for user:', userError);
+    if (!googleIntegration?.refresh_token) {
+      console.error('❌ No refresh token found for user');
       return null;
     }
 
@@ -38,7 +25,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
       body: new URLSearchParams({
         client_id: process.env.GOOGLE_CLIENT_ID || '',
         client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-        refresh_token: user.google_refresh_token,
+        refresh_token: googleIntegration.refresh_token,
         grant_type: 'refresh_token',
       }).toString(),
     });
@@ -51,6 +38,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
 
     const data = await response.json();
     const newAccessToken = data.access_token;
+    const expiresIn = data.expires_in; // Usually 3600 seconds = 1 hour
 
     if (!newAccessToken) {
       console.error('❌ No access token in refresh response');
@@ -59,8 +47,18 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
 
     console.log('✅ Successfully refreshed Google access token');
 
-    // Update the access token in Supabase (we can't store it in identities, but we can use it)
-    // We'll store it in localStorage for the client to pick up
+    // Update the token in the integrations table
+    let tokenExpiresAt: string | undefined;
+    if (expiresIn) {
+      const expiresAtDate = new Date(Date.now() + expiresIn * 1000);
+      tokenExpiresAt = expiresAtDate.toISOString();
+    }
+
+    await updateIntegrationToken(userId, 'google', {
+      access_token: newAccessToken,
+      token_expires_at: tokenExpiresAt,
+    });
+
     return newAccessToken;
   } catch (error) {
     console.error('❌ Error refreshing Google token:', error);

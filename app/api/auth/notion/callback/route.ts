@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { saveNotionIntegration } from '@/lib/database';
 
 function getAbsoluteUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -94,30 +95,19 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Got Notion access token');
 
-    // Save to Supabase user_integrations table using service role (supabaseAdmin already created above)
+    // Save Notion integration to database
+    const saveResult = await saveNotionIntegration(userId, {
+      access_token: tokenData.access_token,
+      notion_workspace_id: tokenData.workspace_id,
+      notion_workspace_name: tokenData.workspace_name,
+    });
 
-    console.log('📝 Attempting to save Notion token for userId:', userId);
-    console.log('Token length:', tokenData.access_token?.length);
-
-    const { error: upsertError, data: upsertData } = await supabaseAdmin
-      .from('user_integrations')
-      .upsert({
-        id: userId,
-        notion_access_token: tokenData.access_token,
-        notion_connected: true,
-      }, {
-        onConflict: 'id'
-      })
-      .select();
-
-    if (upsertError) {
-      console.error('❌ Error saving Notion token:', upsertError);
-      console.error('Error details:', JSON.stringify(upsertError));
+    if (!saveResult.success) {
+      console.error('❌ Error saving Notion integration:', saveResult.error);
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=save_failed'));
     }
 
-    console.log('✅ Notion token saved for user:', userId);
-    console.log('Upsert result:', upsertData);
+    console.log('✅ Notion integration saved for user:', userId);
 
     // Redirect back with success
     return NextResponse.redirect(getAbsoluteUrl('/app/integrations?notion=success'));
