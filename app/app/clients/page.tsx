@@ -84,13 +84,22 @@ const AddClientModal = ({
   onClose: () => void;
   onAdd: (data: any) => void;
 }) => {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    company: string;
+    email: string;
+    phone: string;
+    website: string;
+    status: "active" | "lead" | "inactive";
+    notes: string;
+    avatar_color: string;
+  }>({
     name: "",
     company: "",
     email: "",
     phone: "",
     website: "",
-    status: "active" as const,
+    status: "active",
     notes: "",
     avatar_color: "#00D4A4",
   });
