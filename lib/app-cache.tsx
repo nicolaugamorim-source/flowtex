@@ -5,6 +5,8 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 interface CacheData {
   calendarEvents?: { thisWeek: any[]; nextWeek: any[] }
   inboxEmails?: any[]
+  allInboxEmails?: any[]
+  dashboardEmails?: { messages: any[]; totalUnread: number }
   kanbanTasks?: any[]
   quickNotes?: any[]
   streakData?: any
