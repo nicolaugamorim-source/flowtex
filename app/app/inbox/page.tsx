@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Mail, Search, Circle } from "lucide-react";
+import { Mail, Search, Circle, ChevronLeft } from "lucide-react";
 import { useAppCache } from "@/lib/app-cache";
 
 interface GmailMessage {
