@@ -13,6 +13,7 @@ interface Task {
   category?: "task" | "client" | "idea" | "bug";
   due_date?: string;
   tags?: string[];
+  position: number;
 }
 
 interface NewTaskForm {
