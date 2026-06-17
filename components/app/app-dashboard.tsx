@@ -207,7 +207,9 @@ const SkeletonLoader = () => (
 const getUpcomingEvents = (events: CalendarEvent[]): CalendarEvent[] => {
   const now = new Date();
   return events.filter((event) => {
-    const startTime = new Date(event.start.dateTime ?? event.start.date);
+    const dateString = event.start.dateTime ?? event.start.date;
+    if (!dateString) return false;
+    const startTime = new Date(dateString);
     return startTime > now;
   });
 };
