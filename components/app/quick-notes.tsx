@@ -70,9 +70,8 @@ const NoteItem = ({
   return (
     <div
       onClick={handleToggleDone}
-      disabled={isUpdating}
       className={`bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] px-3 py-2 rounded cursor-pointer hover:shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex items-center justify-between gap-3 transition-all ${
-        isUpdating || isDeleting ? "opacity-50" : ""
+        isUpdating || isDeleting ? "opacity-50 pointer-events-none" : ""
       }`}
     >
       <span
@@ -102,20 +101,6 @@ export const QuickNotes = () => {
 
   useEffect(() => {
     fetchNotes();
-  }, []);
-
-  useEffect(() => {
-    const handleActivityChange = () => {
-      fetchNotes();
-    };
-
-    activityEventTarget.addEventListener("activity:tracked", handleActivityChange);
-    activityEventTarget.addEventListener("activity:removed", handleActivityChange);
-
-    return () => {
-      activityEventTarget.removeEventListener("activity:tracked", handleActivityChange);
-      activityEventTarget.removeEventListener("activity:removed", handleActivityChange);
-    };
   }, []);
 
   const fetchNotes = async () => {

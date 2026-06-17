@@ -60,9 +60,11 @@ export const AtAGlance = ({
 
   // Calculate meetings today
   const today = new Date().toDateString();
-  const meetingsToday = thisWeekEvents.filter(
-    (e) => new Date(e.start?.dateTime ?? e.start?.date).toDateString() === today
-  ).length;
+  const meetingsToday = thisWeekEvents.filter((e) => {
+    const dateString = e.start?.dateTime ?? e.start?.date;
+    if (!dateString) return false;
+    return new Date(dateString).toDateString() === today;
+  }).length;
 
   // Calculate undone notes
   const notesCount = quickNotes.filter((n) => !n.is_done).length;

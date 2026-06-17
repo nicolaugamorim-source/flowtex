@@ -231,7 +231,9 @@ const getTodaysActivityCount = (thisWeekEvents: CalendarEvent[], quickNotes: Not
   count += emailsReadToday;
 
   const eventsToday = thisWeekEvents.filter((e) => {
-    const eventDate = new Date(e.start?.dateTime ?? e.start?.date).toDateString();
+    const dateString = e.start?.dateTime ?? e.start?.date;
+    if (!dateString) return false;
+    const eventDate = new Date(dateString).toDateString();
     return eventDate === today;
   }).length;
   count += eventsToday;

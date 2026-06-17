@@ -72,16 +72,23 @@ export const TodaysFocus = ({ thisWeekEvents, gmailMessages, isLoading }: Todays
 
   // Get today's events
   const todayEvents = thisWeekEvents
-    .filter((e) => new Date(e.start?.dateTime ?? e.start?.date).toDateString() === today)
-    .map((event) => ({
-      id: event.id,
-      type: "event" as const,
-      time: formatEventTime(event.start?.dateTime),
-      title: event.summary,
-      icon: <Calendar size={18} />,
-      badge: "Meeting",
-      rawTime: new Date(event.start?.dateTime ?? event.start?.date),
-    }));
+    .filter((e) => {
+      const dateString = e.start?.dateTime ?? e.start?.date;
+      if (!dateString) return false;
+      return new Date(dateString).toDateString() === today;
+    })
+    .map((event) => {
+      const dateString = event.start?.dateTime ?? event.start?.date;
+      return {
+        id: event.id,
+        type: "event" as const,
+        time: formatEventTime(event.start?.dateTime),
+        title: event.summary,
+        icon: <Calendar size={18} />,
+        badge: "Meeting",
+        rawTime: dateString ? new Date(dateString) : new Date(),
+      };
+    });
 
   // Get 2 most recent unread emails
   const unreadEmails = gmailMessages
@@ -94,6 +101,7 @@ export const TodaysFocus = ({ thisWeekEvents, gmailMessages, isLoading }: Todays
       title: message.subject,
       icon: <Mail size={18} />,
       badge: "Email",
+      rawTime: new Date(message.date),
     }));
 
   // Combine and sort by time (events first, then emails)
