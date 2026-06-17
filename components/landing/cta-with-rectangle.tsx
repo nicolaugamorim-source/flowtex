@@ -35,7 +35,7 @@ export function CTASection({
         {badge && (
           <Badge
             variant="outline"
-            className="text-[#00D4A4] animate-fade-in-up delay-100"
+            className="text-[var(--color-accent)] animate-fade-in-up delay-100"
           >
             {badge.text}
           </Badge>
@@ -44,7 +44,7 @@ export function CTASection({
         {/* Title */}
         <div className="flex flex-col items-center">
           <h2
-            className="text-5xl lg:text-6xl font-semibold text-[#0D1F2D] animate-fade-in-up delay-200"
+            className="text-5xl lg:text-6xl font-semibold text-[var(--color-text-primary)] animate-fade-in-up delay-200"
           >
             {title.split('<br />')[0]}
           </h2>
@@ -55,7 +55,7 @@ export function CTASection({
             className="animate-fade-in-up delay-300 -my-3 ml-48"
           />
           <h2
-            className="text-5xl lg:text-6xl font-semibold text-[#0D1F2D] animate-fade-in-up delay-400"
+            className="text-5xl lg:text-6xl font-semibold text-[var(--color-text-primary)] animate-fade-in-up delay-400"
           >
             {title.split('<br />')[1]}
           </h2>
@@ -64,7 +64,7 @@ export function CTASection({
         {/* Description */}
         {description && (
           <p
-            className="text-lg text-[#2E4A62] animate-fade-in-up delay-300 max-w-2xl"
+            className="text-lg text-[var(--color-text-secondary)] animate-fade-in-up delay-300 max-w-2xl"
             dangerouslySetInnerHTML={{ __html: description }}
           />
         )}

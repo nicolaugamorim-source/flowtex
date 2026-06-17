@@ -63,7 +63,7 @@ const pricingPlans = [
 export default function Home() {
   return (
     <>
-      <main className="w-full overflow-x-hidden bg-[#F8FAFC]">
+      <main className="w-full overflow-x-hidden bg-[var(--color-bg-base)]">
         <HeroFlowtex />
         <FeaturesCards />
         <div id="how-it-works">

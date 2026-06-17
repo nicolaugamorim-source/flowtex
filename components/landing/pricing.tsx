@@ -35,17 +35,17 @@ interface PricingProps {
 const getIconForFeature = (text: string) => {
   const lowerText = text.toLowerCase();
 
-  if (lowerText.includes("shared context across all team")) return { icon: Share2, color: "#3B82F6" };
-  if (lowerText.includes("1 user")) return { icon: User, color: "#EF4444" };
-  if (lowerText.includes("users")) return { icon: Users, color: "#EF4444" };
+  if (lowerText.includes("shared context across all team")) return { icon: Share2, color: "var(--color-info)" };
+  if (lowerText.includes("1 user")) return { icon: User, color: "var(--color-error)" };
+  if (lowerText.includes("users")) return { icon: Users, color: "var(--color-error)" };
   if (lowerText.includes("gmail") || lowerText.includes("email")) return { icon: Mail, color: "#FBBF24" };
-  if (lowerText.includes("calendar")) return { icon: Calendar, color: "#3B82F6" };
+  if (lowerText.includes("calendar")) return { icon: Calendar, color: "var(--color-info)" };
   if (lowerText.includes("notion")) return { icon: Database, color: "#A855F7" };
   if (lowerText.includes("drive")) return { icon: HardDrive, color: "#8B5CF6" };
   if (lowerText.includes("ai context") || lowerText.includes("shared ai")) return { icon: Brain, color: "#06B6D4" };
   if (lowerText.includes("chat") && !lowerText.includes("ai")) return { icon: MessageSquare, color: "#06B6D4" };
   if (lowerText.includes("dashboard") || lowerText.includes("visibility")) return { icon: Eye, color: "#EC4899" };
-  if (lowerText.includes("ready") || lowerText.includes("minutes")) return { icon: Zap, color: "#F59E0B" };
+  if (lowerText.includes("ready") || lowerText.includes("minutes")) return { icon: Zap, color: "var(--color-warning)" };
   if (lowerText.includes("permissions") || lowerText.includes("roles") || lowerText.includes("security")) return { icon: Shield, color: "#B45309" };
   if (lowerText.includes("support")) return { icon: Headphones, color: "#6366F1" };
   if (lowerText.includes("unlimited")) return { icon: Infinity, color: "#7C3AED" };
@@ -72,14 +72,14 @@ export function Pricing({
   };
 
   return (
-    <section className="py-20 md:py-24 px-4 md:px-6 bg-[#F8FAFC]">
+    <section className="py-20 md:py-24 px-4 md:px-6 bg-[var(--color-bg-base)]">
       <div className="max-w-5xl mx-auto">
         <div className="text-center space-y-4 mb-12">
-          <h2 className="text-4xl lg:text-5xl font-semibold tracking-tight text-[#0D1F2D]">
+          <h2 className="text-4xl lg:text-5xl font-semibold tracking-tight text-[var(--color-text-primary)]">
             Get 6 hours back every week<br />
-            for less than <span className="underline decoration-[#00D4A4] decoration-4 underline-offset-4">a coffee a day.</span>
+            for less than <span className="underline decoration-[var(--color-accent)] decoration-4 underline-offset-4">a coffee a day.</span>
           </h2>
-          <p className="text-lg text-[#0D1F2D] mt-4">
+          <p className="text-lg text-[var(--color-text-primary)] mt-4">
             7 day free trial. Cancel anytime.
           </p>
         </div>
@@ -99,15 +99,15 @@ export function Pricing({
               className="relative"
             >
               {plan.isPopular && (
-                <div className="absolute rounded-2xl bg-gradient-to-t from-[#00D4A4] 60% to-[#F8FAFC] h-[70%] w-[105%] left-1/2 -translate-x-1/2 bottom-0 translate-y-2 z-0" />
+                <div className="absolute rounded-2xl bg-gradient-to-t from-[var(--color-accent)] 60% to-[var(--color-bg-base)] h-[70%] w-[105%] left-1/2 -translate-x-1/2 bottom-0 translate-y-2 z-0" />
               )}
               <div
                 className={cn(
-                  "rounded-2xl border border-[#C8D8E6] p-6 bg-[#F8FAFC] flex flex-col relative z-10 min-h-[560px]",
+                  "rounded-2xl border border-[var(--color-border-default)] p-6 bg-[var(--color-bg-base)] flex flex-col relative z-10 min-h-[560px]",
                 )}
               >
               {plan.isPopular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#00D4A4] py-1 px-4 rounded-full flex items-center gap-1">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--color-accent)] py-1 px-4 rounded-full flex items-center gap-1">
                   <Star className="h-4 w-4 text-white fill-white" />
                   <span className="text-white text-sm font-semibold">
                     Popular
@@ -116,21 +116,21 @@ export function Pricing({
               )}
 
               <div className="flex-1 flex flex-col">
-                <p className="text-2xl font-semibold text-[#0D1F2D] mb-4">
+                <p className="text-2xl font-semibold text-[var(--color-text-primary)] mb-4">
                   {plan.name}
                 </p>
 
                 <div className="mt-2 mb-8 flex items-baseline gap-1">
                   {plan.price === "Contact us" ? (
-                    <span className="text-5xl font-bold text-[#0D1F2D]">
+                    <span className="text-5xl font-bold text-[var(--color-text-primary)]">
                       Contact us
                     </span>
                   ) : (
                     <>
-                      <span className="text-5xl font-bold text-[#0D1F2D]">
+                      <span className="text-5xl font-bold text-[var(--color-text-primary)]">
                         ${plan.price.split(".")[0]}
                       </span>
-                      <span className="text-2xl font-medium text-[#4A6880]">
+                      <span className="text-2xl font-medium text-[var(--color-text-muted)]">
                         .{plan.price.split(".")[1]} / month
                       </span>
                     </>
@@ -143,7 +143,7 @@ export function Pricing({
                     return (
                       <li key={idx} className="flex items-start gap-3">
                         <IconComponent className="h-4 w-4 mt-1 flex-shrink-0" style={{ color }} />
-                        <span className="text-base font-medium text-[#2E4A62]">{feature}</span>
+                        <span className="text-base font-medium text-[var(--color-text-secondary)]">{feature}</span>
                       </li>
                     );
                   })}

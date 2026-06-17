@@ -29,24 +29,24 @@ interface SignInPageProps {
 }
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-lg border border-[#C8D8E6] bg-white/50 backdrop-blur-sm transition-all focus-within:border-[#00D4A4]/70 focus-within:bg-[#F0FDFB]">
+  <div className="rounded-lg border border-[var(--color-border-default)] bg-white/50 backdrop-blur-sm transition-all focus-within:border-[var(--color-accent)]/70 focus-within:bg-[#F0FDFB]">
     {children}
   </div>
 );
 
 const TestimonialCard = ({ testimonial, delay }: { testimonial: Testimonial, delay: string }) => (
-  <div className={`${delay} flex items-start gap-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-[#C8D8E6] p-4 w-64`}>
+  <div className={`${delay} flex items-start gap-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-[var(--color-border-default)] p-4 w-64`}>
     <img src={testimonial.avatarSrc} className="h-10 w-10 object-cover rounded-lg" alt="avatar" />
     <div className="text-sm leading-snug">
-      <p className="flex items-center gap-1 font-semibold text-[#0D1F2D]">{testimonial.name}</p>
-      <p className="text-[#7A96AA]">{testimonial.handle}</p>
-      <p className="mt-1 text-[#2E4A62]">{testimonial.text}</p>
+      <p className="flex items-center gap-1 font-semibold text-[var(--color-text-primary)]">{testimonial.name}</p>
+      <p className="text-[var(--color-text-disabled)]">{testimonial.handle}</p>
+      <p className="mt-1 text-[var(--color-text-secondary)]">{testimonial.text}</p>
     </div>
   </div>
 );
 
 export const SignInPage: React.FC<SignInPageProps> = ({
-  title = <span className="font-light text-[#0D1F2D] tracking-tight">Welcome Back</span>,
+  title = <span className="font-light text-[var(--color-text-primary)] tracking-tight">Welcome Back</span>,
   description = "Sign in to your account and continue",
   heroImageSrc,
   testimonials = [],
@@ -58,7 +58,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[var(--color-bg-base)]">
     </div>
   );
 };

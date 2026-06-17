@@ -1,7 +1,378 @@
-export default function InboxPage() {
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { Mail, Search, Circle } from "lucide-react";
+import { useAppCache } from "@/lib/app-cache";
+
+interface GmailMessage {
+  id: string;
+  sender: string;
+  subject: string;
+  date: string;
+  isUnread: boolean;
+}
+
+interface EmailDetail {
+  id: string;
+  subject: string;
+  from: string;
+  to: string;
+  date: string;
+  body: string;
+  isUnread: boolean;
+  mimeType: string;
+}
+
+const EmailListSkeleton = () => (
+  <div className="space-y-2">
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="p-4 border-b border-[var(--color-border-subtle)] animate-pulse">
+        <div className="h-4 bg-[var(--color-bg-elevated)] rounded mb-2 w-3/4" />
+        <div className="h-3 bg-[var(--color-bg-card)] rounded w-full mb-1" />
+        <div className="h-2 bg-[var(--color-bg-card)] rounded w-2/3" />
+      </div>
+    ))}
+  </div>
+);
+
+const EmailDetailSkeleton = () => (
+  <div className="p-8 animate-pulse space-y-4">
+    <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-3/4 mb-6" />
+    <div className="h-4 bg-[var(--color-bg-card)] rounded w-1/2 mb-2" />
+    <div className="h-4 bg-[var(--color-bg-card)] rounded w-2/3" />
+    <div className="mt-8 space-y-3">
+      <div className="h-3 bg-[var(--color-bg-card)] rounded w-full" />
+      <div className="h-3 bg-[var(--color-bg-card)] rounded w-full" />
+      <div className="h-3 bg-[var(--color-bg-card)] rounded w-3/4" />
+    </div>
+  </div>
+);
+
+const EmailListItem = ({
+  email,
+  isSelected,
+  onClick,
+}: {
+  email: GmailMessage;
+  isSelected: boolean;
+  onClick: () => void;
+}) => {
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const time = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+
+    if (date.toDateString() === today.toDateString()) {
+      return time;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `Yesterday ${time}`;
+    } else {
+      const dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `${dateStr} ${time}`;
+    }
+  };
+
   return (
-    <>
-      {/* Content goes here */}
-    </>
+    <div
+      onClick={onClick}
+      className={`px-4 py-3 border-b border-[var(--color-border-subtle)] cursor-pointer transition-all flex items-start gap-3 ${
+        isSelected
+          ? "border-l-4 border-l-[var(--color-accent)] bg-[var(--color-accent-subtle)]"
+          : "border-l-4 border-l-transparent hover:bg-[var(--color-bg-base)]"
+      }`}
+    >
+      {/* Unread dot */}
+      {email.isUnread && (
+        <Circle size={8} className="text-[var(--color-accent)] mt-2 flex-shrink-0 fill-current" />
+      )}
+      {!email.isUnread && <div className="w-2 mt-2 flex-shrink-0" />}
+
+      {/* Email content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <p className={`text-sm ${email.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)]"}`}>
+            {email.sender}
+          </p>
+          <span className="text-xs text-[var(--color-text-disabled)] flex-shrink-0">{formatDate(email.date)}</span>
+        </div>
+        <p
+          className={`text-sm truncate ${
+            email.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)]"
+          }`}
+        >
+          {email.subject}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default function InboxPage() {
+  const searchParams = useSearchParams();
+  const { cache, setCache, isStale } = useAppCache();
+  const [emails, setEmails] = useState<GmailMessage[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<EmailDetail | null>(null);
+  const [isLoadingList, setIsLoadingList] = useState(true);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "read">("all");
+  const [gmailConnected, setGmailConnected] = useState(true);
+
+  useEffect(() => {
+    // Check if we have valid cache with 25 emails (allEmails, not dashboard's 4)
+    if (cache.allInboxEmails && cache.allInboxEmails.length >= 25 && !isStale("allInboxEmails", 3 * 60 * 1000)) {
+      setEmails(cache.allInboxEmails);
+      setGmailConnected(true);
+      setIsLoadingList(false);
+      return;
+    }
+
+    // No valid cache with 25 emails, fetch fresh from /all endpoint
+    fetchEmails();
+  }, []);
+
+  // Check if email ID is in query params and auto-expand it
+  useEffect(() => {
+    const emailId = searchParams.get("email");
+    if (emailId && emails.length > 0) {
+      const email = emails.find((e) => e.id === emailId);
+      if (email) {
+        handleSelectEmail(email);
+      }
+    }
+  }, [searchParams, emails]);
+
+  const fetchEmails = async () => {
+    setIsLoadingList(true);
+    try {
+      const response = await fetch("/api/gmail/inbox/all");
+      const data = await response.json();
+      if (data.error === "Gmail not connected") {
+        setGmailConnected(false);
+      } else if (data.messages) {
+        setEmails(data.messages);
+        setCache("allInboxEmails", data.messages);
+        setGmailConnected(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch emails:", err);
+      setGmailConnected(false);
+    } finally {
+      setIsLoadingList(false);
+    }
+  };
+
+  const filteredEmails = useMemo(() => {
+    return emails.filter((email) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        email.sender.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.subject.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesFilter =
+        activeFilter === "all"
+          ? true
+          : activeFilter === "unread"
+          ? email.isUnread
+          : !email.isUnread;
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [emails, searchQuery, activeFilter]);
+
+  const handleSelectEmail = async (email: GmailMessage) => {
+    setSelectedEmail(email);
+    setIsLoadingDetail(true);
+
+    // Mark as read IMMEDIATELY if unread
+    if (email.isUnread) {
+      // Optimistic update: mark as read locally immediately
+      setEmails((prev) =>
+        prev.map((e) => (e.id === email.id ? { ...e, isUnread: false } : e))
+      );
+
+      // Call API to mark as read in Gmail
+      try {
+        console.log("📧 [INBOX] Marking email as read:", email.id);
+        const response = await fetch("/api/gmail/mark-read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messageId: email.id }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          console.error(
+            "❌ [INBOX] Failed to mark as read:",
+            response.status,
+            data
+          );
+        } else {
+          console.log("✅ [INBOX] Marked as read in Gmail:", email.id);
+        }
+      } catch (err) {
+        console.error("❌ [INBOX] Mark as read error:", err);
+      }
+    }
+
+    // Fetch full email details
+    try {
+      const response = await fetch(`/api/gmail/message/${email.id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setSelectedEmail(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch email details:", err);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  if (!gmailConnected) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg-base)] p-8">
+        <Link href="/app" className="flex items-center gap-2 text-[var(--color-accent)] mb-8">
+          <ChevronLeft size={20} /> Back to dashboard
+        </Link>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Mail size={48} className="mx-auto mb-4 text-[var(--color-text-disabled)]" />
+            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Gmail not connected</h2>
+            <p className="text-[var(--color-text-disabled)] mb-6">Connect Gmail in integrations to view your inbox</p>
+            <a href="/app/integrations" className="text-[var(--color-accent)] hover:underline">
+              Go to Integrations
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--color-bg-base)]">
+      <div className="flex h-screen flex-col">
+        <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4">
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Inbox</h1>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left Panel: Email List */}
+          <div className="w-[35%] border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] flex flex-col">
+            {/* Search Bar */}
+            <div className="p-4 border-b border-[var(--color-border-subtle)]">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-3 text-[var(--color-text-disabled)]" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search emails..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex gap-2">
+                {(["all", "unread", "read"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      activeFilter === filter
+                        ? "bg-[var(--color-accent)] text-[var(--color-bg-base)] font-medium"
+                        : "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]"
+                    }`}
+                  >
+                    {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Read"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Email List */}
+            <div className="flex-1 overflow-y-auto">
+              {isLoadingList ? (
+                <EmailListSkeleton />
+              ) : filteredEmails.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-[var(--color-text-disabled)]">
+                    {emails.length === 0 ? "Your inbox is empty" : "No emails matching your search"}
+                  </p>
+                </div>
+              ) : (
+                filteredEmails.map((email) => (
+                  <EmailListItem
+                    key={email.id}
+                    email={email}
+                    isSelected={selectedEmail?.id === email.id}
+                    onClick={() => handleSelectEmail(email)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Right Panel: Email Detail */}
+          <div className="w-[65%] bg-[var(--color-bg-base)] flex flex-col">
+            {selectedEmail ? (
+              <>
+                <div className="border-b border-[var(--color-border-subtle)] p-8 space-y-4">
+                  <h1 className="text-3xl font-bold text-[var(--color-text-primary)] leading-tight">
+                    {selectedEmail.subject}
+                  </h1>
+                  <div className="space-y-2 text-[var(--color-text-disabled)]">
+                    <p>
+                      <span className="font-semibold">From:</span> {selectedEmail.from}
+                    </p>
+                    <p>
+                      <span className="font-semibold">To:</span> {selectedEmail.to}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Date:</span>{" "}
+                      {new Date(selectedEmail.date).toLocaleString("en-US", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-8">
+                  {isLoadingDetail ? (
+                    <EmailDetailSkeleton />
+                  ) : (
+                    <div className="prose prose-sm max-w-none">
+                      {selectedEmail.mimeType?.includes("html") ? (
+                        <div
+                          dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
+                          className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words"
+                        />
+                      ) : (
+                        <p className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
+                          {selectedEmail.body}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <Mail size={48} className="text-[var(--color-border-default)] mb-4" />
+                <p className="text-[var(--color-text-disabled)]">Select an email to read</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

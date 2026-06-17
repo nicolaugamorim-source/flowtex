@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { supabase } from "@/lib/supabase";
 import { SidebarWrapper } from "@/components/app/sidebar-wrapper";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Check } from "lucide-react";
@@ -84,11 +86,11 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8FAFC]">
+      <div className="flex h-screen items-center justify-center bg-[var(--color-bg-base)]">
         <motion.div
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="text-[#00D4A4] font-semibold"
+          className="text-[var(--color-accent)] font-semibold"
         >
           Loading settings...
         </motion.div>
@@ -104,7 +106,7 @@ export default function SettingsPage() {
     .slice(0, 2);
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC]">
+    <div className="flex h-screen bg-[var(--color-bg-base)]">
       <SidebarWrapper />
 
       <main className="flex-1 overflow-auto">
@@ -135,8 +137,8 @@ export default function SettingsPage() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col"
             >
-              <h2 className="text-3xl font-bold text-[#0D1F2D]">Settings</h2>
-              <p className="text-[#4A6880] text-base">
+              <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">Settings</h2>
+              <p className="text-[var(--color-text-muted)] text-base">
                 Manage your account and preferences.
               </p>
             </motion.div>
@@ -146,7 +148,7 @@ export default function SettingsPage() {
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.1 }}
-              className="h-px bg-gradient-to-r from-[#E2EAF1] via-[#E2EAF1] to-transparent origin-left"
+              className="h-px bg-gradient-to-r from-[var(--color-border-subtle)] via-[var(--color-border-subtle)] to-transparent origin-left"
             />
 
             {/* Settings Sections */}
@@ -159,139 +161,53 @@ export default function SettingsPage() {
               {/* Profile Section */}
               <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
                 <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[#0D1F2D]">
+                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
                     Your Profile
                   </h3>
-                  <p className="text-[#4A6880] text-sm">
+                  <p className="text-[var(--color-text-muted)] text-sm">
                     View your account information and profile.
                   </p>
                 </div>
 
                 <div className="md:col-span-6">
-                  <div className="flex items-center gap-6 bg-white rounded-lg p-6 border border-[#E2EAF1]">
-                    <Avatar className="h-16 w-16 border-2 border-[#E0F7F2]">
+                  <div className="flex items-center gap-6 bg-[var(--color-bg-card)] rounded-lg p-6 border border-[var(--color-border-subtle)]">
+                    <Avatar className="h-16 w-16 border-2 border-[var(--color-accent-subtle)]">
                       <AvatarImage src={`https://avatar.vercel.sh/${userName}`} />
-                      <AvatarFallback className="bg-gradient-to-br from-[#00D4A4] to-[#00A882] text-white text-lg font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white text-lg font-bold">
                         {avatarInitials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-[#0D1F2D]">
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
                         {userName}
                       </p>
-                      <p className="text-xs text-[#4A6880]">{userEmail}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{userEmail}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="h-px bg-[#E2EAF1]" />
+              <div className="h-px bg-[var(--color-border-subtle)]" />
 
-              {/* Language Section */}
+              {/* Appearance Section */}
               <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
                 <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[#0D1F2D]">
-                    Chatbot Language
+                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
+                    Appearance
                   </h3>
-                  <p className="text-[#4A6880] text-sm">
-                    Choose your preferred language for the chatbot responses.
+                  <p className="text-[var(--color-text-muted)] text-sm">
+                    Switch between light and dark mode
                   </p>
                 </div>
 
                 <div className="md:col-span-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {LANGUAGES.map((lang, idx) => (
-                      <motion.button
-                        key={lang.code}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + idx * 0.1 }}
-                        onClick={() => handleSaveLanguage(lang.code)}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`relative p-4 rounded-lg border-2 transition-all cursor-pointer overflow-hidden group ${
-                          language === lang.code
-                            ? "border-[#00D4A4] bg-[#E0F7F2]"
-                            : "border-[#E2EAF1] bg-white hover:border-[#00D4A4]/50"
-                        }`}
-                        disabled={saving}
-                      >
-                        {/* Hover glow */}
-                        <motion.div
-                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{
-                            background:
-                              "radial-gradient(circle, rgba(0,212,164,0.08) 0%, transparent 70%)",
-                          }}
-                        />
-
-                        <div className="relative z-10 flex items-center justify-between gap-3">
-                          <div className="text-left">
-                            <span className="text-2xl block mb-1">
-                              {lang.flag}
-                            </span>
-                            <p
-                              className={`text-sm font-semibold ${
-                                language === lang.code
-                                  ? "text-[#00D4A4]"
-                                  : "text-[#0D1F2D]"
-                              }`}
-                            >
-                              {lang.name}
-                            </p>
-                          </div>
-
-                          {language === lang.code && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 300,
-                              }}
-                              className="flex-shrink-0 w-5 h-5 rounded-full bg-[#00D4A4] flex items-center justify-center"
-                            >
-                              <Check className="w-3 h-3 text-white" />
-                            </motion.div>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  {saving && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-xs text-[#00D4A4] mt-3 font-medium"
-                    >
-                      ✓ Preference saved
-                    </motion.p>
-                  )}
-                </div>
-              </div>
-
-              <div className="h-px bg-[#E2EAF1]" />
-
-              {/* Coming Soon Section */}
-              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
-                <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[#0D1F2D]">
-                    More Features
-                  </h3>
-                  <p className="text-[#4A6880] text-sm">
-                    Additional settings coming soon.
-                  </p>
-                </div>
-
-                <div className="md:col-span-6">
-                  <div className="bg-gradient-to-br from-[#E0F7F2] to-[#F1F5F9] rounded-lg p-6 border border-[#00D4A4]/20 text-center">
-                    <p className="text-[#00D4A4] text-sm font-medium">
-                      🚀 Stay tuned for more customization options!
-                    </p>
+                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'var(--color-bg-card)', border: '0.5px solid var(--color-border-default)' }}>
+                    <p style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>Dark Mode</p>
+                    <ThemeToggle />
                   </div>
                 </div>
               </div>
+
             </motion.div>
           </div>
         </section>

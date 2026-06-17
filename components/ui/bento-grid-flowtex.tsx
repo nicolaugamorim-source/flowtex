@@ -17,7 +17,7 @@ function TypeTester() {
   return (
     <div className="flex items-center justify-center h-full">
       <motion.span
-        className="font-serif text-6xl md:text-8xl text-[#00D4A4] font-medium"
+        className="font-serif text-6xl md:text-8xl text-[var(--color-accent)] font-medium"
         animate={{ scale }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       >
@@ -49,7 +49,7 @@ function LayoutAnimation() {
         {[1, 2, 3].map((i) => (
           <motion.div
             key={i}
-            className="bg-[#00D4A4]/20 rounded-md h-5 w-full"
+            className="bg-[var(--color-accent)]/20 rounded-md h-5 w-full"
             layout
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           />
@@ -74,7 +74,7 @@ function SpeedIndicator() {
           {loading ? (
             <motion.div
               key="loader"
-              className="h-8 w-24 bg-[#00D4A4]/10 rounded"
+              className="h-8 w-24 bg-[var(--color-accent)]/10 rounded"
               initial={{ opacity: 0.5 }}
               animate={{ opacity: [0.4, 0.7, 0.4] }}
               exit={{ opacity: 0, y: -20, position: 'absolute' }}
@@ -85,17 +85,17 @@ function SpeedIndicator() {
               key="text"
               initial={{ y: 20, opacity: 0, filter: "blur(5px)" }}
               animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-              className="text-3xl md:text-4xl font-sans font-medium text-[#00D4A4]"
+              className="text-3xl md:text-4xl font-sans font-medium text-[var(--color-accent)]"
             >
               20x
             </motion.span>
           )}
         </AnimatePresence>
       </div>
-      <span className="text-sm text-[#7A96AA]">Faster</span>
-      <div className="w-full max-w-[120px] h-1.5 bg-[#00D4A4]/10 rounded-full overflow-hidden">
+      <span className="text-sm text-[var(--color-text-disabled)]">Faster</span>
+      <div className="w-full max-w-[120px] h-1.5 bg-[var(--color-accent)]/10 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-[#00D4A4] rounded-full"
+          className="h-full bg-[var(--color-accent)] rounded-full"
           initial={{ width: 0 }}
           animate={{ width: loading ? 0 : "100%" }}
           transition={{ type: "spring", stiffness: 100, damping: 15, mass: 1 }}
@@ -131,12 +131,12 @@ function SecurityBadge() {
         <motion.div
           key={shield.id}
           className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-            shield.active ? 'bg-[#00D4A4]/20' : 'bg-[#00D4A4]/5'
+            shield.active ? 'bg-[var(--color-accent)]/20' : 'bg-[var(--color-accent)]/5'
           }`}
           animate={{ scale: shield.active ? 1.1 : 1 }}
           transition={{ duration: 0.3 }}
         >
-          <Lock className={`w-5 h-5 ${shield.active ? 'text-[#00D4A4]' : 'text-[#7A96AA]'}`} />
+          <Lock className={`w-5 h-5 ${shield.active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-disabled)]'}`} />
         </motion.div>
       ))}
     </div>
@@ -148,11 +148,11 @@ function GlobalNetwork() {
 
   return (
     <div className="flex items-center justify-center h-full relative">
-      <Globe className="w-16 h-16 text-[#00D4A4]/80 z-10" />
+      <Globe className="w-16 h-16 text-[var(--color-accent)]/80 z-10" />
       {pulses.map((pulse) => (
         <motion.div
           key={pulse}
-          className="absolute w-16 h-16 border-2 border-[#00D4A4]/30 rounded-full"
+          className="absolute w-16 h-16 border-2 border-[var(--color-accent)]/30 rounded-full"
           initial={{ scale: 0.5, opacity: 1 }}
           animate={{ scale: 3, opacity: 0 }}
           transition={{
@@ -169,11 +169,11 @@ function GlobalNetwork() {
 
 export function BentoGridFlowtex() {
   return (
-    <section className="bg-[#080C12] px-6 py-24 flex items-center justify-center">
+    <section className="bg-[var(--color-bg-base)] px-6 py-24 flex items-center justify-center">
       <div className="max-w-7xl w-full mx-auto">
         {/* Title */}
         <motion.h2
-          className="text-[clamp(2.5rem,5vw,5rem)] font-bold text-[#F8FAFC] mb-16 leading-tight"
+          className="text-[clamp(2.5rem,5vw,5rem)] font-bold text-[var(--color-bg-base)] mb-16 leading-tight"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -186,7 +186,7 @@ export function BentoGridFlowtex() {
 
           {/* 1. Integration */}
           <motion.div
-            className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-[#00D4A4]/15 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-8 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-[var(--color-accent)]/15 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-8 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -195,7 +195,7 @@ export function BentoGridFlowtex() {
 
           {/* 2. Context */}
           <motion.div
-            className="md:col-span-2 bg-gradient-to-br from-[#00D4A4]/15 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-8 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-2 bg-gradient-to-br from-[var(--color-accent)]/15 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-8 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -205,7 +205,7 @@ export function BentoGridFlowtex() {
 
           {/* 3. Smart Routing */}
           <motion.div
-            className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-[#00D4A4]/10 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-6 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-[var(--color-accent)]/10 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-6 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -215,7 +215,7 @@ export function BentoGridFlowtex() {
 
           {/* 4. Chat */}
           <motion.div
-            className="md:col-span-1 bg-gradient-to-br from-[#00D4A4]/15 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-8 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-1 bg-gradient-to-br from-[var(--color-accent)]/15 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-8 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -225,7 +225,7 @@ export function BentoGridFlowtex() {
 
           {/* 5. Security & Focus */}
           <motion.div
-            className="md:col-span-1 bg-gradient-to-br from-[#00D4A4]/15 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-8 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-1 bg-gradient-to-br from-[var(--color-accent)]/15 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-8 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -235,7 +235,7 @@ export function BentoGridFlowtex() {
 
           {/* 6. Global CDN */}
           <motion.div
-            className="md:col-span-2 bg-gradient-to-br from-[#00D4A4]/15 to-[#00D4A4]/5 border border-[#00D4A4]/10 rounded-xl p-8 flex flex-col hover:border-[#00D4A4]/30 transition-colors cursor-pointer overflow-hidden"
+            className="md:col-span-2 bg-gradient-to-br from-[var(--color-accent)]/15 to-[var(--color-accent)]/5 border border-[var(--color-accent)]/10 rounded-xl p-8 flex flex-col hover:border-[var(--color-accent)]/30 transition-colors cursor-pointer overflow-hidden"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

@@ -236,7 +236,7 @@ export function SignupForm() {
               />
               <Label htmlFor="agree" className="text-gray-900">
                 I agree to{" "}
-                <a href="/terms" className="text-[#00D4A4] underline hover:text-[#00A882]">
+                <a href="/terms" className="text-[var(--color-accent)] underline hover:text-[var(--color-accent-hover)]">
                   Terms
                 </a>
               </Label>

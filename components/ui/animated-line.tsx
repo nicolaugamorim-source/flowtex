@@ -34,7 +34,7 @@ const AnimatedLine = React.forwardRef<HTMLDivElement, AnimatedLineProps>(
           width="300"
           height="30"
           viewBox="0 0 300 30"
-          className="text-[#00D4A4]"
+          className="text-[var(--color-accent)]"
         >
           <motion.path
             d="M 0,15 Q 75,5 150,15 Q 225,25 300,15"

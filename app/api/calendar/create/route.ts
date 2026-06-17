@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createEvent } from '@/lib/google-calendar';
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { supabase } from '@/lib/supabase';
+import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check subscription
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json(
+        { error: 'Not authorized' },
+        { status: 403 }
+      );
+    }
+
     const { googleAccessToken, summary, description, startTime, endTime } = await request.json();
 
     // Get userId from session to enable token refresh

@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  TrendingUp,
-  Clock,
-  Zap,
-  CheckCircle2,
-  AlertCircle,
-  Mail,
-  Calendar,
-  Database,
-  ArrowRight,
-  Send,
   MoreVertical,
+  RefreshCw,
 } from "lucide-react";
+import Link from "next/link";
+import { createBrowserClient } from "@supabase/ssr";
+import { useAppCache } from "@/lib/app-cache";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarSelection } from "./calendar-selection";
+import { GmailInbox } from "./gmail-inbox";
+import { DailyStreak } from "./daily-streak";
+import { PriorityTasks } from "./priority-tasks";
+import { DashboardSkeleton } from "./dashboard-skeleton";
 
 const FALLBACK_QUOTES = [
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
@@ -23,6 +23,106 @@ const FALLBACK_QUOTES = [
   { text: "Make something people want.", author: "Paul Graham" },
   { text: "Stay hungry, stay foolish.", author: "Steve Jobs" },
 ];
+
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  const day = new Date().getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  const midnight = [
+    "Still up?",
+    "Burning the midnight oil.",
+    "The quiet hours.",
+    "Late night mode.",
+    "Everyone else is asleep.",
+  ];
+
+  const earlyMorning = [
+    "Early bird.",
+    "You're up early.",
+    "Most people aren't awake yet.",
+    "The best hours of the day.",
+    "Head start activated.",
+  ];
+
+  const morning = isWeekend
+    ? [
+        "Weekend morning.",
+        "Even on weekends.",
+        "No days off, huh.",
+        "Saturday grind.",
+        "Sunday founder mode.",
+      ]
+    : [
+        "Good morning,",
+        "Back to work,",
+        "Morning,",
+        "Let's get into it,",
+        "Ready to build,",
+        "Another day,",
+      ];
+
+  const midday = [
+    "Good afternoon,",
+    "Halfway there,",
+    "Midday check-in,",
+    "Keep going,",
+    "Lunchtime? Maybe later,",
+  ];
+
+  const afternoon = [
+    "Afternoon,",
+    "Still at it,",
+    "Deep work hours,",
+    "Focused mode,",
+    "Good afternoon,",
+  ];
+
+  const evening = [
+    "Evening,",
+    "Good evening,",
+    "Winding down?",
+    "End of day push,",
+    "Almost done,",
+  ];
+
+  const night = [
+    "Working late,",
+    "Night mode,",
+    "Late session,",
+    "Night owl,",
+    "One more thing,",
+  ];
+
+  if (hour >= 0 && hour < 4) return pickDaily(midnight, hour);
+  if (hour >= 4 && hour < 8) return pickDaily(earlyMorning, hour);
+  if (hour >= 8 && hour < 12) return pickDaily(morning, hour);
+  if (hour >= 12 && hour < 14) return pickDaily(midday, hour);
+  if (hour >= 14 && hour < 18) return pickDaily(afternoon, hour);
+  if (hour >= 18 && hour < 21) return pickDaily(evening, hour);
+  return pickDaily(night, hour);
+};
+
+const pickDaily = (phrases: string[], hour: number): string => {
+  const block = Math.floor(hour / 4);
+  const today = new Date().toDateString();
+  const key = `flowtex_greeting_${today}_${block}`;
+
+  const cached = localStorage.getItem(key);
+  if (cached) return cached;
+
+  const picked = phrases[Math.floor(Math.random() * phrases.length)];
+  localStorage.setItem(key, picked);
+
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k?.startsWith("flowtex_greeting_") && !k.includes(today)) {
+      localStorage.removeItem(k);
+    }
+  }
+
+  return picked;
+};
 
 const useQuoteOfDay = () => {
   const [quote, setQuote] = useState<{ text: string; author: string } | null>(null);
@@ -60,361 +160,454 @@ const useQuoteOfDay = () => {
   return quote;
 };
 
-export const AppDashboard = () => {
-  const quote = useQuoteOfDay();
+interface CalendarEvent {
+  id: string;
+  summary: string;
+  start: {
+    dateTime?: string;
+    date?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+  };
+}
+
+const EventCard = ({ event }: { event: CalendarEvent }) => {
+  const startTime = event.start?.dateTime
+    ? new Date(event.start.dateTime).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "All day";
+
+  const title = event.summary ?? "Untitled event";
 
   return (
-    <div className="p-8 flex-1 overflow-y-auto bg-[#F8FAFC] flex flex-col gap-8">
+    <div className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3">
+      <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{startTime}</p>
+      <p className="font-semibold text-[var(--color-text-primary)] truncate flex-1">{title}</p>
+      <MoreVertical size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
+    </div>
+  );
+};
+
+const SkeletonLoader = () => (
+  <div className="space-y-2">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="flex items-center gap-3 mb-2">
+        <Skeleton style={{ width: 48, height: 12, borderRadius: 4 }} />
+        <Skeleton style={{ flex: 1, height: 12, borderRadius: 4 }} />
+      </div>
+    ))}
+  </div>
+);
+
+const getUpcomingEvents = (events: CalendarEvent[]): CalendarEvent[] => {
+  const now = new Date();
+  return events.filter((event) => {
+    const startTime = new Date(event.start.dateTime ?? event.start.date);
+    return startTime > now;
+  });
+};
+
+const NoEventsPlaceholder = ({ googleConnected, height = "h-full" }: { googleConnected: boolean; height?: string }) => {
+  if (!googleConnected) {
+    return (
+      <div className={`flex flex-col items-center justify-center text-center p-4 ${height}`}>
+        <p className="text-[var(--color-text-muted)] text-sm mb-3">Google Calendar not connected</p>
+        <Link href="/app/integrations" className="text-[var(--color-accent)] text-xs font-medium hover:underline">
+          Connect Calendar
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col items-center justify-center text-center ${height}`}>
+      <p className="text-[var(--color-text-muted)] text-sm">No upcoming events this week</p>
+    </div>
+  );
+};
+
+interface GmailMessage {
+  id: string;
+  sender: string;
+  subject: string;
+  date: string;
+  isUnread: boolean;
+}
+
+export const AppDashboard = () => {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { cache, setCache, isStale } = useAppCache();
+  const quote = useQuoteOfDay();
+  const [thisWeekEvents, setThisWeekEvents] = useState<CalendarEvent[]>([]);
+  const [nextWeekEvents, setNextWeekEvents] = useState<CalendarEvent[]>([]);
+  const [gmailMessages, setGmailMessages] = useState<GmailMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isReloading, setIsReloading] = useState(false);
+  const [minLoadDone, setMinLoadDone] = useState(false);
+  const [googleConnected, setGoogleConnected] = useState(true);
+  const [calendarsConfigured, setCalendarsConfigured] = useState<boolean | null>(null);
+  const [greeting, setGreeting] = useState<string>("");
+  const [userName, setUserName] = useState<string>("there");
+
+  // Minimum 300ms loading state to prevent flash
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadDone(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Load user name and set initial greeting
+  useEffect(() => {
+    const loadUserName = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Try user metadata first (from Google OAuth)
+          const fullName = user.user_metadata?.full_name ?? "";
+          const firstName = fullName.split(" ")[0] || "there";
+          setUserName(firstName);
+
+          // Also try loading from profiles table as fallback
+          if (!firstName || firstName === "there") {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", user.id)
+              .single();
+
+            if (profile?.full_name) {
+              setUserName(profile.full_name.split(" ")[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user name:", error);
+      }
+    };
+
+    loadUserName();
+    setGreeting(getGreeting());
+  }, []);
+
+  // Update greeting every 4 hours
+  useEffect(() => {
+    const now = new Date();
+    const minutesUntilNextBlock = (4 - (now.getHours() % 4)) * 60 - now.getMinutes();
+    const msUntilNextBlock = minutesUntilNextBlock * 60 * 1000;
+
+    const timeout = setTimeout(() => {
+      setGreeting(getGreeting());
+    }, msUntilNextBlock);
+
+    return () => clearTimeout(timeout);
+  }, [greeting]);
+
+  const fetchEmailsBackground = useCallback(async () => {
+    try {
+      const gmailResponse = await fetch("/api/gmail/inbox");
+      const gmailData = await gmailResponse.json();
+
+      if (gmailData.messages) {
+        setCache("inboxEmails", gmailData.messages);
+      }
+    } catch (err) {
+      console.error("Failed to fetch emails in background:", err);
+    }
+  }, [setCache]);
+
+  useEffect(() => {
+    const fetchIntegrationAndEvents = async () => {
+      try {
+        // First check if calendars are configured
+        const integrationResponse = await fetch("/api/user/integrations");
+        const integrationData = await integrationResponse.json();
+
+        if (integrationData.integrations && integrationData.integrations.length > 0) {
+          const googleIntegration = integrationData.integrations.find(
+            (i: any) => i.provider === "google"
+          );
+
+          if (googleIntegration) {
+            setCalendarsConfigured(googleIntegration.calendars_configured ?? false);
+            setGoogleConnected(true);
+
+            // Only fetch events if calendars are configured
+            if (googleIntegration.calendars_configured) {
+              fetchEvents();
+            }
+          } else {
+            setGoogleConnected(false);
+            setCalendarsConfigured(null);
+          }
+        } else {
+          setGoogleConnected(false);
+          setCalendarsConfigured(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch integration:", err);
+        setGoogleConnected(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchEvents = async () => {
+      try {
+        // Check cache first
+        if (cache.calendarEvents && !isStale("calendarEvents")) {
+          setThisWeekEvents(cache.calendarEvents.thisWeek);
+          setNextWeekEvents(cache.calendarEvents.nextWeek);
+          setGoogleConnected(true);
+          return;
+        }
+
+        // Fetch calendar events
+        const calendarResponse = await fetch("/api/calendar/dashboard-events");
+        const calendarData = await calendarResponse.json();
+
+        if (calendarData.error === "Google not connected") {
+          setGoogleConnected(false);
+        } else {
+          const eventData = {
+            thisWeek: calendarData.thisWeek ?? [],
+            nextWeek: calendarData.nextWeek ?? [],
+          };
+          setThisWeekEvents(eventData.thisWeek);
+          setNextWeekEvents(eventData.nextWeek);
+          setCache("calendarEvents", eventData);
+          setGoogleConnected(true);
+        }
+      } catch (err) {
+        console.error("Failed to fetch events:", err);
+        setGoogleConnected(false);
+      }
+    };
+
+    fetchIntegrationAndEvents();
+    // Always fetch emails in background (no cache for freshness)
+    fetchEmailsBackground();
+  }, [cache, setCache, isStale, fetchEmailsBackground]);
+
+  const fetchCalendarEvents = useCallback(async () => {
+    try {
+      const calendarResponse = await fetch("/api/calendar/dashboard-events");
+      const calendarData = await calendarResponse.json();
+
+      if (calendarData.error === "Google not connected") {
+        setGoogleConnected(false);
+      } else {
+        const eventData = {
+          thisWeek: calendarData.thisWeek ?? [],
+          nextWeek: calendarData.nextWeek ?? [],
+        };
+        setThisWeekEvents(eventData.thisWeek);
+        setNextWeekEvents(eventData.nextWeek);
+        setCache("calendarEvents", eventData);
+        setGoogleConnected(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch calendar events:", err);
+      setGoogleConnected(false);
+    }
+  }, [setCache]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsReloading(true);
+    await fetchCalendarEvents();
+    setIsReloading(false);
+  }, [fetchCalendarEvents]);
+
+  const handleCalendarSelectionComplete = () => {
+    setCalendarsConfigured(true);
+    fetchCalendarEvents();
+  };
+
+  const handleReloadEvents = async () => {
+    setIsReloading(true);
+    try {
+      // Fetch calendar events
+      const calendarResponse = await fetch("/api/calendar/dashboard-events");
+      const calendarData = await calendarResponse.json();
+
+      if (calendarData.error === "Google not connected") {
+        setGoogleConnected(false);
+      } else {
+        setThisWeekEvents(calendarData.thisWeek ?? []);
+        setNextWeekEvents(calendarData.nextWeek ?? []);
+        setGoogleConnected(true);
+      }
+
+      // Fetch Gmail messages
+      try {
+        const gmailResponse = await fetch("/api/gmail/inbox");
+        const gmailData = await gmailResponse.json();
+
+        if (gmailData.messages) {
+          setGmailMessages(gmailData.messages);
+        }
+      } catch (err) {
+        console.error("Failed to fetch Gmail messages:", err);
+      }
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+      setGoogleConnected(false);
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
+  const showSkeleton = !minLoadDone || isLoading;
+
+  if (showSkeleton) {
+    return <DashboardSkeleton />;
+  }
+
+  return (
+    <div className="p-8 flex-1 overflow-y-auto bg-[var(--color-bg-base)] flex flex-col gap-8">
       {/* Top Section - 2 Columns */}
       <div className="grid grid-cols-2 gap-8 h-1/2 items-center">
-        {/* Good Morning Text - 1/2 width */}
+        {/* Dynamic Greeting - 1/2 width */}
         <div className="flex flex-col items-center justify-center h-full gap-4">
-          <p className="text-[#0D1F2D] text-6xl font-bold leading-tight text-center">
-            Good morning,<br />Nicolau
+          <p className="text-[var(--color-text-primary)] text-6xl font-bold leading-tight text-center">
+            {greeting.endsWith(",") ? (
+              <>
+                {greeting} <br />
+                {userName}
+              </>
+            ) : (
+              greeting
+            )}
           </p>
           {quote && (
-            <p className="text-[#4A6880] text-base italic font-light max-w-lg text-center">
+            <p className="text-[var(--color-text-muted)] text-base italic font-light max-w-lg text-center">
               "{quote.text}" — {quote.author}
             </p>
           )}
         </div>
 
-        {/* Card 4: Today & Tomorrow */}
-        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col">
-          <div className="flex flex-row gap-6 h-full">
-            {/* Today Column */}
-            <div className="flex-1 flex flex-col gap-3">
-              <h3 className="text-[#0D1F2D] text-xl font-semibold">Today</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">09:00 AM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Team Standup</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
-                </div>
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">02:30 PM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Code Review</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
-                </div>
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">04:00 PM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Update Documentation</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
+        {/* Card 4: Calendar selection or events */}
+        {calendarsConfigured === false ? (
+          <CalendarSelection onComplete={handleCalendarSelectionComplete} />
+        ) : (
+          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col">
+            <div className="flex flex-row gap-6 h-full">
+              {/* This Week Column */}
+              <div className="flex-1 flex flex-col gap-3">
+                <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">This week</h3>
+                <div style={{ height: "320px" }} className="flex flex-col overflow-hidden">
+                  {isLoading || isReloading ? (
+                    <div className="overflow-y-auto flex-1">
+                      <SkeletonLoader />
+                    </div>
+                  ) : (() => {
+                    const allThisWeek = getUpcomingEvents(thisWeekEvents);
+                    const displayThisWeek = allThisWeek.slice(0, 4);
+                    const moreThisWeek = allThisWeek.length - 4;
+
+                    console.log("📊 This week events:");
+                    console.log("  - Total from API:", thisWeekEvents.length);
+                    console.log("  - Upcoming (future only):", allThisWeek.length);
+                    console.log("  - Display (first 4):", displayThisWeek.length);
+                    console.log("  - More count:", moreThisWeek);
+
+                    return displayThisWeek.length > 0 ? (
+                      <div className="flex flex-col overflow-y-auto flex-1">
+                        <div className="flex flex-col gap-3">
+                          {displayThisWeek.map((event) => (
+                            <EventCard key={event.id} event={event} />
+                          ))}
+                        </div>
+                        {moreThisWeek > 0 && (
+                          <p className="text-xs text-center text-[var(--color-text-muted)] mt-3">
+                            +{moreThisWeek} more events this week
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <NoEventsPlaceholder googleConnected={googleConnected} height="h-full" />
+                    );
+                  })()}
                 </div>
               </div>
-            </div>
 
-            {/* Divider */}
-            <div className="w-px bg-[#C8D8E6]"></div>
+              {/* Divider */}
+              <div className="w-px bg-[var(--color-border-default)]"></div>
 
-            {/* Tomorrow Column */}
-            <div className="flex-1 flex flex-col gap-3">
-              <h3 className="text-[#0D1F2D] text-xl font-semibold">Tomorrow</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">10:00 AM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Design Review</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
+              {/* Next Week Column */}
+              <div className="flex-1 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">Next week</h3>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isReloading}
+                    className="p-1 hover:text-[var(--color-text-muted)] transition-colors duration-150 disabled:opacity-50"
+                    style={{ color: "var(--color-text-disabled)" }}
+                  >
+                    <RefreshCw
+                      size={14}
+                      className={isReloading ? "animate-spin" : ""}
+                    />
+                  </button>
                 </div>
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">11:30 AM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Client Meeting</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
-                </div>
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">03:00 PM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Testing Sprint</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
-                </div>
-                <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-3">
-                  <div className="flex-shrink-0">
-                    <p className="text-xs text-[#4A6880] font-medium">05:00 PM</p>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <p className="font-semibold text-[#0D1F2D] truncate">Deploy to Staging</p>
-                  </div>
-                  <MoreVertical size={16} className="text-[#4A6880] flex-shrink-0" />
+                <div style={{ height: "320px" }} className="flex flex-col overflow-hidden">
+                  {isLoading || isReloading ? (
+                    <div className="overflow-y-auto flex-1">
+                      <SkeletonLoader />
+                    </div>
+                  ) : (() => {
+                    const allNextWeek = getUpcomingEvents(nextWeekEvents);
+                    const displayNextWeek = allNextWeek.slice(0, 4);
+                    const moreNextWeek = allNextWeek.length - 4;
+
+                    console.log("📊 Next week events:");
+                    console.log("  - Total from API:", nextWeekEvents.length);
+                    console.log("  - Upcoming (future only):", allNextWeek.length);
+                    console.log("  - Display (first 4):", displayNextWeek.length);
+                    console.log("  - More count:", moreNextWeek);
+
+                    return displayNextWeek.length > 0 ? (
+                      <div className="flex flex-col overflow-y-auto flex-1">
+                        <div className="flex flex-col gap-3">
+                          {displayNextWeek.map((event) => (
+                            <EventCard key={event.id} event={event} />
+                          ))}
+                        </div>
+                        {moreNextWeek > 0 && (
+                          <p className="text-xs text-center text-[var(--color-text-muted)] mt-3 pt-3 border-t border-[var(--color-bg-elevated)]">
+                            +{moreNextWeek} more events next week
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <NoEventsPlaceholder googleConnected={googleConnected} height="h-full" />
+                    );
+                  })()}
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Bottom Section - 3 Cards */}
       <div className="grid grid-cols-3 gap-8 h-1/2">
-        {/* Card 1: Just happened */}
-        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col gap-3">
-          <h3 className="text-[#0D1F2D] text-xl font-semibold">Just happened</h3>
-          <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
-                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">02:32 PM</p>
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="font-semibold text-[#0D1F2D] truncate flex-1">Website Redesign</p>
-                  <span className="text-xs bg-[#00D4A4] text-[#0D1F2D] font-medium px-2 py-1 rounded-md flex-shrink-0">Completed</span>
-                </div>
-              </div>
-              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop" alt="JS" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-            </div>
-            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
-                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">01:45 PM</p>
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="font-semibold text-[#0D1F2D] truncate flex-1">Design Review</p>
-                  <span className="text-xs bg-[#00D4A4] text-[#0D1F2D] font-medium px-2 py-1 rounded-md flex-shrink-0">Completed</span>
-                </div>
-              </div>
-              <div className="flex gap-1 items-center flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=32&h=32&fit=crop" alt="MD" className="w-6 h-6 rounded-full object-cover" />
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop" alt="S" className="w-6 h-6 rounded-full object-cover -ml-2 border-2 border-[#DDE6EF]" />
-              </div>
-            </div>
-            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
-                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">12:15 PM</p>
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="font-semibold text-[#0D1F2D] truncate flex-1">API Integration</p>
-                  <span className="text-xs bg-[#3B82F6] text-[#0D1F2D] font-medium px-2 py-1 rounded-md flex-shrink-0">Postponed</span>
-                </div>
-              </div>
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop" alt="S" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-            </div>
-            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
-                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">11:20 AM</p>
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="font-semibold text-[#0D1F2D] truncate flex-1">Database Update</p>
-                  <span className="text-xs bg-[#00D4A4] text-[#0D1F2D] font-medium px-2 py-1 rounded-md flex-shrink-0">Completed</span>
-                </div>
-              </div>
-              <div className="flex gap-1 items-center flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop" alt="JS" className="w-6 h-6 rounded-full object-cover" />
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=32&h=32&fit=crop" alt="MD" className="w-6 h-6 rounded-full object-cover -ml-2 border-2 border-[#DDE6EF]" />
-              </div>
-            </div>
-            <div className="bg-[#DDE6EF] p-3 rounded-lg border border-[#C8D8E6] text-sm h-16 flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
-                <p className="text-xs text-[#4A6880] font-medium whitespace-nowrap">10:50 AM</p>
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="font-semibold text-[#0D1F2D] truncate flex-1">Meeting Notes</p>
-                  <span className="text-xs bg-[#3B82F6] text-[#0D1F2D] font-medium px-2 py-1 rounded-md flex-shrink-0">Postponed</span>
-                </div>
-              </div>
-              <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=32&h=32&fit=crop" alt="AC" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-            </div>
-          </div>
-        </div>
+        {/* Card 1: Gmail Inbox */}
+        <GmailInbox />
 
-        {/* Card 2: Who's on what */}
-        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col gap-4">
-          <h3 className="text-[#0D1F2D] text-xl font-semibold">Who's on what</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
-              <div className="relative flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop" alt="John Smith" className="w-8 h-8 rounded-full object-cover" />
-                <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#00D4A4] border-2 border-[#DDE6EF]"></div>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-[#0D1F2D]">John Smith</p>
-                <p className="text-xs text-[#4A6880]">Working on: API Design</p>
-              </div>
-            </div>
-<div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
-              <div className="relative flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=40&h=40&fit=crop" alt="Sarah" className="w-8 h-8 rounded-full object-cover" />
-                <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#00D4A4] border-2 border-[#DDE6EF]"></div>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-[#0D1F2D]">Sarah</p>
-                <p className="text-xs text-[#4A6880]">Working on: Testing</p>
-              </div>
-            </div>
-            <div className="col-span-2 flex items-center gap-3 my-2">
-              <div className="flex-1 border-t border-[#C8D8E6]"></div>
-              <p className="text-xs font-semibold text-[#4A6880] uppercase tracking-wide flex-shrink-0">Offline members</p>
-              <div className="flex-1 border-t border-[#C8D8E6]"></div>
-            </div>
-            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
-              <div className="relative flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=40&h=40&fit=crop" alt="Alex Chen" className="w-8 h-8 rounded-full object-cover" />
-                <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#4A6880] border-2 border-[#DDE6EF]"></div>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-[#0D1F2D]">Alex Chen</p>
-                <p className="text-xs text-[#4A6880]">Offline</p>
-              </div>
-            </div>
-            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
-              <div className="relative flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop" alt="Emma Miller" className="w-8 h-8 rounded-full object-cover" />
-                <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#4A6880] border-2 border-[#DDE6EF]"></div>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-[#0D1F2D]">Emma Miller</p>
-                <p className="text-xs text-[#4A6880]">Offline</p>
-              </div>
-            </div>
-            <div className="bg-[#DDE6EF] rounded-lg border border-[#C8D8E6] p-3 flex items-center gap-3 h-16">
-              <div className="relative flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop" alt="Marcus Davis" className="w-8 h-8 rounded-full object-cover" />
-                <div className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#4A6880] border-2 border-[#DDE6EF]"></div>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold text-[#0D1F2D]">Marcus Davis</p>
-                <p className="text-xs text-[#4A6880]">Offline</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Card 2: Priority Tasks */}
+        <PriorityTasks />
 
-        {/* Card 3: Talk with your team */}
-        <div className="bg-[#E8EFF5] rounded-2xl border border-[#C8D8E6] p-6 h-full flex flex-col">
-          <h3 className="text-[#0D1F2D] text-xl font-semibold mb-4">Team chat</h3>
-          <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-            <div className="flex justify-end">
-              <div className="flex flex-col items-end gap-1">
-                <p className="text-xs text-[#4A6880] font-medium">You</p>
-                <div className="bg-[#00D4A4] text-[#0D1F2D] px-3 py-2 rounded-lg text-sm max-w-xs">
-                  Hi team, when is the meeting scheduled?
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-start gap-2">
-              <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop" alt="Sarah" className="w-6 h-6 rounded-full object-cover" />
-                <p className="text-xs text-[#4A6880] font-medium">Sarah</p>
-              </div>
-              <div className="flex flex-col items-start gap-2 w-full">
-                <div className="bg-white text-[#0D1F2D] p-3 rounded-lg text-sm max-w-xs border border-[#C8D8E6] w-full">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar size={18} className="text-blue-500" />
-                    <p className="text-xs text-[#4A6880] font-medium">Google Calendar</p>
-                  </div>
-                  <div className="bg-[#E8EFF5] p-3 rounded border border-[#C8D8E6] mb-3">
-                    <p className="font-semibold text-sm mb-1">Team Meeting</p>
-                    <p className="text-xs text-[#2E4A62] mb-2">Thursday 10:30 - 11:30 AM</p>
-                    <p className="text-xs text-[#4A6880]">Topic: Team Sync & Planning</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-2 py-1.5 text-xs rounded border border-[#C8D8E6] text-[#0D1F2D] hover:bg-[#F8FAFC] transition-colors">
-                      View in Calendar
-                    </button>
-                    <button className="flex-1 px-2 py-1.5 text-xs rounded bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-colors font-medium">
-                      Join
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              className="flex-1 px-4 py-3 rounded-lg border border-[#C8D8E6] bg-[#DDE6EF] text-[#0D1F2D] placeholder-[#4A6880] focus:outline-none focus:border-[#00D4A4] focus:ring-1 focus:ring-[#00D4A4]"
-            />
-            <button className="p-2 rounded-lg text-[#0D1F2D] hover:bg-[#DDE6EF] hover:text-[#00D4A4] transition-colors">
-              <Send size={20} />
-            </button>
-          </div>
-        </div>
+        {/* Card 3: Daily Streak */}
+        <DailyStreak />
       </div>
     </div>
   );
 };
-
-interface StatusBadgeProps {
-  icon: React.ReactNode;
-  label: string;
-  status: string;
-}
-
-const StatusBadge: React.FC<StatusBadgeProps> = ({ icon, label, status }) => (
-  <div className="bg-[#DDE6EF] rounded-lg p-3 border border-[#C8D8E6] flex flex-col items-center gap-2">
-    <div className="text-[#2E4A62]">{icon}</div>
-    <p className="text-[#0D1F2D] text-xs font-medium text-center">{label}</p>
-    <p className="text-[#4A6880] text-xs">{status}</p>
-  </div>
-);
-
-interface ContextItemProps {
-  label: string;
-  value: string;
-}
-
-const ContextItem: React.FC<ContextItemProps> = ({ label, value }) => (
-  <div className="flex items-center justify-between pb-2 border-b border-[#E8EFF5] last:border-0">
-    <span className="text-[#2E4A62]">{label}</span>
-    <span className="text-[#0D1F2D] font-semibold">{value}</span>
-  </div>
-);
-
-interface ActivityItemProps {
-  title: string;
-  time: string;
-  type: "meeting" | "email" | "task";
-}
-
-const ActivityItem: React.FC<ActivityItemProps> = ({ title, time, type }) => {
-  const icons = {
-    meeting: <Calendar size={14} className="text-[#00D4A4]" />,
-    email: <Mail size={14} className="text-[#3B82F6]" />,
-    task: <CheckCircle2 size={14} className="text-[#22C55E]" />,
-  };
-
-  return (
-    <div className="flex items-start gap-2 pb-2 border-b border-[#E8EFF5] last:border-0">
-      <div className="mt-1">{icons[type]}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[#0D1F2D] text-sm font-medium truncate">{title}</p>
-        <p className="text-[#4A6880] text-xs">{time}</p>
-      </div>
-    </div>
-  );
-};
-
-interface QuickActionProps {
-  label: string;
-}
-
-const QuickAction: React.FC<QuickActionProps> = ({ label }) => (
-  <button className="w-full px-3 py-2.5 rounded-lg bg-[#E8EFF5] text-[#0D1F2D] text-sm font-medium hover:bg-[#DDE6EF] transition-colors flex items-center gap-2">
-    <span className="text-[#00D4A4]">+</span>
-    {label}
-  </button>
-);

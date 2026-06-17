@@ -5,6 +5,7 @@ import { getEmails, sendEmail, searchEmails, deleteEmail, markAsRead, getFullEma
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { saveChatMessage, getChatHistory, buildAIContextString } from '@/lib/database';
 import { supabase } from '@/lib/supabase';
+import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -200,6 +201,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'ANTHROPIC_API_KEY not configured' },
         { status: 500 }
+      );
+    }
+
+    // Check subscription before processing
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      console.log('❌ [CHAT API] Subscription check failed');
+      return subscriptionCheck.error || NextResponse.json(
+        { error: 'Not authorized' },
+        { status: 403 }
       );
     }
 

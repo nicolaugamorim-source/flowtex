@@ -43,7 +43,7 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
           onClick={onClick}
           className={cn(
             "relative group flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap",
-            "text-base font-semibold text-[#0D1F2D]",
+            "text-base font-semibold text-[var(--color-text-primary)]",
             "hover:bg-white/10 transition-colors",
             className
           )}
@@ -63,8 +63,8 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
           onClick={onClick}
           className={cn(
             "relative group px-5 py-2 rounded-full whitespace-nowrap",
-            "text-sm font-semibold text-[#0D1F2D]",
-            "bg-[#00D4A4] hover:bg-[#00A882]",
+            "text-sm font-semibold text-[var(--color-text-primary)]",
+            "bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]",
             "transition-colors shadow-md hover:shadow-lg",
             className
           )}
@@ -82,7 +82,7 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
         onClick={onClick}
         className={cn(
           "relative group px-4 py-2 rounded-lg whitespace-nowrap",
-          "text-sm font-medium text-[#0D1F2D]",
+          "text-sm font-medium text-[var(--color-text-primary)]",
           "hover:bg-white/20 transition-colors",
           className
         )}

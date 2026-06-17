@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import UniqueLoading from "@/components/ui/morph-loading";
 import { UpgradeRequired } from "./upgrade-required";
 
 interface AppGuardProps {
@@ -84,10 +85,10 @@ export function AppGuard({ children }: AppGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-[#F8FAFC]">
+      <div className="w-full h-screen flex items-center justify-center bg-[var(--color-bg-base)]">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <UniqueLoading variant="morph" size="lg" />
+          <p className="text-[var(--color-text-muted)] mt-6">Loading...</p>
         </div>
       </div>
     );

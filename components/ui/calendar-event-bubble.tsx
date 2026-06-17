@@ -62,58 +62,58 @@ export function CalendarEventBubble({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-lg p-4 w-full max-w-sm bg-[#F8FAFC] text-[#0D1F2D]"
+      className="rounded-lg p-4 w-full max-w-sm bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="text-lg font-bold leading-tight mb-1 text-[#0D1F2D]">
+          <h3 className="text-lg font-bold leading-tight mb-1 text-[var(--color-text-primary)]">
             {title}
           </h3>
           {calendar && (
-            <p className="text-xs text-[#4A6880] font-medium">{calendar}</p>
+            <p className="text-xs text-[var(--color-text-muted)] font-medium">{calendar}</p>
           )}
         </div>
-        <div className="px-2 py-1 rounded-lg text-xs font-semibold text-[#0D1F2D]">
+        <div className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--color-text-primary)]">
           {actionText}
         </div>
       </div>
 
       {/* Date and Time */}
       <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-sm text-[#0D1F2D]">
-          <Calendar className="w-4 h-4 text-[#4A6880]" />
+        <div className="flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+          <Calendar className="w-4 h-4 text-[var(--color-text-muted)]" />
           <span>
             {dayOfWeek && `${dayOfWeek}, `}
             {date}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-[#0D1F2D]">
-          <Clock className="w-4 h-4 text-[#4A6880]" />
+        <div className="flex items-center gap-2 text-sm text-[var(--color-text-primary)]">
+          <Clock className="w-4 h-4 text-[var(--color-text-muted)]" />
           <span>{time}</span>
         </div>
       </div>
 
       {/* Members */}
       {members.length > 0 && (
-        <div className="border-t border-[#E2EAF1] pt-3">
+        <div className="border-t border-[var(--color-border-subtle)] pt-3">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-[#4A6880]" />
-            <span className="text-sm font-medium text-[#0D1F2D]">
+            <Users className="w-4 h-4 text-[var(--color-text-muted)]" />
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">
               {members.length} {members.length === 1 ? "participante" : "participantes"}
             </span>
           </div>
           <div className="flex -space-x-2">
             {members.slice(0, 5).map((member, idx) => (
-              <Avatar key={idx} className="h-8 w-8 border-2 border-[#F8FAFC]">
+              <Avatar key={idx} className="h-8 w-8 border-2 border-[var(--color-bg-base)]">
                 <AvatarImage src={member.avatar} alt={member.name} />
-                <AvatarFallback className="bg-[#E2EAF1] text-[#0D1F2D] text-xs font-bold">
+                <AvatarFallback className="bg-[var(--color-border-subtle)] text-[var(--color-text-primary)] text-xs font-bold">
                   {member.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             ))}
             {members.length > 5 && (
-              <div className="h-8 w-8 rounded-full bg-[#E2EAF1] border-2 border-[#F8FAFC] flex items-center justify-center text-xs font-bold text-[#0D1F2D]">
+              <div className="h-8 w-8 rounded-full bg-[var(--color-border-subtle)] border-2 border-[var(--color-bg-base)] flex items-center justify-center text-xs font-bold text-[var(--color-text-primary)]">
                 +{members.length - 5}
               </div>
             )}

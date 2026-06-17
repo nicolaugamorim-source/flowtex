@@ -200,30 +200,30 @@ function CookieBanner({
             className
           )}
         >
-          <div className="m-3 bg-[#F8FAFC] border border-[#C8D8E6] rounded-xl shadow-lg">
+          <div className="m-3 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-xl shadow-lg">
             <div className="flex items-center gap-3 p-6 pb-4">
-              <div className="bg-[#E0F7F2] p-2 rounded-lg">
-                <CookieIcon className="h-5 w-5 text-[#0D1F2D]" />
+              <div className="bg-[var(--color-accent-subtle)] p-2 rounded-lg">
+                <CookieIcon className="h-5 w-5 text-[var(--color-text-primary)]" />
               </div>
-              <h2 className="text-lg font-semibold text-[#0D1F2D]">Cookie Preferences</h2>
+              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Cookie Preferences</h2>
             </div>
             <div className="px-6 pb-4">
-              <p className="text-sm text-[#4A6880] leading-relaxed mb-4">
+              <p className="text-sm text-[var(--color-text-muted)] leading-relaxed mb-4">
                 We use cookies to enhance your experience, personalize content, and analyze traffic.
               </p>
               <Link
                 href={cookiePolicyUrl}
-                className="text-xs inline-flex items-center text-[#0D1F2D] hover:underline group font-medium transition-colors"
+                className="text-xs inline-flex items-center text-[var(--color-text-primary)] hover:underline group font-medium transition-colors"
               >
                 Cookie Policy
                 <ChevronRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
-            <div className="p-4 flex flex-col sm:flex-row gap-3 border-t border-[#E2EAF1] bg-[#F1F5F9]">
+            <div className="p-4 flex flex-col sm:flex-row gap-3 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)]">
               <Button
                 onClick={onAcceptAll}
                 size="sm"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-all hover:shadow-md font-semibold"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent-hover)] transition-all hover:shadow-md font-semibold"
               >
                 Accept All
               </Button>
@@ -231,7 +231,7 @@ function CookieBanner({
                 onClick={onCustomize}
                 size="sm"
                 variant="outline"
-                className="w-full sm:flex-1 h-9 rounded-lg text-sm border-[#C8D8E6] text-[#0D1F2D] hover:bg-[#F1F5F9] transition-all hover:shadow-md"
+                className="w-full sm:flex-1 h-9 rounded-lg text-sm border-[var(--color-border-default)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-all hover:shadow-md"
               >
                 Customize
               </Button>
@@ -245,10 +245,10 @@ function CookieBanner({
 
 function getCategoryIcon(index: number) {
   const icons = [
-    <Lock key="lock" className="h-4 w-4 text-[#0D1F2D]" />,
-    <BarChart3 key="chart" className="h-4 w-4 text-[#0D1F2D]" />,
+    <Lock key="lock" className="h-4 w-4 text-[var(--color-text-primary)]" />,
+    <BarChart3 key="chart" className="h-4 w-4 text-[var(--color-text-primary)]" />,
   ];
-  return icons[index] || <CookieIcon className="h-4 w-4 text-[#0D1F2D]" />;
+  return icons[index] || <CookieIcon className="h-4 w-4 text-[var(--color-text-primary)]" />;
 }
 
 interface CookieCustomizeDialogProps {
@@ -280,10 +280,10 @@ function CookieCustomizeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#F8FAFC] z-[200] sm:max-w-[500px] p-0 gap-0 border-[#C8D8E6] shadow-xl">
-        <DialogHeader className="p-6 pb-4 border-b border-[#E2EAF1]">
-          <DialogTitle className="text-xl font-semibold text-[#0D1F2D]">Manage Cookies</DialogTitle>
-          <DialogDescription className="text-[#4A6880]">
+      <DialogContent className="bg-[var(--color-bg-base)] z-[200] sm:max-w-[500px] p-0 gap-0 border-[var(--color-border-default)] shadow-xl">
+        <DialogHeader className="p-6 pb-4 border-b border-[var(--color-border-subtle)]">
+          <DialogTitle className="text-xl font-semibold text-[var(--color-text-primary)]">Manage Cookies</DialogTitle>
+          <DialogDescription className="text-[var(--color-text-muted)]">
             Customize your cookie preferences below.
           </DialogDescription>
         </DialogHeader>
@@ -297,28 +297,28 @@ function CookieCustomizeDialog({
               className={cn(
                 "p-4 border rounded-xl transition-all duration-200",
                 preferences[index]
-                  ? "border-[#00D4A4]/50 bg-[#E0F7F2] shadow-sm"
-                  : "border-[#E2EAF1] hover:border-[#C8D8E6]"
+                  ? "border-[var(--color-accent)]/50 bg-[var(--color-accent-subtle)] shadow-sm"
+                  : "border-[var(--color-border-subtle)] hover:border-[var(--color-border-default)]"
               )}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "p-2 rounded-lg transition-colors",
-                    preferences[index] ? "bg-[#E0F7F2]" : "bg-[#F1F5F9]"
+                    preferences[index] ? "bg-[var(--color-accent-subtle)]" : "bg-[var(--color-bg-secondary)]"
                   )}>
                     {category.icon || getCategoryIcon(index)}
                   </div>
                   <Label
                     htmlFor={`cookie-${index}`}
-                    className="font-semibold text-base cursor-pointer text-[#0D1F2D]"
+                    className="font-semibold text-base cursor-pointer text-[var(--color-text-primary)]"
                   >
                     {category.name}
                     {category.isEssential && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#E0F7F2] text-[#00A882]">
+                            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[var(--color-accent-subtle)] text-[var(--color-accent-hover)]">
                               Required
                             </span>
                           </TooltipTrigger>
@@ -337,25 +337,25 @@ function CookieCustomizeDialog({
                   disabled={category.isEssential}
                 />
               </div>
-              <p className="text-sm mt-3 text-[#4A6880] leading-relaxed">
+              <p className="text-sm mt-3 text-[var(--color-text-muted)] leading-relaxed">
                 {category.description}
               </p>
             </motion.div>
           ))}
         </div>
-        <DialogFooter className="p-6 border-t border-[#E2EAF1] bg-[#F1F5F9]">
+        <DialogFooter className="p-6 border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)]">
           <div className="flex w-full flex-col-reverse sm:flex-row sm:justify-between gap-3 items-center">
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={onRejectAll}
-                className="min-w-[120px] border-[#C8D8E6] text-[#0D1F2D] hover:bg-[#E8EFF5] transition-all hover:shadow-md"
+                className="min-w-[120px] border-[var(--color-border-default)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)] transition-all hover:shadow-md"
               >
                 Reject All
               </Button>
               <Button
                 onClick={handleSaveClick}
-                className="min-w-[140px] bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-all hover:shadow-md font-semibold"
+                className="min-w-[140px] bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent-hover)] transition-all hover:shadow-md font-semibold"
               >
                 {showSaveSuccess ? "✓ Saved" : "Save Preferences"}
               </Button>
@@ -365,7 +365,7 @@ function CookieCustomizeDialog({
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="text-sm text-[#22C55E] font-medium"
+                className="text-sm text-[var(--color-success)] font-medium"
               >
                 Preferences saved successfully
               </motion.div>

@@ -19,13 +19,13 @@ import {
 
 export const DashboardMockup = () => {
   return (
-    <div className="flex h-[700px] rounded-3xl border border-[#C8D8E6] overflow-hidden shadow-sm bg-[#F8FAFC]">
+    <div className="flex h-[700px] rounded-3xl border border-[var(--color-border-default)] overflow-hidden shadow-sm bg-[var(--color-bg-base)]">
       {/* SIDEBAR - COMPACT */}
-      <div className="w-20 border-r border-[#C8D8E6] bg-[#F8FAFC] flex flex-col items-center py-6 px-3">
+      <div className="w-20 border-r border-[var(--color-border-default)] bg-[var(--color-bg-base)] flex flex-col items-center py-6 px-3">
         {/* Logo */}
         <div className="mb-8 flex items-center justify-center">
-          <div className="w-10 h-10 rounded-lg bg-[#00D4A4] flex items-center justify-center hover:bg-[#00A882] transition-colors cursor-pointer">
-            <div className="w-5 h-5 rounded-full bg-[#0D1F2D]" />
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-accent-hover)] transition-colors cursor-pointer">
+            <div className="w-5 h-5 rounded-full bg-[var(--color-text-primary)]" />
           </div>
         </div>
 
@@ -38,14 +38,14 @@ export const DashboardMockup = () => {
         </nav>
 
         {/* Projects Indicator Dots */}
-        <div className="border-t border-[#C8D8E6] pt-4 mb-4 space-y-2">
-          <div className="w-3 h-3 rounded-full bg-[#00D4A4]" title="Website Redesign" />
-          <div className="w-3 h-3 rounded-full bg-[#3B82F6]" title="Mobile App" />
-          <div className="w-3 h-3 rounded-full bg-[#F59E0B]" title="API Integration" />
+        <div className="border-t border-[var(--color-border-default)] pt-4 mb-4 space-y-2">
+          <div className="w-3 h-3 rounded-full bg-[var(--color-accent)]" title="Website Redesign" />
+          <div className="w-3 h-3 rounded-full bg-[var(--color-info)]" title="Mobile App" />
+          <div className="w-3 h-3 rounded-full bg-[var(--color-warning)]" title="API Integration" />
         </div>
 
         {/* Bottom Actions */}
-        <div className="space-y-3 border-t border-[#C8D8E6] pt-4 mt-auto">
+        <div className="space-y-3 border-t border-[var(--color-border-default)] pt-4 mt-auto">
           <NavIconItem icon={<Settings size={20} />} />
           <NavIconItem icon={<LogOut size={20} />} />
         </div>
@@ -54,14 +54,14 @@ export const DashboardMockup = () => {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col">
         {/* TOP BAR */}
-        <div className="border-b border-[#C8D8E6] bg-[#F8FAFC] px-8 py-4 flex items-center justify-between">
+        <div className="border-b border-[var(--color-border-default)] bg-[var(--color-bg-base)] px-8 py-4 flex items-center justify-between">
           <div className="flex-1 max-w-md">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-2.5 text-[#4A6880]" />
+              <Search size={16} className="absolute left-3 top-2.5 text-[var(--color-text-muted)]" />
               <input
                 type="text"
                 placeholder="Search projects, tasks..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#C8D8E6] bg-white text-sm text-[#0D1F2D] placeholder-[#4A6880] focus:outline-none focus:border-[#00D4A4]"
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
               />
             </div>
           </div>
@@ -80,53 +80,53 @@ export const DashboardMockup = () => {
           {/* User Message */}
           <div className="flex justify-end">
             <div className="max-w-md">
-              <div className="bg-[#00D4A4] text-[#0D1F2D] px-4 py-3 rounded-2xl rounded-tr-lg text-sm font-medium">
+              <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-4 py-3 rounded-2xl rounded-tr-lg text-sm font-medium">
                 Schedule a call with Acme on Friday at 3pm
               </div>
-              <p className="text-xs text-[#4A6880] mt-1 text-right">Now</p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1 text-right">Now</p>
             </div>
           </div>
 
           {/* AI Response - Calendar Event Card */}
           <div className="flex justify-start">
             <div className="max-w-md space-y-3">
-              <p className="text-sm text-[#2E4A62]">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 I've created the calendar event for you:
               </p>
 
               {/* Calendar Card */}
-              <div className="bg-[#E8EFF5] border border-[#C8D8E6] rounded-2xl p-4 space-y-3">
+              <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-2xl p-4 space-y-3">
                 <div>
-                  <p className="text-xs font-semibold text-[#00D4A4] uppercase tracking-wide mb-1">
+                  <p className="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wide mb-1">
                     Calendar Event
                   </p>
-                  <p className="font-semibold text-[#0D1F2D] text-sm">Acme Call</p>
+                  <p className="font-semibold text-[var(--color-text-primary)] text-sm">Acme Call</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-3 space-y-2 border border-[#C8D8E6]">
+                <div className="bg-white rounded-xl p-3 space-y-2 border border-[var(--color-border-default)]">
                   <div className="flex items-start gap-3">
-                    <Calendar size={16} className="text-[#00D4A4] mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-[#0D1F2D]">
+                    <Calendar size={16} className="text-[var(--color-accent)] mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-[var(--color-text-primary)]">
                       <p className="font-medium">Friday, Jan 12</p>
-                      <p className="text-[#4A6880]">3:00 PM – 4:00 PM</p>
+                      <p className="text-[var(--color-text-muted)]">3:00 PM – 4:00 PM</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <MapPin size={16} className="text-[#4A6880] mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-[#0D1F2D]">Google Meet</p>
+                    <MapPin size={16} className="text-[var(--color-text-muted)] mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-[var(--color-text-primary)]">Google Meet</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <Mail size={16} className="text-[#4A6880] mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-[#0D1F2D]">contact@acme.com</p>
+                    <Mail size={16} className="text-[var(--color-text-muted)] mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-[var(--color-text-primary)]">contact@acme.com</p>
                   </div>
 
-                  <div className="pt-2 border-t border-[#C8D8E6] flex gap-2">
-                    <button className="flex-1 px-3 py-2 rounded-lg bg-[#E0F7F2] text-[#00D4A4] text-xs font-medium hover:bg-[#00D4A4]/10 transition-colors">
+                  <div className="pt-2 border-t border-[var(--color-border-default)] flex gap-2">
+                    <button className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-accent-subtle)] text-[var(--color-accent)] text-xs font-medium hover:bg-[var(--color-accent)]/10 transition-colors">
                       View in Calendar
                     </button>
-                    <button className="flex-1 px-3 py-2 rounded-lg border border-[#C8D8E6] text-[#2E4A62] text-xs font-medium hover:bg-[#DDE6EF] transition-colors">
+                    <button className="flex-1 px-3 py-2 rounded-lg border border-[var(--color-border-default)] text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-elevated)] transition-colors">
                       Edit
                     </button>
                   </div>
@@ -134,10 +134,10 @@ export const DashboardMockup = () => {
               </div>
 
               <div className="flex gap-2">
-                <button className="px-3 py-2 rounded-lg border border-[#C8D8E6] bg-white text-[#2E4A62] text-xs font-medium hover:bg-[#F8FAFC] transition-colors">
+                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
                   <Zap size={14} className="inline mr-1" /> More
                 </button>
-                <button className="px-3 py-2 rounded-lg border border-[#C8D8E6] bg-white text-[#2E4A62] text-xs font-medium hover:bg-[#F8FAFC] transition-colors">
+                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
                   👍
                 </button>
               </div>
@@ -146,20 +146,20 @@ export const DashboardMockup = () => {
         </div>
 
         {/* INPUT AREA */}
-        <div className="border-t border-[#C8D8E6] bg-[#F8FAFC] px-8 py-4">
+        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-base)] px-8 py-4">
           <div className="flex gap-2">
             <div className="flex-1 relative flex items-center">
               <input
                 type="text"
                 placeholder="Ask Flowtex anything... 'Schedule...', 'Create...', 'Send...'"
-                className="w-full px-4 py-3 rounded-xl border border-[#C8D8E6] bg-white text-sm text-[#0D1F2D] placeholder-[#4A6880] focus:outline-none focus:border-[#00D4A4]"
+                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-default)] bg-white text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
               />
             </div>
-            <button className="p-3 rounded-xl bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00A882] transition-colors flex-shrink-0">
+            <button className="p-3 rounded-xl bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent-hover)] transition-colors flex-shrink-0">
               <Zap size={18} />
             </button>
           </div>
-          <p className="text-xs text-[#4A6880] mt-2">
+          <p className="text-xs text-[var(--color-text-muted)] mt-2">
             Flowtex is connected to all your tools and remembers your business context.
           </p>
         </div>
@@ -180,8 +180,8 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
   <button
     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
       active
-        ? "bg-[#E0F7F2] text-[#00D4A4]"
-        : "text-[#2E4A62] hover:bg-[#E8EFF5]"
+        ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)]"
+        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-card)]"
     }`}
   >
     {icon}
@@ -198,8 +198,8 @@ const NavIconItem: React.FC<NavIconItemProps> = ({ icon, active }) => (
   <button
     className={`p-3 rounded-lg transition-colors ${
       active
-        ? "bg-[#E0F7F2] text-[#00D4A4]"
-        : "text-[#2E4A62] hover:bg-[#E8EFF5]"
+        ? "bg-[var(--color-accent-subtle)] text-[var(--color-accent)]"
+        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-card)]"
     }`}
   >
     {icon}
@@ -215,12 +215,12 @@ interface ProjectItemProps {
 const ProjectItem: React.FC<ProjectItemProps> = ({ name, color, active }) => (
   <div
     className={`flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-      active ? "bg-[#E8EFF5] border border-[#C8D8E6]" : "hover:bg-[#E8EFF5]"
+      active ? "bg-[var(--color-bg-card)] border border-[var(--color-border-default)]" : "hover:bg-[var(--color-bg-card)]"
     }`}
   >
     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
     <span className={`text-sm font-medium truncate ${
-      active ? "text-[#0D1F2D]" : "text-[#2E4A62]"
+      active ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
     }`}>
       {name}
     </span>
@@ -234,13 +234,13 @@ interface IntegrationBadgeProps {
 }
 
 const IntegrationBadge: React.FC<IntegrationBadgeProps> = ({ icon, label, connected }) => (
-  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#C8D8E6]">
-    <div className="text-[#2E4A62]">
+  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[var(--color-border-default)]">
+    <div className="text-[var(--color-text-secondary)]">
       {icon}
     </div>
-    <span className="text-xs font-medium text-[#2E4A62]">{label}</span>
+    <span className="text-xs font-medium text-[var(--color-text-secondary)]">{label}</span>
     {connected && (
-      <div className="w-2 h-2 rounded-full bg-[#00D4A4]" />
+      <div className="w-2 h-2 rounded-full bg-[var(--color-accent)]" />
     )}
   </div>
 );

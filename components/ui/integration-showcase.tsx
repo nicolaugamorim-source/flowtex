@@ -31,10 +31,10 @@ export interface IntegrationShowcaseProps {
 const HighlightedTitle = ({ text }: { text: string }) => {
   const parts = text.split(/~/);
   return (
-    <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[#0D1F2D]">
+    <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[var(--color-text-primary)]">
       {parts.map((part, index) =>
         index === 1 ? (
-          <span key={index} className="underline decoration-[#00D4A4] decoration-8 underline-offset-8">
+          <span key={index} className="underline decoration-[var(--color-accent)] decoration-8 underline-offset-8">
             {part}
           </span>
         ) : (
@@ -75,7 +75,7 @@ export const IntegrationShowcase = React.forwardRef<
           <div className={illustrationSrc ? "max-w-xl" : "mx-auto"}>
             <HighlightedTitle text={title} />
             {subtitle && (
-              <p className="mt-4 text-lg text-[#4A6880] leading-relaxed">
+              <p className="mt-4 text-lg text-[var(--color-text-muted)] leading-relaxed">
                 {subtitle}
               </p>
             )}
@@ -116,11 +116,11 @@ export const IntegrationShowcase = React.forwardRef<
                 onClick={() => isClickable && onIntegrationClick?.(item.name)}
                 className={`group flex items-start space-x-4 p-4 rounded-lg transition-colors duration-300 ${
                   isClickable
-                    ? 'cursor-pointer hover:bg-[#F8FAFC] hover:shadow-md'
+                    ? 'cursor-pointer hover:bg-[var(--color-bg-base)] hover:shadow-md'
                     : 'opacity-75'
                 }`}
               >
-                <div className="flex-shrink-0 p-3 bg-[#F8FAFC] rounded-lg group-hover:bg-[#00D4A4]/10 transition-colors duration-300">
+                <div className="flex-shrink-0 p-3 bg-[var(--color-bg-base)] rounded-lg group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
                   <img
                     src={item.iconSrc}
                     alt={`${item.name} logo`}
@@ -128,8 +128,8 @@ export const IntegrationShowcase = React.forwardRef<
                   />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-[#0D1F2D]">{item.name}</h3>
-                  <p className="mt-1.5 text-sm text-[#4A6880]">{item.description}</p>
+                  <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{item.name}</h3>
+                  <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{item.description}</p>
                 </div>
               </motion.div>
             );

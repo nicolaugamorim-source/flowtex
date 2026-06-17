@@ -50,22 +50,22 @@ export interface DataBubbleProps {
 const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   email: {
     icon: require("lucide-react").Mail,
-    color: "#2E4A62",
-    bg: "#E8EFF5",
+    color: "var(--color-text-secondary)",
+    bg: "var(--color-bg-card)",
   },
   event: {
     icon: require("lucide-react").Calendar,
-    color: "#00D4A4",
-    bg: "#E0F7F2",
+    color: "var(--color-accent)",
+    bg: "var(--color-accent-subtle)",
   },
   task: {
     icon: require("lucide-react").CheckCircle2,
-    color: "#22C55E",
+    color: "var(--color-success)",
     bg: "#ECFDF5",
   },
   notion: {
     icon: require("lucide-react").Database,
-    color: "#3B82F6",
+    color: "var(--color-info)",
     bg: "#EFF6FF",
   },
   slack: {
@@ -75,8 +75,8 @@ const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }
   },
   custom: {
     icon: require("lucide-react").Zap,
-    color: "#00D4A4",
-    bg: "#E0F7F2",
+    color: "var(--color-accent)",
+    bg: "var(--color-accent-subtle)",
   },
 };
 
@@ -86,34 +86,34 @@ const COLOR_CLASSES: Record<
   { text: string; bg: string; border: string }
 > = {
   default: {
-    text: "#0D1F2D",
-    bg: "#F1F5F9",
-    border: "#E2EAF1",
+    text: "var(--color-text-primary)",
+    bg: "var(--color-bg-secondary)",
+    border: "var(--color-border-subtle)",
   },
   accent: {
-    text: "#00A882",
-    bg: "#E0F7F2",
-    border: "#00D4A4",
+    text: "var(--color-accent-hover)",
+    bg: "var(--color-accent-subtle)",
+    border: "var(--color-accent)",
   },
   success: {
     text: "#16A34A",
     bg: "#F0FDF4",
-    border: "#22C55E",
+    border: "var(--color-success)",
   },
   warning: {
     text: "#D97706",
     bg: "#FFFBEB",
-    border: "#F59E0B",
+    border: "var(--color-warning)",
   },
   error: {
     text: "#DC2626",
     bg: "#FEF2F2",
-    border: "#EF4444",
+    border: "var(--color-error)",
   },
   info: {
     text: "#1D4ED8",
     bg: "#EFF6FF",
-    border: "#3B82F6",
+    border: "var(--color-info)",
   },
 };
 
@@ -139,8 +139,8 @@ export function DataBubble({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn(
-        "rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-lg hover:border-[#C8D8E6]",
-        "bg-white border-[#E2EAF1]",
+        "rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-lg hover:border-[var(--color-border-default)]",
+        "bg-white border-[var(--color-border-subtle)]",
         variant === "compact" ? "max-w-sm" : "w-full max-w-2xl",
         className
       )}
@@ -160,11 +160,11 @@ export function DataBubble({
 
             {/* Title + Subtitle */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-[#0D1F2D] truncate text-sm sm:text-base">
+              <h3 className="font-semibold text-[var(--color-text-primary)] truncate text-sm sm:text-base">
                 {title}
               </h3>
               {subtitle && (
-                <p className="text-xs sm:text-sm text-[#4A6880] truncate mt-0.5">
+                <p className="text-xs sm:text-sm text-[var(--color-text-muted)] truncate mt-0.5">
                   {subtitle}
                 </p>
               )}
@@ -193,7 +193,7 @@ export function DataBubble({
 
         {/* Description */}
         {description && (
-          <p className="text-sm text-[#2E4A62] leading-relaxed line-clamp-3">
+          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed line-clamp-3">
             {description}
           </p>
         )}
@@ -250,7 +250,7 @@ export function DataBubble({
 
       {/* Footer with Actions */}
       {actions.length > 0 && (
-        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-[#E2EAF1] pt-3 sm:pt-4 flex gap-2 flex-wrap">
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-[var(--color-border-subtle)] pt-3 sm:pt-4 flex gap-2 flex-wrap">
           {actions.map((action, idx) => (
             <motion.button
               key={idx}
@@ -260,10 +260,10 @@ export function DataBubble({
               className={cn(
                 "text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium transition-all",
                 action.variant === "outline"
-                  ? "border border-[#E2EAF1] text-[#0D1F2D] hover:border-[#C8D8E6] hover:bg-[#F1F5F9]"
+                  ? "border border-[var(--color-border-subtle)] text-[var(--color-text-primary)] hover:border-[var(--color-border-default)] hover:bg-[var(--color-bg-secondary)]"
                   : action.variant === "secondary"
-                    ? "bg-[#F1F5F9] text-[#0D1F2D] hover:bg-[#E8EFF5]"
-                    : "bg-[#00D4A4] text-white hover:bg-[#00A882]"
+                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)]"
+                    : "bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
               )}
             >
               {action.label}

@@ -25,30 +25,30 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "group relative overflow-hidden rounded-xl border border-[#E2EAF1] bg-white transition-all duration-300",
-          "hover:border-[#00D4A4] hover:shadow-lg hover:shadow-[#00D4A4]/10",
+          "group relative overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white transition-all duration-300",
+          "hover:border-[var(--color-accent)] hover:shadow-lg hover:shadow-[var(--color-accent)]/10",
           className
         )}
       >
         {/* Background gradient on hover */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#00D4A4]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Content */}
         <div className="relative p-6 space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
-              <div className="p-2.5 bg-[#F8FAFC] rounded-lg group-hover:bg-[#00D4A4]/10 transition-colors duration-300">
+              <div className="p-2.5 bg-[var(--color-bg-base)] rounded-lg group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
                 {icon}
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-[#0D1F2D]">{name}</h3>
-                <p className="text-sm text-[#4A6880] mt-1">{description}</p>
+                <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{name}</h3>
+                <p className="text-sm text-[var(--color-text-muted)] mt-1">{description}</p>
               </div>
             </div>
 
             {/* Status Badge */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F8FAFC] group-hover:bg-[#00D4A4]/10 transition-colors duration-300">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-base)] group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
               {isConnected ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -56,15 +56,15 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
                 </>
               ) : (
                 <>
-                  <XCircle className="h-4 w-4 text-[#4A6880]/40" />
-                  <span className="text-xs font-medium text-[#4A6880]">Disconnected</span>
+                  <XCircle className="h-4 w-4 text-[var(--color-text-muted)]/40" />
+                  <span className="text-xs font-medium text-[var(--color-text-muted)]">Disconnected</span>
                 </>
               )}
             </div>
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-[#E2EAF1]" />
+          <div className="h-px bg-[var(--color-border-subtle)]" />
 
           {/* Content */}
           <div className="space-y-3">
@@ -76,7 +76,7 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
             <button
               onClick={onConnect}
               disabled={isLoading}
-              className="w-full mt-4 px-4 py-2 bg-[#00D4A4] hover:bg-[#00C494] disabled:bg-[#00D4A4]/50 text-white font-medium rounded-lg transition-colors duration-200"
+              className="w-full mt-4 px-4 py-2 bg-[var(--color-accent)] hover:bg-[#00C494] disabled:bg-[var(--color-accent)]/50 text-white font-medium rounded-lg transition-colors duration-200"
             >
               {isLoading ? 'Connecting...' : 'Connect'}
             </button>
@@ -85,7 +85,7 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
 
         {/* Accent line on top for connected state */}
         {isConnected && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00D4A4] to-transparent" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-accent)] to-transparent" />
         )}
       </motion.div>
     );

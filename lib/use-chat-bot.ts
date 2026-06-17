@@ -47,6 +47,23 @@ export function useChatBot() {
 
     console.log('📤 Sending message with userId:', userId ? 'YES' : 'NO');
 
+    // Track first AI message of the day
+    const today = new Date().toISOString().split('T')[0];
+    const storageKey = `flowtex_ai_message_${today}`;
+
+    if (!localStorage.getItem(storageKey)) {
+      localStorage.setItem(storageKey, 'true');
+      try {
+        await fetch('/api/activity/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action_type: 'ai_message' }),
+        });
+      } catch (err) {
+        console.error('Failed to track AI message activity:', err);
+      }
+    }
+
     // Get valid access token (uses smart caching and refresh)
     let freshAccessToken = await getValidAccessToken();
 

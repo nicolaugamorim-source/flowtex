@@ -1,0 +1,72 @@
+export async function getValidGoogleToken(supabase: any, userId: string): Promise<string | null> {
+  const { data: integration } = await supabase
+    .from("integrations")
+    .select("access_token, refresh_token, token_expires_at")
+    .eq("user_id", userId)
+    .eq("provider", "google")
+    .eq("is_active", true)
+    .single();
+
+  if (!integration) {
+    console.warn("⚠️ [GOOGLE AUTH] No Google integration found");
+    return null;
+  }
+
+  // Check if token is expired or expires in next 5 minutes
+  const expiresAt = new Date(integration.token_expires_at);
+  const now = new Date();
+  const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+  const isExpired = timeUntilExpiry < 5 * 60 * 1000; // 5 minutes
+
+  if (!isExpired) {
+    return integration.access_token;
+  }
+
+  // Refresh the token
+  if (!integration.refresh_token) {
+    console.warn("⚠️ [GOOGLE AUTH] No refresh token available");
+    return null;
+  }
+
+  console.log("🔄 [GOOGLE AUTH] Refreshing access token...");
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: integration.refresh_token,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  if (!response.ok) {
+    console.error("❌ [GOOGLE AUTH] Token refresh failed:", response.status);
+    const errorData = await response.text();
+    console.error("Error details:", errorData);
+    return null;
+  }
+
+  const tokens = await response.json();
+
+  console.log("✅ [GOOGLE AUTH] Token refreshed successfully");
+
+  // Save new token to database
+  const { error: updateError } = await supabase
+    .from("integrations")
+    .update({
+      access_token: tokens.access_token,
+      token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+    })
+    .eq("user_id", userId)
+    .eq("provider", "google");
+
+  if (updateError) {
+    console.warn("⚠️ [GOOGLE AUTH] Failed to save refreshed token:", updateError);
+  } else {
+    console.log("💾 [GOOGLE AUTH] New token saved to database");
+  }
+
+  return tokens.access_token;
+}

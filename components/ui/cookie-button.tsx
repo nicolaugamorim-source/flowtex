@@ -8,7 +8,7 @@ export function CookieButton() {
   return (
     <button
       onClick={openCustomizeDialog}
-      className="text-sm text-[#4A6880] underline-offset-4 hover:underline"
+      className="text-sm text-[var(--color-text-muted)] underline-offset-4 hover:underline"
     >
       Cookies
     </button>

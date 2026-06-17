@@ -26,13 +26,13 @@ const repeatedIcons = (icons: string[], repeat = 4) => Array.from({ length: repe
 
 export default function IntegrationHero() {
   return (
-    <section className="relative py-12 overflow-hidden bg-[#F8FAFC]">
+    <section className="relative py-12 overflow-hidden bg-[var(--color-bg-base)]">
       {/* Light grid background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.03)_1px,transparent_1px)] [background-size:24px_24px]" />
 
       {/* Content */}
       <div className="relative max-w-7xl mx-auto px-6 text-center">
-        <h1 className="text-2xl lg:text-4xl font-bold tracking-tight text-[#0D1F2D]">
+        <h1 className="text-2xl lg:text-4xl font-bold tracking-tight text-[var(--color-text-primary)]">
           Integrate with your favorite tools
         </h1>
 
@@ -41,7 +41,7 @@ export default function IntegrationHero() {
           {/* Row 1 */}
           <div className="flex gap-10 whitespace-nowrap animate-scroll-left">
             {repeatedIcons(ICONS_ROW1, 4).map((src, i) => (
-              <div key={i} className="h-12 w-12 flex-shrink-0 rounded-full bg-[#E8EFF5] shadow-md flex items-center justify-center border border-[#C8D8E6]">
+              <div key={i} className="h-12 w-12 flex-shrink-0 rounded-full bg-[var(--color-bg-card)] shadow-md flex items-center justify-center border border-[var(--color-border-default)]">
                 <img src={src} alt="icon" className="h-7 w-7 object-contain" />
               </div>
             ))}
@@ -50,15 +50,15 @@ export default function IntegrationHero() {
           {/* Row 2 */}
           <div className="flex gap-10 whitespace-nowrap mt-6 animate-scroll-right">
             {repeatedIcons(ICONS_ROW2, 4).map((src, i) => (
-              <div key={i} className="h-12 w-12 flex-shrink-0 rounded-full bg-[#E8EFF5] shadow-md flex items-center justify-center border border-[#C8D8E6]">
+              <div key={i} className="h-12 w-12 flex-shrink-0 rounded-full bg-[var(--color-bg-card)] shadow-md flex items-center justify-center border border-[var(--color-border-default)]">
                 <img src={src} alt="icon" className="h-7 w-7 object-contain" />
               </div>
             ))}
           </div>
 
           {/* Fade overlays */}
-          <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-[#F8FAFC] to-transparent pointer-events-none" />
-          <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-[#F8FAFC] to-transparent pointer-events-none" />
+          <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-[var(--color-bg-base)] to-transparent pointer-events-none" />
+          <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-[var(--color-bg-base)] to-transparent pointer-events-none" />
         </div>
       </div>
 

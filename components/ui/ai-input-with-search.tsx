@@ -95,7 +95,7 @@ export function AIInputWithSearch({
               value={value}
               placeholder={placeholder}
               className={cn(
-                "w-full rounded-t-2xl px-4 pt-3.5 pb-3 bg-[#F8FAFC] border-none text-[#0D1F2D] placeholder:text-[#4A6880]/50 resize-none focus-visible:ring-0 leading-[1.2] text-lg",
+                "w-full rounded-t-2xl px-4 pt-3.5 pb-3 bg-[var(--color-bg-base)] border-none text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]/50 resize-none focus-visible:ring-0 leading-[1.2] text-lg",
                 showScrollbar ? "overflow-y-auto pr-4" : "overflow-hidden"
               )}
               ref={textareaRef}
@@ -116,15 +116,15 @@ export function AIInputWithSearch({
             />
           </div>
 
-          <div className="h-12 bg-[#F8FAFC] rounded-b-2xl border-t border-[#E2EAF1] flex items-center px-4 justify-between">
+          <div className="h-12 bg-[var(--color-bg-base)] rounded-b-2xl border-t border-[var(--color-border-subtle)] flex items-center px-4 justify-between">
             <div className="flex items-center gap-2">
-              <label className="cursor-pointer rounded-lg p-2 hover:bg-[#E2EAF1] transition-colors">
+              <label className="cursor-pointer rounded-lg p-2 hover:bg-[var(--color-border-subtle)] transition-colors">
                 <input
                   type="file"
                   className="hidden"
                   onChange={handleFileChange}
                 />
-                <Paperclip className="w-4 h-4 text-[#4A6880]" />
+                <Paperclip className="w-4 h-4 text-[var(--color-text-muted)]" />
               </label>
 
               {/* Action Preset Icons */}
@@ -137,8 +137,8 @@ export function AIInputWithSearch({
                     className={cn(
                       "rounded-full transition-all flex items-center gap-2 px-1.5 py-1 border h-8",
                       activeAction === type
-                        ? "bg-[#E0F7F2] border-[#00D4A4] text-[#4A6880] scale-110"
-                        : "bg-[#F1F5F9] border-transparent text-[#4A6880] hover:text-[#0D1F2D]"
+                        ? "bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-text-muted)] scale-110"
+                        : "bg-[var(--color-bg-secondary)] border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
                     )}
                   >
                     <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
@@ -173,7 +173,7 @@ export function AIInputWithSearch({
                           }}
                           exit={{ width: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="text-sm overflow-hidden whitespace-nowrap flex-shrink-0 text-[#4A6880]"
+                          className="text-sm overflow-hidden whitespace-nowrap flex-shrink-0 text-[var(--color-text-muted)]"
                         >
                           {label}
                         </motion.span>
@@ -190,11 +190,11 @@ export function AIInputWithSearch({
                 className={cn(
                   "rounded-lg p-2 transition-colors",
                   value
-                    ? "bg-[#00D4A4]/50"
-                    : "bg-[#F1F5F9]"
+                    ? "bg-[var(--color-accent)]/50"
+                    : "bg-[var(--color-bg-secondary)]"
                 )}
               >
-                <ArrowUp className="w-4 h-4 text-[#4A6880] stroke-[2.5]" />
+                <ArrowUp className="w-4 h-4 text-[var(--color-text-muted)] stroke-[2.5]" />
               </button>
             </div>
           </div>

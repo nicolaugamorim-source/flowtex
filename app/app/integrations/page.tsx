@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { IntegrationShowcase, Integration } from "@/components/ui/integration-showcase";
 import { IntegrationCard } from "@/components/ui/integration-card";
-import { Database } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getIntegration } from "@/lib/database";
+import { Button } from "@/components/ui/button";
 
 const integrationsData: Integration[] = [
   {
@@ -21,14 +22,22 @@ const integrationsData: Integration[] = [
 ];
 
 export default function IntegrationsPage() {
+  const searchParams = useSearchParams();
   const [notionConnected, setNotionConnected] = useState(false);
-  const [googleConnected, setGoogleConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     checkIntegrationsStatus();
   }, []);
+
+  // Re-check status when returning from OAuth callback
+  useEffect(() => {
+    const notionSuccess = searchParams.get('notion');
+    if (notionSuccess === 'success') {
+      checkIntegrationsStatus();
+    }
+  }, [searchParams]);
 
   async function checkIntegrationsStatus() {
     try {
@@ -43,14 +52,9 @@ export default function IntegrationsPage() {
       // Check Notion integration from database
       const notionIntegration = await getIntegration(user.id, 'notion');
       setNotionConnected(notionIntegration?.is_active === true);
-
-      // Check Google integration from database
-      const googleIntegration = await getIntegration(user.id, 'google');
-      setGoogleConnected(googleIntegration?.is_active === true);
     } catch (error) {
       console.error('Error checking integrations status:', error);
       setNotionConnected(false);
-      setGoogleConnected(false);
     } finally {
       setLoading(false);
     }
@@ -96,32 +100,35 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="w-full bg-white min-h-screen flex flex-col">
-      <IntegrationShowcase
-        title="Integrate with your ~favorite tools~"
-        integrations={integrationsData}
-        onIntegrationClick={handleIntegrationClick}
-        renderCustomCard={(integration) => {
-          if (integration.name === 'Notion') {
-            return (
-              <IntegrationCard
-                key={integration.name}
-                name={integration.name}
-                description={integration.description}
-                icon={<Database className="h-6 w-6 text-[#00D4A4]" />}
-                isConnected={notionConnected}
-                isLoading={connecting}
-                onConnect={handleNotionConnect}
-              >
-                <div className="text-sm text-[#4A6880]">
-                  {notionConnected ? 'Your Notion workspace is connected' : 'Click Connect to link your Notion workspace'}
+    <div className="w-full bg-[var(--color-bg-card)] min-h-screen flex flex-col">
+      <div className="w-full max-w-5xl mx-auto px-4 py-8">
+        <IntegrationShowcase
+          title="Integrate with your ~favorite tools~"
+          integrations={integrationsData}
+          onIntegrationClick={handleIntegrationClick}
+          renderCustomCard={(integration) => {
+            if (integration.name === 'Notion') {
+              return (
+                <div key={integration.name} className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
+                  <IntegrationCard
+                    name={integration.name}
+                    description={integration.description}
+                    icon={<img src="https://cdn.worldvectorlogo.com/logos/notion-2.svg" alt="Notion" className="h-6 w-6" />}
+                    isConnected={notionConnected}
+                    isLoading={connecting}
+                    onConnect={handleNotionConnect}
+                  >
+                    <div className="text-sm text-[var(--color-text-muted)]">
+                      {notionConnected ? 'Your Notion workspace is connected' : 'Click Connect to link your Notion workspace'}
+                    </div>
+                  </IntegrationCard>
                 </div>
-              </IntegrationCard>
-            );
-          }
-          return null;
-        }}
-      />
+              );
+            }
+            return null;
+          }}
+        />
+      </div>
     </div>
   );
 }

@@ -70,7 +70,7 @@ export function AICommandModal() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               layout
-              className={`w-full bg-[#F8FAFC] border border-[#E2EAF1] rounded-2xl shadow-lg overflow-hidden ${
+              className={`w-full bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-2xl shadow-lg overflow-hidden ${
                 hasMessages ? 'max-w-4xl mt-4' : ''
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -96,7 +96,7 @@ export function AICommandModal() {
                     <div key={msg.id} className="flex flex-col gap-2 w-full">
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="bg-[#00D4A4] text-[#0D1F2D] rounded-lg px-4 py-2 max-w-2xl text-base">
+                          <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] rounded-lg px-4 py-2 max-w-2xl text-base">
                             {msg.content}
                           </div>
                         </div>
@@ -104,7 +104,7 @@ export function AICommandModal() {
                         <>
                           {msg.content && (
                             <div className="flex justify-start">
-                              <div className="bg-[#F8FAFC] text-[#0D1F2D] rounded-lg px-4 py-2 max-w-2xl text-base">
+                              <div className="bg-[var(--color-bg-base)] text-[var(--color-text-primary)] rounded-lg px-4 py-2 max-w-2xl text-base">
                                 <ReactMarkdown
                                   components={{
                                     p: ({ children }) => <p>{children}</p>,
@@ -141,11 +141,11 @@ export function AICommandModal() {
                   ))}
                   {isLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-[#E2EAF1] text-[#0D1F2D] rounded-lg px-4 py-2 text-base">
+                      <div className="bg-[var(--color-border-subtle)] text-[var(--color-text-primary)] rounded-lg px-4 py-2 text-base">
                         <div className="flex gap-1">
-                          <div className="w-2 h-2 rounded-full bg-[#4A6880] animate-bounce" />
-                          <div className="w-2 h-2 rounded-full bg-[#4A6880] animate-bounce delay-100" />
-                          <div className="w-2 h-2 rounded-full bg-[#4A6880] animate-bounce delay-200" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--color-text-muted)] animate-bounce" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--color-text-muted)] animate-bounce delay-100" />
+                          <div className="w-2 h-2 rounded-full bg-[var(--color-text-muted)] animate-bounce delay-200" />
                         </div>
                       </div>
                     </div>

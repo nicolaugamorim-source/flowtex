@@ -270,7 +270,7 @@ const LogoComponent: React.FC<{ icon: any; size?: number }> = ({ icon, size = 20
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      style={{ fill: '#2E4A62' }}
+      style={{ fill: 'var(--color-text-secondary)' }}
     >
       <path d={icon.path} />
     </svg>
@@ -283,7 +283,7 @@ const GmailLogo: React.FC<{ size?: number }> = ({ size = 20 }) => (
     viewBox="0 0 24 24"
     width={size}
     height={size}
-    style={{ fill: '#2E4A62' }}
+    style={{ fill: 'var(--color-text-secondary)' }}
   >
     <path d={siGmail.path} />
   </svg>
@@ -295,7 +295,7 @@ const NotionLogo: React.FC<{ size?: number }> = ({ size = 20 }) => (
     viewBox="0 0 24 24"
     width={size}
     height={size}
-    style={{ fill: '#2E4A62' }}
+    style={{ fill: 'var(--color-text-secondary)' }}
   >
     <path d={siNotion.path} />
   </svg>
@@ -307,7 +307,7 @@ const ClaudeLogo: React.FC<{ size?: number }> = ({ size = 20 }) => (
     viewBox="0 0 24 24"
     width={size}
     height={size}
-    style={{ fill: '#2E4A62' }}
+    style={{ fill: 'var(--color-text-secondary)' }}
   >
     <path d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" />
   </svg>
@@ -353,14 +353,14 @@ const NavLink: React.FC<NavLinkProps> = ({ href = "#", children, hasDropdown = f
    <motion.a
      href={href}
      onClick={onClick}
-     className={cn("relative group text-sm font-medium text-[#0D1F2D] hover:text-[#0D1F2D] transition-colors duration-200 flex items-center py-1", className)}
+     className={cn("relative group text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] transition-colors duration-200 flex items-center py-1", className)}
      whileHover="hover"
    >
      {children}
      {hasDropdown && <ChevronDownIcon />}
      {!hasDropdown && (
          <motion.div
-           className="absolute bottom-[-2px] left-0 right-0 h-[1px] bg-[#00D4A4]"
+           className="absolute bottom-[-2px] left-0 right-0 h-[1px] bg-[var(--color-accent)]"
            variants={{ initial: { scaleX: 0, originX: 0.5 }, hover: { scaleX: 1, originX: 0.5 } }}
            initial="initial"
            transition={{ duration: 0.3, ease: "easeOut" }}
@@ -384,7 +384,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({ children, isOpen }) => (
          transition={{ duration: 0.2, ease: "easeOut" }}
          className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 origin-top z-40"
        >
-           <div className="bg-[#E8EFF5] border border-[#C8D8E6] rounded-md shadow-xl p-2">
+           <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-md shadow-xl p-2">
                {children}
            </div>
        </motion.div>
@@ -401,7 +401,7 @@ interface DropdownItemProps {
 const DropdownItem: React.FC<DropdownItemProps> = ({ href = "#", children, icon }) => (
  <a
    href={href}
-   className="group flex items-center justify-between w-full px-3 py-2 text-sm text-[#2E4A62] hover:bg-[#DDE6EF] hover:text-[#0D1F2D] rounded-md transition-colors duration-150"
+   className="group flex items-center justify-between w-full px-3 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-elevated)] hover:text-[var(--color-text-primary)] rounded-md transition-colors duration-150"
  >
    <span>{children}</span>
    {icon && React.cloneElement(icon, { className: "w-4 h-4 ml-1 opacity-70 group-hover:opacity-100 transition-opacity" })}
@@ -676,7 +676,7 @@ const HeroFlowtex: React.FC = () => {
     };
 
   return (
-    <div id="hero" className="relative bg-[#F8FAFC] text-[#2E4A62] min-h-screen flex flex-col overflow-x-hidden">
+    <div id="hero" className="relative bg-[var(--color-bg-base)] text-[var(--color-text-secondary)] min-h-screen flex flex-col overflow-x-hidden">
         <div className="fixed top-0 w-full flex items-center justify-center py-2 z-50 pointer-events-none" style={{boxSizing: 'border-box'}}>
             <div className="pointer-events-auto">
                 <Dock items={[
@@ -698,7 +698,7 @@ const HeroFlowtex: React.FC = () => {
         </div>
 
         <div className="absolute inset-0 z-1 pointer-events-none" style={{
-            background: 'linear-gradient(to bottom, transparent 0%, #F8FAFC 90%), radial-gradient(ellipse at center, transparent 40%, #F8FAFC 95%)'
+            background: 'linear-gradient(to bottom, transparent 0%, var(--color-bg-base) 90%), radial-gradient(ellipse at center, transparent 40%, var(--color-bg-base) 95%)'
         }}></div>
 
         <main className="h-screen flex flex-col lg:flex-row items-center justify-center gap-12 text-left px-6 md:px-16 relative z-10 max-w-full overflow-x-hidden">
@@ -709,23 +709,23 @@ const HeroFlowtex: React.FC = () => {
                 variants={bannerVariants}
                 initial="hidden"
                 animate="visible"
-                className="inline-flex items-center px-4 py-2 rounded-full border border-[#00D4A4] bg-[#F0FDFB] mb-6 w-fit"
+                className="inline-flex items-center px-4 py-2 rounded-full border border-[var(--color-accent)] bg-[#F0FDFB] mb-6 w-fit"
             >
-                <span className="text-sm font-semibold text-[#00D4A4] uppercase tracking-wide">Be First - Early Access</span>
+                <span className="text-sm font-semibold text-[var(--color-accent)] uppercase tracking-wide">Be First - Early Access</span>
             </motion.div>
 
 <motion.h1
                 variants={headlineVariants}
                 initial="hidden"
                 animate="visible"
-                className="text-3xl sm:text-4xl lg:text-6xl text-[#0D1F2D] leading-tight max-w-5xl mb-4"
+                className="text-3xl sm:text-4xl lg:text-6xl text-[var(--color-text-primary)] leading-tight max-w-5xl mb-4"
                 style={{ fontWeight: 700 }}
             >
                 Your team loses context in
                 <span className="block h-[1.2em] sm:h-[1.2em] lg:h-[1.2em] overflow-hidden align-bottom mt-2">
                     <RotatingText
                         texts={['every app switch.', 'every Notion update.', 'every AI session.', 'every decision on a call.', 'every new team member.']}
-                        mainClassName="text-[#00D4A4] mx-1"
+                        mainClassName="text-[var(--color-accent)] mx-1"
                         staggerFrom={"last"}
                         initial={{ y: "-100%", opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
@@ -744,7 +744,7 @@ const HeroFlowtex: React.FC = () => {
                 variants={subHeadlineVariants}
                 initial="hidden"
                 animate="visible"
-                className="text-base sm:text-lg lg:text-xl text-[#2E4A62] max-w-2xl mb-8"
+                className="text-base sm:text-lg lg:text-xl text-[var(--color-text-secondary)] max-w-2xl mb-8"
                 style={{ fontWeight: 400 }}
             >
                 Flowtex is the workspace that remembers everything your team can't afford to forget.
@@ -758,7 +758,7 @@ const HeroFlowtex: React.FC = () => {
             >
                 <motion.a
                     href="#pricing"
-                    className="bg-[#00D4A4] text-[#0D1F2D] px-8 py-3 rounded-md text-base hover:bg-[#00A882] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
+                    className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-8 py-3 rounded-md text-base hover:bg-[var(--color-accent-hover)] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
                     style={{ fontWeight: 600 }}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
@@ -768,7 +768,7 @@ const HeroFlowtex: React.FC = () => {
                 </motion.a>
                 <motion.a
                     href="#how-it-works"
-                    className="text-[#2E4A62] px-6 py-3 rounded-md text-base font-medium border border-[#C8D8E6] hover:bg-[#F0F4F8] transition-colors duration-200"
+                    className="text-[var(--color-text-secondary)] px-6 py-3 rounded-md text-base font-medium border border-[var(--color-border-default)] hover:bg-[#F0F4F8] transition-colors duration-200"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}

@@ -24,9 +24,9 @@ export const DESIGN_TOKENS = {
     },
     // Semantic
     success: "#10B981",
-    warning: "#F59E0B",
-    error: "#EF4444",
-    info: "#3B82F6",
+    warning: "var(--color-warning)",
+    error: "var(--color-error)",
+    info: "var(--color-info)",
   },
 
   // Typography Scale (fluid, 1.25 ratio between steps)

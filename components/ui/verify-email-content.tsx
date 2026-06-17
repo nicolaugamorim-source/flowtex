@@ -90,7 +90,7 @@ export function VerifyEmailContent() {
         <div className="space-y-4 text-center">
           {status === "verifying" && (
             <>
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00D4A4] mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[var(--color-accent)] mx-auto"></div>
               <h1 className="text-2xl font-semibold text-gray-900">
                 Verifying your email...
               </h1>
@@ -126,7 +126,7 @@ export function VerifyEmailContent() {
                       placeholder="your@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00D4A4]"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
                     <Button
                       onClick={handleResendEmail}

@@ -47,13 +47,18 @@ export function SidebarWrapper() {
           // Get user profile
           const { data: profile } = await supabase
             .from("users")
-            .select("full_name, team_name")
+            .select("full_name")
             .eq("id", user.id)
             .single();
 
+          // Get business profile
+          const { data: businessProfile } = await supabase
+            .from("profiles")
+            .select("business_name")
+            .eq("user_id", user.id)
+            .single();
+
           if (profile) {
-            setTeamName(profile.team_name || "Flowtex");
-            localStorage.setItem("teamName", profile.team_name || "Flowtex");
             setUserName(profile.full_name || user.email?.split("@")[0] || "User");
             localStorage.setItem("userName", profile.full_name || user.email?.split("@")[0] || "User");
           } else {
@@ -61,6 +66,11 @@ export function SidebarWrapper() {
             const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
             setUserName(fullName);
             localStorage.setItem("userName", fullName);
+          }
+
+          if (businessProfile?.business_name) {
+            setTeamName(businessProfile.business_name);
+            localStorage.setItem("teamName", businessProfile.business_name);
           }
         }
       } catch (error) {

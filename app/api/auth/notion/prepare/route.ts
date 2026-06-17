@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const clientId = process.env.NOTION_CLIENT_ID;
     const redirectUri = process.env.NOTION_REDIRECT_URI;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseAnonKey || !clientId || !redirectUri) {
+    if (!clientId || !redirectUri) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 500 });
     }
 
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.slice(7); // Remove "Bearer "
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
       global: {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -30,42 +32,42 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('User auth error:', userError);
+      console.error('❌ User auth error:', userError);
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Create oauth_states record using service role
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      return NextResponse.json({ error: 'Missing service role key' }, { status: 500 });
-    }
+    // Generate random state parameter
+    const state = randomBytes(16).toString('hex');
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    // Store state AND user_id in cookies for verification in callback
+    const cookieStore = await cookies();
+    cookieStore.set('notion_oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+    });
 
-    const { data, error } = await supabaseAdmin
-      .from('oauth_states')
-      .insert({
-        user_id: user.id,
-        provider: 'notion',
-      })
-      .select('state')
-      .single();
+    cookieStore.set('notion_user_id', user.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10, // 10 minutes
+    });
 
-    if (error || !data) {
-      console.error('❌ Error creating oauth state:', error);
-      console.error('Error details:', JSON.stringify(error));
-      return NextResponse.json({
-        error: 'Failed to create state',
-        details: error?.message || 'Unknown error'
-      }, { status: 500 });
-    }
+    // Build Notion auth URL
+    const notionAuthUrl = `https://api.notion.com/v1/oauth/authorize?` + new URLSearchParams({
+      client_id: clientId,
+      response_type: 'code',
+      owner: 'user',
+      redirect_uri: redirectUri,
+      state: state,
+    });
 
-    // Generate authorization URL
-    const authUrl = `https://api.notion.com/v1/oauth/authorize?client_id=${clientId}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(data.state)}`;
-
-    return NextResponse.json({ authUrl });
+    console.log('✅ Notion OAuth prepared for user:', user.id);
+    return NextResponse.json({ authUrl: notionAuthUrl });
   } catch (error) {
-    console.error('Error in notion prepare:', error);
+    console.error('❌ Error in notion prepare:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

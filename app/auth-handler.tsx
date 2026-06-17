@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { supabase } from "@/lib/supabase";
-import { createOrUpdateProfile, saveGoogleIntegration } from "@/lib/database";
 import { saveTokenData } from "@/lib/google-token-manager";
 
 export function AuthHandler() {
   const router = useRouter();
   const processedRef = useRef(false);
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     const handleAuthFlow = async () => {
@@ -31,12 +32,24 @@ export function AuthHandler() {
             return;
           }
 
-          // Create or update profile
-          await createOrUpdateProfile(user.id, {
-            full_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "User",
-            email: user.email,
-            email_verified: user.email_confirmed_at ? true : false,
-          });
+          // Profile was already created in the OAuth callback
+          console.log("✅ User authenticated:", user.id);
+
+          // Load user's theme preference
+          try {
+            const { data: profile } = await supabase
+              .from("users")
+              .select("theme")
+              .eq("id", user.id)
+              .single();
+
+            if (profile?.theme) {
+              setTheme(profile.theme);
+              console.log("✅ Loaded theme preference:", profile.theme);
+            }
+          } catch (error) {
+            console.warn("⚠️ Failed to load theme preference:", error);
+          }
 
           // Try to save Google access token from session
           if (session.provider_token) {
@@ -54,15 +67,6 @@ export function AuthHandler() {
             if (googleIdentity?.identity_data?.access_token) {
               localStorage.setItem("google_access_token", googleIdentity.identity_data.access_token);
               console.log("✅ Saved access_token from identities to localStorage");
-
-              // Save Google integration
-              await saveGoogleIntegration(user.id, {
-                access_token: googleIdentity.identity_data.access_token,
-                refresh_token: googleIdentity.identity_data.refresh_token,
-                scope: "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar",
-              });
-
-              console.log("✅ Google integration saved");
             } else {
               console.warn("⚠️ No access_token in identity_data");
             }

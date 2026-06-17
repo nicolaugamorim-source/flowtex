@@ -273,43 +273,43 @@ export function CompactBubbleExample() {
  */
 export function DataBubbleShowcase() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-6 sm:p-12">
+    <div className="min-h-screen bg-[var(--color-bg-base)] p-6 sm:p-12">
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-[#0D1F2D]">Data Bubble Components</h1>
-          <p className="text-[#4A6880]">
+          <h1 className="text-4xl font-bold text-[var(--color-text-primary)]">Data Bubble Components</h1>
+          <p className="text-[var(--color-text-muted)]">
             Exemplos de uso do componente genérico DataBubble para diferentes integrações
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">📧 Email</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">📧 Email</h2>
             <EmailBubbleExample />
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">📅 Calendar Event</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">📅 Calendar Event</h2>
             <EventBubbleExample />
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">✅ Task (Notion)</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">✅ Task (Notion)</h2>
             <TaskBubbleExample />
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">📊 Notion Page</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">📊 Notion Page</h2>
             <NotionBubbleExample />
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">💬 Slack Message</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">💬 Slack Message</h2>
             <SlackBubbleExample />
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold text-[#0D1F2D]">📄 Custom</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">📄 Custom</h2>
             <CustomBubbleExample />
           </div>
         </div>

@@ -9,12 +9,10 @@ import {
   LogOut,
   Settings,
   UserCircle,
-  ChevronsUpDown,
   Plus,
   Mail,
-  CheckSquare2,
+  SquareKanban,
   Users,
-  Lightbulb,
   Zap,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -106,7 +104,7 @@ export function SessionNavBar({
   return (
     <motion.div
       className={cn(
-        "sidebar fixed left-0 z-40 h-full shrink-0 border-r fixed"
+        "sidebar fixed left-0 z-40 h-full shrink-0 border-r border-[var(--color-border-default)] fixed"
       )}
       initial={isCollapsed ? "closed" : "open"}
       animate={isCollapsed ? "closed" : "open"}
@@ -116,19 +114,19 @@ export function SessionNavBar({
       onMouseLeave={() => setIsCollapsed(true)}
     >
       <motion.div
-        className={`relative z-40 flex text-[#4A6880] h-full shrink-0 flex-col bg-[#F8FAFC] border-[#C8D8E6] transition-all`}
+        className={`relative z-40 flex text-[var(--color-text-muted)] h-full shrink-0 flex-col bg-[var(--color-bg-base)] border-[var(--color-border-default)] transition-all`}
         variants={contentVariants}
       >
         <motion.ul variants={staggerVariants} className="flex h-full flex-col">
           <div className="flex grow flex-col items-center">
-            <div className="flex h-[54px] w-full shrink-0 border-b border-[#E2EAF1] p-2">
+            <div className="flex h-[54px] w-full shrink-0 border-b border-[var(--color-border-subtle)] p-2">
               <div className="mt-[1.5px] flex w-full">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger className="w-full" asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex w-fit items-center gap-2 px-2 text-[#0D1F2D] hover:bg-[#E8EFF5]"
+                      className="flex w-fit items-center gap-2 px-2 text-[var(--color-text-primary)] hover-accent-50"
                     >
                       <Image
                         src="/logo.svg"
@@ -142,19 +140,16 @@ export function SessionNavBar({
                         className="flex w-fit items-center gap-2"
                       >
                         {!isCollapsed && (
-                          <>
-                            <p className="text-lg font-bold text-[#0D1F2D]">
-                              {teamName}
-                            </p>
-                            <ChevronsUpDown className="h-4 w-4 text-[#4A6880]/50" />
-                          </>
+                          <p className="text-lg font-bold text-[var(--color-text-primary)]">
+                            {teamName}
+                          </p>
                         )}
                       </motion.li>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/settings" className="text-[#0D1F2D]">
+                      <Link href="/settings" className="text-[var(--color-text-primary)]">
                         <Plus className="h-4 w-4 mr-2" />
                         Settings
                       </Link>
@@ -171,9 +166,9 @@ export function SessionNavBar({
                     <Link
                       href="/app"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#0D1F2D]",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname === "/app" &&
-                          "bg-[#00D4A4]/20",
+                          "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <LayoutDashboard className="h-4 w-4" />
@@ -187,9 +182,9 @@ export function SessionNavBar({
                     <Link
                       href="/app/inbox"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#0D1F2D]",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname?.includes("/inbox") &&
-                          "bg-[#00D4A4]/20",
+                          "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <Mail className="h-4 w-4" />
@@ -201,17 +196,17 @@ export function SessionNavBar({
                     </Link>
 
                     <Link
-                      href="/app/tasks"
+                      href="/app/kanban"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#0D1F2D]",
-                        pathname?.includes("/tasks") &&
-                          "bg-[#00D4A4]/20",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
+                        pathname?.includes("/kanban") &&
+                          "bg-[var(--color-accent)]/40",
                       )}
                     >
-                      <CheckSquare2 className="h-4 w-4" />
+                      <SquareKanban className="h-4 w-4" />
                       <motion.li variants={variants}>
                         {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Tasks</p>
+                          <p className="ml-2 text-sm font-medium">Kanban</p>
                         )}
                       </motion.li>
                     </Link>
@@ -219,9 +214,9 @@ export function SessionNavBar({
                     <Link
                       href="/app/clients"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#0D1F2D]",
+                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname?.includes("/clients") &&
-                          "bg-[#00D4A4]/20",
+                          "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <Users className="h-4 w-4" />
@@ -232,34 +227,14 @@ export function SessionNavBar({
                       </motion.li>
                     </Link>
 
-                    <Link
-                      href="/app/ideas"
-                      className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#0D1F2D]",
-                        pathname?.includes("/ideas") &&
-                          "bg-[#00D4A4]/20",
-                      )}
-                    >
-                      <Lightbulb className="h-4 w-4" />
-                      <motion.li variants={variants}>
-                        {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Ideas</p>
-                        )}
-                      </motion.li>
-                    </Link>
-
-                    <Separator className="w-full bg-[#E2EAF1]" />
+                    <Separator className="w-full bg-[var(--color-border-subtle)]" />
                   </div>
                 </ScrollArea>
               </div>
-              <div className="flex flex-col p-2 border-t border-[#E2EAF1] gap-2">
+              <div className="flex flex-col p-2 border-t border-[var(--color-border-subtle)] gap-2">
                 <Link
                   href="/app/integrations"
-                  className={cn(
-                    "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#4A6880]",
-                    pathname?.includes("/integrations") &&
-                      "bg-[#00D4A4]/20",
-                  )}
+                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
                 >
                   <Zap className="h-4 w-4 shrink-0" />
                   <motion.li variants={variants}>
@@ -270,7 +245,7 @@ export function SessionNavBar({
                 </Link>
                 <Link
                   href="/settings"
-                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#4A6880]"
+                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
                 >
                   <Settings className="h-4 w-4 shrink-0" />
                   <motion.li variants={variants}>
@@ -282,10 +257,10 @@ export function SessionNavBar({
                 <div>
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
-                      <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-[#E8EFF5] text-[#4A6880]">
-                        <Avatar className="size-6 bg-[#00D4A4]">
+                      <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]">
+                        <Avatar className="size-6 bg-[var(--color-accent)]">
                           <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
-                          <AvatarFallback className="bg-[#00D4A4] text-white font-bold text-xs">
+                          <AvatarFallback className="bg-[var(--color-accent)] text-white font-bold text-xs">
                             {userName?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -294,39 +269,36 @@ export function SessionNavBar({
                           className="flex w-full items-center gap-2"
                         >
                           {!isCollapsed && (
-                            <>
-                              <p className="text-sm font-medium text-[#0D1F2D]">{userName}</p>
-                              <ChevronsUpDown className="ml-auto h-4 w-4 text-[#4A6880]/50" />
-                            </>
+                            <p className="text-sm font-medium text-[var(--color-text-primary)]">{userName}</p>
                           )}
                         </motion.li>
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent sideOffset={5} className="bg-[#F8FAFC] border border-[#E2EAF1] rounded-lg">
+                    <DropdownMenuContent sideOffset={5} className="bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg">
                       <div className="flex flex-row items-center gap-2 p-2">
-                        <Avatar className="size-8 bg-[#00D4A4]">
+                        <Avatar className="size-8 bg-[var(--color-accent)]">
                           <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
-                          <AvatarFallback className="bg-[#00D4A4] text-white font-bold">
+                          <AvatarFallback className="bg-[var(--color-accent)] text-white font-bold">
                             {userName?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col text-left">
-                          <span className="text-sm font-medium text-[#0D1F2D]">
+                          <span className="text-sm font-medium text-[var(--color-text-primary)]">
                             {userName}
                           </span>
-                          <span className="line-clamp-1 text-xs text-[#4A6880]">
+                          <span className="line-clamp-1 text-xs text-[var(--color-text-muted)]">
                             {userEmail}
                           </span>
                         </div>
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href="/settings/profile" className="text-[#0D1F2D]">
+                        <Link href="/settings/profile" className="text-[var(--color-text-primary)]">
                           <UserCircle className="h-4 w-4 mr-2" />
                           Profile
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleSignOut} className="text-[#0D1F2D] cursor-pointer">
+                      <DropdownMenuItem onClick={handleSignOut} className="text-[var(--color-text-primary)] cursor-pointer">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign out
                       </DropdownMenuItem>

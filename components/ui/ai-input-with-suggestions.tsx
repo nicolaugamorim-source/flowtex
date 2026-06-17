@@ -131,7 +131,7 @@ export function AIInputWithSuggestions({
           background: transparent;
         }
         .ai-input-scrollbar::-webkit-scrollbar-thumb {
-          background: #4A6880;
+          background: var(--color-text-muted);
           border-radius: 4px;
         }
         .ai-input-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -140,7 +140,7 @@ export function AIInputWithSuggestions({
       `}</style>
       <div className={cn("w-full", className)}>
         <div
-          className="relative border border-[#E2EAF1] focus-within:border-[#C8D8E6] rounded-2xl bg-white transition-all duration-150"
+          className="relative border border-[var(--color-border-subtle)] focus-within:border-[var(--color-border-default)] rounded-2xl bg-white transition-all duration-150"
           style={{
             height: `${textareaHeight + 50}px`,
             paddingRight: showScrollbar ? '20px' : '0',
@@ -156,7 +156,7 @@ export function AIInputWithSuggestions({
               id={id}
               placeholder={placeholder}
               className={cn(
-                "w-full px-4 pt-3.5 pb-3 placeholder:text-[#4A6880]/50 border-none focus:ring text-[#0D1F2D] resize-none text-wrap bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-[1.2] text-lg",
+                "w-full px-4 pt-3.5 pb-3 placeholder:text-[var(--color-text-muted)]/50 border-none focus:ring text-[var(--color-text-primary)] resize-none text-wrap bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 leading-[1.2] text-lg",
                 showScrollbar ? "overflow-y-auto ai-input-scrollbar" : "overflow-hidden"
               )}
               style={{
@@ -203,14 +203,14 @@ export function AIInputWithSuggestions({
 
           <button
             type="button"
-            className="absolute left-3 bottom-3 p-2 rounded-md hover:bg-[#E2EAF1] transition-colors duration-200 text-[#4A6880] hover:text-[#0D1F2D]"
+            className="absolute left-3 bottom-3 p-2 rounded-md hover:bg-[var(--color-border-subtle)] transition-colors duration-200 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <Plus className="w-5 h-5" />
           </button>
 
           <button
             type="button"
-            className="absolute right-3 bottom-3 p-2 rounded-lg bg-teal-100 hover:bg-teal-200 transition-colors duration-200 text-[#4A6880] hover:text-[#0D1F2D]"
+            className="absolute right-3 bottom-3 p-2 rounded-lg bg-teal-100 hover:bg-teal-200 transition-colors duration-200 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
           >
             <ArrowUp className="w-5 h-5" />
           </button>

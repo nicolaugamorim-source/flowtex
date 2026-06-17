@@ -27,26 +27,26 @@ export function CTASection({
   className,
 }: CTAProps) {
   return (
-    <section className={cn("overflow-hidden py-20 md:py-24 bg-[#F8FAFC]", className)}>
+    <section className={cn("overflow-hidden py-20 md:py-24 bg-[var(--color-bg-base)]", className)}>
       <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-6 px-4 md:px-6 py-12 text-center sm:gap-8">
         {/* Badge */}
         {badge && (
           <Badge
             variant="outline"
-            className="opacity-0 animate-fade-in-up delay-100 text-[#00D4A4]"
+            className="opacity-0 animate-fade-in-up delay-100 text-[var(--color-accent)]"
           >
             {badge.text}
           </Badge>
         )}
 
         {/* Title */}
-        <h2 className="text-4xl lg:text-5xl font-semibold text-[#0D1F2D] opacity-0 animate-fade-in-up delay-200">
+        <h2 className="text-4xl lg:text-5xl font-semibold text-[var(--color-text-primary)] opacity-0 animate-fade-in-up delay-200">
           {title}
         </h2>
 
         {/* Description */}
         {description && (
-          <p className="text-lg text-[#2E4A62] opacity-0 animate-fade-in-up delay-300 max-w-2xl">
+          <p className="text-lg text-[var(--color-text-secondary)] opacity-0 animate-fade-in-up delay-300 max-w-2xl">
             {description}
           </p>
         )}
@@ -54,7 +54,7 @@ export function CTASection({
         {/* Action Button */}
         <Link
           href={action.href}
-          className="inline-flex items-center justify-center h-12 px-8 rounded-xl font-semibold bg-[#00D4A4] text-[#0D1F2D] hover:bg-[#00B894] transition-all duration-300 opacity-0 animate-fade-in-up delay-500"
+          className="inline-flex items-center justify-center h-12 px-8 rounded-xl font-semibold bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[#00B894] transition-all duration-300 opacity-0 animate-fade-in-up delay-500"
         >
           {action.text}
         </Link>

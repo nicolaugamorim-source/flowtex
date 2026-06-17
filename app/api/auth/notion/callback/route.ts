@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { saveNotionIntegration } from '@/lib/database';
 
 function getAbsoluteUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -11,17 +11,36 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const returnedState = searchParams.get('state');
 
     if (!code) {
       console.error('❌ No authorization code received from Notion');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_code'));
     }
 
-    if (!state) {
+    if (!returnedState) {
       console.error('❌ No state received from Notion');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_state'));
     }
+
+    // Verify state from cookie
+    const cookieStore = await cookies();
+    const savedState = cookieStore.get('notion_oauth_state')?.value;
+    const userId = cookieStore.get('notion_user_id')?.value;
+
+    if (!savedState || savedState !== returnedState) {
+      console.error('❌ Invalid or expired state');
+      return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=invalid_state'));
+    }
+
+    if (!userId) {
+      console.error('❌ No user ID in cookie');
+      return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_user_id'));
+    }
+
+    // Clear the state cookies
+    cookieStore.delete('notion_oauth_state');
+    cookieStore.delete('notion_user_id');
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -31,29 +50,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=supabase_not_configured'));
     }
 
+    // Use service role for saving (we have userId from cookie, not from auth)
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    // Get user_id from oauth_states using the state
-    const { data: oauthState, error: stateError } = await supabaseAdmin
-      .from('oauth_states')
-      .select('user_id')
-      .eq('state', state)
-      .eq('provider', 'notion')
-      .single();
-
-    if (stateError || !oauthState) {
-      console.error('❌ Invalid or expired state:', stateError);
-      return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=invalid_state'));
-    }
-
-    const userId = oauthState.user_id;
-    console.log('✅ User ID from state:', userId);
-
-    // Delete the used state record
-    await supabaseAdmin
-      .from('oauth_states')
-      .delete()
-      .eq('state', state);
+    console.log('✅ User ID from cookie:', userId);
 
     const clientId = process.env.NOTION_CLIENT_ID;
     const clientSecret = process.env.NOTION_CLIENT_SECRET;
@@ -95,15 +94,29 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Got Notion access token');
 
-    // Save Notion integration to database
-    const saveResult = await saveNotionIntegration(userId, {
-      access_token: tokenData.access_token,
-      notion_workspace_id: tokenData.workspace_id,
-      notion_workspace_name: tokenData.workspace_name,
-    });
+    // Save Notion integration to database using service role
+    const { error: saveError } = await supabaseAdmin
+      .from('integrations')
+      .upsert(
+        {
+          user_id: userId,
+          provider: 'notion',
+          access_token: tokenData.access_token,
+          metadata: {
+            workspace_id: tokenData.workspace_id,
+            workspace_name: tokenData.workspace_name,
+          },
+          is_active: true,
+          connected_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,provider',
+        }
+      );
 
-    if (!saveResult.success) {
-      console.error('❌ Error saving Notion integration:', saveResult.error);
+    if (saveError) {
+      console.error('❌ Error saving Notion integration:', saveError);
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=save_failed'));
     }
 
