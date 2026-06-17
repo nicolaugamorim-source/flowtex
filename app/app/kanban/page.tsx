@@ -817,8 +817,8 @@ export default function KanbanPage() {
                                 {(provided, snapshot) => (
                                   <div
                                     ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...(task.isAddTask ? {} : provided.dragHandleProps)}
+                                    {...(provided.draggableProps as any)}
+                                    {...(task.isAddTask ? {} : (provided.dragHandleProps as any))}
                                   >
                                     {task.isAddTask ? (
                                       addingTaskInColumn === column.id ? (
