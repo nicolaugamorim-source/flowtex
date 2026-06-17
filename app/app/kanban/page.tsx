@@ -789,7 +789,7 @@ export default function KanbanPage() {
                         </h2>
                         <span
                           className="text-xs font-medium px-2 py-1 rounded-full text-white"
-                          style={{ backgroundColor: column.color }}
+                          style={{ backgroundColor: `var(${column.colorVar})` }}
                         >
                           {columnTasks.length}
                         </span>
