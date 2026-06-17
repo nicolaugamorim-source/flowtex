@@ -185,7 +185,7 @@ export default function InboxPage() {
   }, [emails, searchQuery, activeFilter]);
 
   const handleSelectEmail = async (email: GmailMessage) => {
-    setSelectedEmail(email);
+    setSelectedEmail(email as any);
     setIsLoadingDetail(true);
 
     // Mark as read IMMEDIATELY if unread
