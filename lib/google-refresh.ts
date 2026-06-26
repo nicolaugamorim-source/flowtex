@@ -4,13 +4,18 @@ import { google } from 'googleapis';
 // Server-only client (service role) — this file is never imported by client
 // components, and RLS would otherwise block reading another user's stored
 // refresh_token since there's no per-request session to authenticate with here.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Created lazily (not at module scope) so that build-time page-data collection,
+// which evaluates this module without runtime env vars loaded, doesn't crash.
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function refreshGoogleAccessToken(userId: string): Promise<string | null> {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     // Get the Google integration with refresh token from the database
     const { data: integration, error } = await supabaseAdmin
       .from('integrations')
