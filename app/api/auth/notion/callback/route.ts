@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { captureServerEvent } from '@/lib/posthog-server';
 
 function getAbsoluteUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -102,11 +103,11 @@ export async function GET(request: NextRequest) {
           user_id: userId,
           provider: 'notion',
           access_token: tokenData.access_token,
-          metadata: {
-            workspace_id: tokenData.workspace_id,
-            workspace_name: tokenData.workspace_name,
-          },
+          notion_workspace_id: tokenData.workspace_id || null,
+          notion_workspace_name: tokenData.workspace_name || null,
+          notion_bot_id: tokenData.bot_id || null,
           is_active: true,
+          disconnected_at: null,
           connected_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -121,6 +122,8 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('✅ Notion integration saved for user:', userId);
+
+    await captureServerEvent(userId, 'integration_connected', { integration: 'notion' });
 
     // Redirect back with success
     return NextResponse.redirect(getAbsoluteUrl('/app/integrations?notion=success'));

@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -39,6 +40,7 @@ export default function SettingsPage() {
 
         setUserId(user.id);
         setUserEmail(user.email || "");
+        setAvatarUrl(user.user_metadata?.avatar_url);
 
         // Fetch user data
         const { data: userData } = await supabase
@@ -172,7 +174,7 @@ export default function SettingsPage() {
                 <div className="md:col-span-6">
                   <div className="flex items-center gap-6 bg-[var(--color-bg-card)] rounded-lg p-6 border border-[var(--color-border-subtle)]">
                     <Avatar className="h-16 w-16 border-2 border-[var(--color-accent-subtle)]">
-                      <AvatarImage src={`https://avatar.vercel.sh/${userName}`} />
+                      <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
                       <AvatarFallback className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white text-lg font-bold">
                         {avatarInitials}
                       </AvatarFallback>

@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
+import { decodeMimeHeader } from "@/lib/google-gmail";
 
 export async function GET() {
   try {
@@ -55,9 +56,15 @@ export async function GET() {
       ),
     ]);
 
+    const safeJson = async (res: Response) => {
+      if (res.status === 204) return {};
+      const text = await res.text();
+      return text ? JSON.parse(text) : {};
+    };
+
     const [unreadData, labelData] = await Promise.all([
-      unreadRes.json(),
-      labelRes.json(),
+      safeJson(unreadRes),
+      safeJson(labelRes),
     ]);
 
     const messageIds = (unreadData.messages ?? []).map((m: any) => m.id);
@@ -88,7 +95,7 @@ export async function GET() {
 
     const messages = messageDetails.map((message: any) => {
       const msgHeaders = message.payload?.headers ?? [];
-      const from = getHeader(msgHeaders, "From");
+      const from = decodeMimeHeader(getHeader(msgHeaders, "From"));
       const senderName = from.includes("<")
         ? from.split("<")[0].trim().replace(/"/g, "")
         : from.split("@")[0];
@@ -108,7 +115,7 @@ export async function GET() {
       return {
         id: message.id,
         sender: senderName || "Unknown",
-        subject: getHeader(msgHeaders, "Subject") || "(No subject)",
+        subject: decodeMimeHeader(getHeader(msgHeaders, "Subject")) || "(No subject)",
         date: formattedDate,
         isUnread: (message.labelIds ?? []).includes("UNREAD"),
       };

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -109,23 +110,32 @@ export const IntegrationShowcase = React.forwardRef<
             }
 
             const isClickable = item.name !== 'More Coming';
+            const isMoreComing = item.name === 'More Coming';
             return (
               <motion.div
                 key={item.name}
                 variants={itemVariants}
                 onClick={() => isClickable && onIntegrationClick?.(item.name)}
-                className={`group flex items-start space-x-4 p-4 rounded-lg transition-colors duration-300 ${
+                className={`group flex p-4 rounded-lg transition-colors duration-300 h-full ${
+                  isMoreComing ? 'flex-col items-center justify-center text-center space-y-2' : 'items-start space-x-4'
+                } ${
                   isClickable
                     ? 'cursor-pointer hover:bg-[var(--color-bg-base)] hover:shadow-md'
                     : 'opacity-75'
                 }`}
               >
                 <div className="flex-shrink-0 p-3 bg-[var(--color-bg-base)] rounded-lg group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
-                  <img
-                    src={item.iconSrc}
-                    alt={`${item.name} logo`}
-                    className="h-8 w-8 object-contain"
-                  />
+                  {isMoreComing ? (
+                    // The PNG glyph is a fixed dark color and disappears in dark mode —
+                    // use a themed icon instead so it always matches the main text color.
+                    <Plus className="h-8 w-8 text-[var(--color-text-primary)]" />
+                  ) : (
+                    <img
+                      src={item.iconSrc}
+                      alt={`${item.name} logo`}
+                      className="h-8 w-8 object-contain"
+                    />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{item.name}</h3>

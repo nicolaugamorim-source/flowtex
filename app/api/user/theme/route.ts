@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { error } = await supabase
-      .from("users")
+      .from("profiles")
       .update({ theme })
       .eq("id", user.id);
 

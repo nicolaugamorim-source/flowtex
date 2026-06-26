@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -60,6 +61,14 @@ export async function GET(request: NextRequest) {
     console.log("✅ [AUTH CALLBACK] Session exchanged successfully");
     console.log("👤 [AUTH CALLBACK] User authenticated:", user.email);
 
+    // Determine if this is a brand new user (no profile row yet) before we upsert one.
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+    const isNewUser = !existingProfile;
+
     // Save Google tokens to integrations table
     console.log("📝 [AUTH CALLBACK] Saving Google tokens to integrations...");
 
@@ -88,6 +97,7 @@ export async function GET(request: NextRequest) {
         console.warn("⚠️ [AUTH CALLBACK] Integration save warning:", integrationError);
       } else {
         console.log("✅ [AUTH CALLBACK] Google tokens saved to integrations");
+        await captureServerEvent(user.id, "integration_connected", { integration: "google" });
       }
     } else {
       console.warn("⚠️ [AUTH CALLBACK] No provider token found in session");
@@ -118,6 +128,10 @@ export async function GET(request: NextRequest) {
     } else {
       console.log("✅ [AUTH CALLBACK] Profile created/updated");
     }
+
+    await captureServerEvent(user.id, isNewUser ? "user_signed_up" : "user_logged_in", {
+      email: user.email,
+    });
 
     // Create ai_context if doesn't exist
     console.log("📝 [AUTH CALLBACK] Creating AI context...");

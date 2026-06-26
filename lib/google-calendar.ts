@@ -139,6 +139,7 @@ export async function createEvent(
     startTime: string;
     endTime: string;
     calendarId?: string;
+    attendeeEmail?: string;
   }
 ) {
   try {
@@ -148,6 +149,9 @@ export async function createEvent(
     const response = await calendar.events.insert({
       auth,
       calendarId,
+      // Attach the client silently (no invite email) — this just links the event to
+      // them for reliable lookups later. Sending a real invite is a separate, explicit action.
+      sendUpdates: 'none',
       requestBody: {
         summary: event.summary,
         description: event.description,
@@ -159,6 +163,7 @@ export async function createEvent(
           dateTime: event.endTime,
           timeZone: 'America/Sao_Paulo',
         },
+        attendees: event.attendeeEmail ? [{ email: event.attendeeEmail }] : undefined,
       },
     });
 
@@ -414,6 +419,64 @@ export async function findAndDeleteEvent(
     };
   } catch (error) {
     console.error('Error finding and deleting event:', error);
+    throw error;
+  }
+}
+
+// Sends a real invite email to the attendee already linked to an event (added silently
+// by createEvent). Re-saving an event with sendUpdates: 'all' is what triggers Google
+// to email the attendees, even when nothing else about the event changes.
+export async function findAndSendInvite(accessToken: string, eventTitle: string) {
+  try {
+    const auth = await getCalendarClient(accessToken);
+    const normalizedSearchTitle = normalizeString(eventTitle);
+
+    const calendarsResponse = await calendar.calendarList.list({ auth, maxResults: 50 });
+    const cals = calendarsResponse.data.items || [];
+
+    for (const cal of cals) {
+      try {
+        const response = await calendar.events.list({
+          auth,
+          calendarId: cal.id!,
+          timeMin: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+          maxResults: 250,
+          singleEvents: true,
+          orderBy: 'startTime',
+        });
+
+        const events = response.data.items || [];
+        const match = events.find((event: any) => normalizeString(event.summary || '').includes(normalizedSearchTitle));
+
+        if (match && match.id) {
+          if (!match.attendees || match.attendees.length === 0) {
+            return { success: false, message: `"${match.summary}" has no client linked to it.` };
+          }
+
+          await calendar.events.patch({
+            auth,
+            calendarId: cal.id!,
+            eventId: match.id,
+            sendUpdates: 'all',
+            requestBody: {
+              attendees: match.attendees,
+            },
+          });
+
+          return {
+            success: true,
+            eventTitle: match.summary,
+            attendeeEmail: match.attendees[0]?.email,
+          };
+        }
+      } catch (error) {
+        console.error(`Error searching calendar ${cal.id}:`, error);
+      }
+    }
+
+    return { success: false, message: `No event found with the title "${eventTitle}"` };
+  } catch (error) {
+    console.error('Error sending calendar invite:', error);
     throw error;
   }
 }

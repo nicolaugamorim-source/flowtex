@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { getGravatarUrl } from "@/lib/gravatar";
 
 export async function PATCH(
   request: NextRequest,
@@ -49,7 +50,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ client });
+    return NextResponse.json({ client: { ...client, avatar_url: getGravatarUrl(client.email) } });
   } catch (error) {
     console.error("Error updating client:", error);
     return NextResponse.json({ error: "Failed to update client" }, { status: 500 });

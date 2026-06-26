@@ -159,45 +159,26 @@ export async function upsertProfileFromGoogle() {
 
     const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
 
-    console.log("📝 Upserting user:", { id: user.id, email: user.email, fullName });
+    console.log("📝 Upserting profile:", { id: user.id, email: user.email, fullName });
 
-    // Check if user exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", user.id)
-      .single();
+    // Upsert profile (profiles table is created by OAuth callback)
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        full_name: fullName,
+        email: user.email,
+      }, {
+        onConflict: "id",
+        ignoreDuplicates: false
+      });
 
-    if (existingUser) {
-      console.log("✅ User exists, updating...");
-      // Update existing user
-      const { error } = await supabase
-        .from("users")
-        .update({
-          full_name: fullName,
-        })
-        .eq("id", user.id);
+    if (error) throw error;
 
-      if (error) throw error;
-    } else {
-      console.log("✨ Creating new user...");
-      // Create new user
-      const { error } = await supabase
-        .from("users")
-        .insert({
-          id: user.id,
-          full_name: fullName,
-          email: user.email,
-          team_name: "My Team",
-        });
-
-      if (error) throw error;
-    }
-
-    console.log("✅ User upserted successfully");
+    console.log("✅ Profile upserted successfully");
     return { success: true, error: null };
   } catch (error) {
-    console.error("❌ Error upserting user:", error);
+    console.error("❌ Error upserting profile:", error);
     return { success: false, error };
   }
 }

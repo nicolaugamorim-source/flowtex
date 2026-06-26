@@ -11,6 +11,7 @@ export interface NotionIntegrationData {
   access_token: string;
   notion_workspace_id?: string;
   notion_workspace_name?: string;
+  notion_bot_id?: string;
 }
 
 /**
@@ -75,11 +76,11 @@ export async function saveNotionIntegration(
           user_id: userId,
           provider: 'notion',
           access_token: data.access_token,
-          metadata: {
-            workspace_id: data.notion_workspace_id,
-            workspace_name: data.notion_workspace_name,
-          },
+          notion_workspace_id: data.notion_workspace_id || null,
+          notion_workspace_name: data.notion_workspace_name || null,
+          notion_bot_id: data.notion_bot_id || null,
           is_active: true,
+          disconnected_at: null,
           connected_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -206,6 +207,7 @@ export async function deactivateIntegration(
       .from('integrations')
       .update({
         is_active: false,
+        disconnected_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId)

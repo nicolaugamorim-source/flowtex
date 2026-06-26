@@ -25,7 +25,7 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={cn(
-          "group relative overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-white transition-all duration-300",
+          "group relative overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] transition-all duration-300",
           "hover:border-[var(--color-accent)] hover:shadow-lg hover:shadow-[var(--color-accent)]/10",
           className
         )}
@@ -38,7 +38,9 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
-              <div className="p-2.5 bg-[var(--color-bg-base)] rounded-lg group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
+              {/* Fixed white chip — brand logos (e.g. Notion's dark mark) need a light
+                  backdrop to stay visible regardless of the app's theme. */}
+              <div className="p-2.5 bg-white rounded-lg group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
                 {icon}
               </div>
               <div className="flex-1">

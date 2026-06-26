@@ -203,9 +203,9 @@ html, body {
     --primary: var(--color-accent);
     --primary-hover: var(--color-accent-hover);
     --primary-muted: rgba(0, 212, 164, 0.08);
-    --text-primary: var(--color-text-primary);
-    --text-secondary: var(--color-text-secondary);
-    --text-muted: var(--color-text-muted);
+    --text-primary: #9CA3AF;
+    --text-secondary: #9CA3AF;
+    --text-muted: #9CA3AF;
 
     /* Brand variables for glow */
     --brand: 158 100% 41%;
@@ -267,6 +267,33 @@ html, body {
 
   .glass {
     @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)];
+  }
+
+  .scrollbar-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: #9CA3AF transparent;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 16px !important;
+    background: transparent !important;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-track,
+  .scrollbar-minimal::-webkit-scrollbar-track-piece,
+  .scrollbar-minimal::-webkit-scrollbar-corner {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background-color: #9CA3AF !important;
+    border-radius: 9999px !important;
+    border: none !important;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-button {
+    background-color: #9CA3AF !important;
   }
 
   .gradient-brand {

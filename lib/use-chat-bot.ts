@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 import { getValidAccessToken } from './google-token-manager';
+import { trackActivity } from './activity-tracker';
 
 export interface BubbleData {
-  type: "email" | "event" | "task" | "notion" | "slack" | "custom";
+  type: "email" | "email_draft" | "event" | "task" | "notion" | "slack" | "custom";
   title: string;
   subtitle?: string;
   description?: string;
@@ -22,6 +23,15 @@ export interface BubbleData {
     onClick?: () => void;
     variant?: "default" | "secondary" | "outline";
   }>;
+  // Raw data needed to power interactive buttons (reschedule, reply, delete, ...)
+  // without having to re-parse the displayed text.
+  meta?: {
+    emailId?: string;
+    fromEmail?: string;
+    to?: string;
+    subject?: string;
+    body?: string;
+  };
 }
 
 export interface Message {
@@ -53,15 +63,9 @@ export function useChatBot() {
 
     if (!localStorage.getItem(storageKey)) {
       localStorage.setItem(storageKey, 'true');
-      try {
-        await fetch('/api/activity/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action_type: 'ai_message' }),
-        });
-      } catch (err) {
-        console.error('Failed to track AI message activity:', err);
-      }
+      trackActivity('ai_message', 1).catch((err) =>
+        console.error('Failed to track AI message activity:', err)
+      );
     }
 
     // Get valid access token (uses smart caching and refresh)
@@ -118,6 +122,12 @@ export function useChatBot() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Let other open pages (e.g. the Kanban board) know a task was created/moved
+      // via the chat, so they can refresh without needing a manual reload.
+      if (data.bubbles?.some((b: BubbleData) => b.type === 'task')) {
+        window.dispatchEvent(new CustomEvent('flowtex:kanban-updated'));
+      }
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         console.error('Chat error:', error);
@@ -149,6 +159,7 @@ export function useChatBot() {
 
   return {
     messages,
+    setMessages,
     isLoading,
     sendMessage,
     clearChat,

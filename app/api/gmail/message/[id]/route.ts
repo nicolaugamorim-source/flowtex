@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
+import { decodeMimeHeader } from "@/lib/google-gmail";
 
 const decodeBase64 = (str: string): string => {
   try {
@@ -11,36 +12,44 @@ const decodeBase64 = (str: string): string => {
   }
 };
 
-const extractEmailBody = (payload: any): string => {
-  if (!payload) return "";
+const extractEmailBody = (payload: any): { body: string; mimeType: string } => {
+  if (!payload) return { body: "", mimeType: "text/plain" };
 
   // If there's a direct body in the part
   if (payload.body && payload.body.data) {
-    return decodeBase64(payload.body.data);
+    return { body: decodeBase64(payload.body.data), mimeType: payload.mimeType || "text/plain" };
   }
 
-  // If there are parts (multipart)
+  // If there are parts (multipart) - prefer HTML, fallback to plain text
   if (payload.parts) {
+    let plainTextResult: { body: string; mimeType: string } | null = null;
+
     for (const part of payload.parts) {
       const mimeType = part.mimeType || "";
 
-      // Prefer HTML, fallback to plain text
       if (mimeType === "text/html" && part.body?.data) {
-        return decodeBase64(part.body.data);
+        return { body: decodeBase64(part.body.data), mimeType: "text/html" };
       }
-      if (mimeType === "text/plain" && part.body?.data) {
-        return decodeBase64(part.body.data);
+      if (mimeType === "text/plain" && part.body?.data && !plainTextResult) {
+        plainTextResult = { body: decodeBase64(part.body.data), mimeType: "text/plain" };
       }
 
-      // Recursively check nested parts
+      // Recursively check nested parts (multipart/alternative, multipart/related, etc)
       if (part.parts) {
-        const nestedBody = extractEmailBody(part);
-        if (nestedBody) return nestedBody;
+        const nestedResult = extractEmailBody(part);
+        if (nestedResult.mimeType === "text/html" && nestedResult.body) {
+          return nestedResult;
+        }
+        if (nestedResult.body && !plainTextResult) {
+          plainTextResult = nestedResult;
+        }
       }
     }
+
+    if (plainTextResult) return plainTextResult;
   }
 
-  return "";
+  return { body: "", mimeType: "text/plain" };
 };
 
 const getHeader = (headers: any[], name: string): string => {
@@ -106,14 +115,14 @@ export async function GET(
     const messageData = await response.json();
     const headers = messageData.payload?.headers ?? [];
 
-    const subject = getHeader(headers, "Subject") || "(No subject)";
-    const from = getHeader(headers, "From");
+    const subject = decodeMimeHeader(getHeader(headers, "Subject")) || "(No subject)";
+    const from = decodeMimeHeader(getHeader(headers, "From"));
     const to = getHeader(headers, "To");
     const date = getHeader(headers, "Date");
-    const body = extractEmailBody(messageData.payload);
+    const { body, mimeType } = extractEmailBody(messageData.payload);
     const isUnread = (messageData.labelIds ?? []).includes("UNREAD");
 
-    console.log("✅ [GMAIL MESSAGE] Message fetched:", { subject, isUnread });
+    console.log("✅ [GMAIL MESSAGE] Message fetched:", { subject, isUnread, mimeType });
 
     return NextResponse.json({
       id: messageData.id,
@@ -123,7 +132,7 @@ export async function GET(
       date,
       body,
       isUnread,
-      mimeType: messageData.payload?.mimeType,
+      mimeType,
     });
   } catch (error) {
     console.error("❌ [GMAIL MESSAGE] Error:", error);

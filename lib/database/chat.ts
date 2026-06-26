@@ -1,3 +1,4 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 export interface ChatMessageData {
@@ -15,14 +16,15 @@ export interface ChatMessageData {
  */
 export async function saveChatMessage(
   userId: string,
-  data: ChatMessageData
+  data: ChatMessageData,
+  client: SupabaseClient = supabase
 ): Promise<{ success: boolean; error?: any; messageId?: string }> {
   try {
     if (!userId) {
       throw new Error('userId is required');
     }
 
-    const { data: insertedData, error } = await supabase
+    const { data: insertedData, error } = await client
       .from('chat_messages')
       .insert({
         user_id: userId,

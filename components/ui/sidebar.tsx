@@ -8,9 +8,8 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
-  UserCircle,
-  Plus,
   Mail,
+  MessageSquare,
   SquareKanban,
   Users,
   Zap,
@@ -121,41 +120,25 @@ export function SessionNavBar({
           <div className="flex grow flex-col items-center">
             <div className="flex h-[54px] w-full shrink-0 border-b border-[var(--color-border-subtle)] p-2">
               <div className="mt-[1.5px] flex w-full">
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger className="w-full" asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex w-fit items-center gap-2 px-2 text-[var(--color-text-primary)] hover-accent-50"
-                    >
-                      <Image
-                        src="/logo.svg"
-                        alt="Flowtex"
-                        width={24}
-                        height={24}
-                        className="shrink-0"
-                      />
-                      <motion.li
-                        variants={variants}
-                        className="flex w-fit items-center gap-2"
-                      >
-                        {!isCollapsed && (
-                          <p className="text-lg font-bold text-[var(--color-text-primary)]">
-                            {teamName}
-                          </p>
-                        )}
-                      </motion.li>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="text-[var(--color-text-primary)]">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Settings
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex h-8 w-full flex-row items-center justify-start px-2 text-[var(--color-text-primary)]">
+                  <div className="h-5 w-5 shrink-0 overflow-hidden">
+                    <Image
+                      src="/logo.svg"
+                      alt="Flowtex"
+                      width={20}
+                      height={20}
+                      className="h-5 w-5 object-contain scale-150"
+                      style={{ width: 20, height: 20 }}
+                    />
+                  </div>
+                  <motion.li variants={variants}>
+                    {!isCollapsed && (
+                      <p className="ml-2 text-lg font-bold text-[var(--color-text-primary)]">
+                        {teamName}
+                      </p>
+                    )}
+                  </motion.li>
+                </div>
               </div>
             </div>
 
@@ -228,6 +211,20 @@ export function SessionNavBar({
                     </Link>
 
                     <Separator className="w-full bg-[var(--color-border-subtle)]" />
+
+                    {!isCollapsed && (
+                      <Link
+                        href="/app/feedback"
+                        className="flex h-auto w-full flex-col items-center justify-center rounded-md px-2 py-2 transition hover-accent-50 text-[var(--color-text-primary)] font-medium text-base border border-[var(--color-border-default)]"
+                      >
+                        <motion.div variants={variants}>
+                          <div className="text-center leading-tight">
+                            <p>Share</p>
+                            <p>Feedback</p>
+                          </div>
+                        </motion.div>
+                      </Link>
+                    )}
                   </div>
                 </ScrollArea>
               </div>
@@ -240,6 +237,17 @@ export function SessionNavBar({
                   <motion.li variants={variants}>
                     {!isCollapsed && (
                       <p className="ml-2 text-sm font-medium">Integrations</p>
+                    )}
+                  </motion.li>
+                </Link>
+                <Link
+                  href="/app/chat-history"
+                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
+                >
+                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  <motion.li variants={variants}>
+                    {!isCollapsed && (
+                      <p className="ml-2 text-sm font-medium">Chat History</p>
                     )}
                   </motion.li>
                 </Link>
@@ -292,12 +300,6 @@ export function SessionNavBar({
                         </div>
                       </div>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/settings/profile" className="text-[var(--color-text-primary)]">
-                          <UserCircle className="h-4 w-4 mr-2" />
-                          Profile
-                        </Link>
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleSignOut} className="text-[var(--color-text-primary)] cursor-pointer">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign out

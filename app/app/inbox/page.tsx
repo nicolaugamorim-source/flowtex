@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Mail, Search, Circle, ChevronLeft } from "lucide-react";
+import { Mail, Search, Circle, ChevronLeft, Trash2 } from "lucide-react";
 import { useAppCache } from "@/lib/app-cache";
 
 interface GmailMessage {
@@ -50,15 +50,63 @@ const EmailDetailSkeleton = () => (
   </div>
 );
 
+// Renders email HTML inside a sandboxed iframe so the email's own styles
+// (inline <style> tags, broad selectors like body/table/p) can never leak
+// out and affect the rest of the app's layout.
+const EmailHtmlFrame = ({ html }: { html: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(200);
+
+  const resize = useCallback(() => {
+    try {
+      const doc = iframeRef.current?.contentWindow?.document;
+      if (doc?.body) {
+        setHeight(doc.body.scrollHeight + 24);
+      }
+    } catch {
+      // Cross-origin content (e.g. a redirect inside the iframe) — keep the current height.
+    }
+  }, []);
+
+  const srcDoc = `<!DOCTYPE html><html><head><base target="_blank" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #0D1F2D; word-wrap: break-word; }
+      img, table { max-width: 100% !important; height: auto !important; }
+      a { color: #00A882; }
+    </style>
+  </head><body>${html}</body></html>`;
+
+  return (
+    <iframe
+      ref={iframeRef}
+      srcDoc={srcDoc}
+      onLoad={resize}
+      sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+      className="w-full border-0"
+      style={{ height }}
+      title="Email content"
+    />
+  );
+};
+
 const EmailListItem = ({
   email,
   isSelected,
   onClick,
+  onDelete,
+  deleteConfirmId,
+  setDeleteConfirmId,
 }: {
   email: GmailMessage;
   isSelected: boolean;
   onClick: () => void;
+  onDelete: (id: string) => void;
+  deleteConfirmId: string | null;
+  setDeleteConfirmId: (id: string | null) => void;
 }) => {
+  const [trashHovered, setTrashHovered] = useState(false);
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -80,7 +128,7 @@ const EmailListItem = ({
   return (
     <div
       onClick={onClick}
-      className={`px-4 py-3 border-b border-[var(--color-border-subtle)] cursor-pointer transition-all flex items-start gap-3 ${
+      className={`group px-4 py-3 border-b border-[var(--color-border-subtle)] cursor-pointer transition-all flex items-start gap-3 ${
         isSelected
           ? "border-l-4 border-l-[var(--color-accent)] bg-[var(--color-accent-subtle)]"
           : "border-l-4 border-l-transparent hover:bg-[var(--color-bg-base)]"
@@ -108,6 +156,41 @@ const EmailListItem = ({
           {email.subject}
         </p>
       </div>
+
+      {/* Trash icon - visible on row hover */}
+      <button
+        data-trash-button="true"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (deleteConfirmId === email.id) {
+            onDelete(email.id);
+            setDeleteConfirmId(null);
+          } else {
+            setDeleteConfirmId(email.id);
+          }
+        }}
+        onMouseEnter={() => setTrashHovered(true)}
+        onMouseLeave={() => setTrashHovered(false)}
+        className="flex-shrink-0 self-center px-2 py-1.5 rounded-full transition-colors text-xs font-medium"
+        style={{
+          color:
+            deleteConfirmId === email.id
+              ? "var(--color-error)"
+              : trashHovered
+              ? "var(--color-error)"
+              : "var(--color-text-disabled)",
+          backgroundColor:
+            deleteConfirmId === email.id
+              ? "var(--color-delete-confirm-bg)"
+              : trashHovered
+              ? "var(--color-delete-hover-bg)"
+              : "transparent",
+          cursor: "pointer",
+          border: deleteConfirmId === email.id ? "1px solid var(--color-error)" : "none",
+        }}
+      >
+        {deleteConfirmId === email.id ? "Delete?" : <Trash2 size={16} />}
+      </button>
     </div>
   );
 };
@@ -122,6 +205,18 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "read">("all");
   const [gmailConnected, setGmailConnected] = useState(true);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-trash-button="true"]')) {
+        setDeleteConfirmId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // Check if we have valid cache with 25 emails (allEmails, not dashboard's 4)
@@ -234,6 +329,34 @@ export default function InboxPage() {
     }
   };
 
+  const handleDeleteEmail = async (emailId: string) => {
+    try {
+      const response = await fetch("/api/gmail/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: emailId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("❌ [INBOX] Failed to delete email:", data);
+        return;
+      }
+
+      console.log("✅ [INBOX] Deleted email from Gmail:", emailId);
+
+      const updatedEmails = emails.filter((e) => e.id !== emailId);
+      setEmails(updatedEmails);
+      setCache("allInboxEmails", updatedEmails);
+
+      if (selectedEmail?.id === emailId) {
+        setSelectedEmail(null);
+      }
+    } catch (err) {
+      console.error("❌ [INBOX] Delete email error:", err);
+    }
+  };
+
   if (!gmailConnected) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] p-8">
@@ -312,6 +435,9 @@ export default function InboxPage() {
                     email={email}
                     isSelected={selectedEmail?.id === email.id}
                     onClick={() => handleSelectEmail(email)}
+                    onDelete={handleDeleteEmail}
+                    deleteConfirmId={deleteConfirmId}
+                    setDeleteConfirmId={setDeleteConfirmId}
                   />
                 ))
               )}
@@ -350,12 +476,9 @@ export default function InboxPage() {
                   {isLoadingDetail ? (
                     <EmailDetailSkeleton />
                   ) : (
-                    <div className="prose prose-sm max-w-none">
-                      {selectedEmail.mimeType?.includes("html") ? (
-                        <div
-                          dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
-                          className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words"
-                        />
+                    <div className="max-w-none">
+                      {selectedEmail.mimeType === "text/html" ? (
+                        <EmailHtmlFrame html={selectedEmail.body} />
                       ) : (
                         <p className="text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
                           {selectedEmail.body}

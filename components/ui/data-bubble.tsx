@@ -15,7 +15,7 @@ export interface MetadataItem {
 export interface DataBubbleAction {
   label: string;
   onClick?: () => void;
-  variant?: "default" | "secondary" | "outline";
+  variant?: "default" | "secondary" | "outline" | "danger";
 }
 
 export interface DataBubbleProps {
@@ -46,37 +46,38 @@ export interface DataBubbleProps {
   className?: string;
 }
 
-// Type icons mapping
+// Type icons mapping — reuses the same palette as the kanban columns/tags.
+// No new colors, no teal accent.
 const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: string }> = {
   email: {
     icon: require("lucide-react").Mail,
-    color: "var(--color-text-secondary)",
-    bg: "var(--color-bg-card)",
+    color: "var(--color-category-bug-text)",
+    bg: "var(--color-category-bug-bg)",
   },
   event: {
     icon: require("lucide-react").Calendar,
-    color: "var(--color-accent)",
-    bg: "var(--color-accent-subtle)",
+    color: "var(--color-category-client-text)",
+    bg: "var(--color-category-client-bg)",
   },
   task: {
     icon: require("lucide-react").CheckCircle2,
-    color: "var(--color-success)",
-    bg: "#ECFDF5",
+    color: "var(--color-text-primary)",
+    bg: "var(--color-bg-elevated)",
   },
   notion: {
     icon: require("lucide-react").Database,
-    color: "var(--color-info)",
-    bg: "#EFF6FF",
+    color: "var(--color-category-idea-text)",
+    bg: "var(--color-category-idea-bg)",
   },
   slack: {
     icon: require("lucide-react").MessageCircle,
-    color: "#7C3AED",
-    bg: "#F3E8FF",
+    color: "var(--color-category-idea-text)",
+    bg: "var(--color-category-idea-bg)",
   },
   custom: {
     icon: require("lucide-react").Zap,
-    color: "var(--color-accent)",
-    bg: "var(--color-accent-subtle)",
+    color: "var(--color-text-primary)",
+    bg: "var(--color-bg-elevated)",
   },
 };
 
@@ -91,29 +92,29 @@ const COLOR_CLASSES: Record<
     border: "var(--color-border-subtle)",
   },
   accent: {
-    text: "var(--color-accent-hover)",
-    bg: "var(--color-accent-subtle)",
-    border: "var(--color-accent)",
+    text: "var(--color-category-client-text)",
+    bg: "var(--color-category-client-bg)",
+    border: "var(--color-category-client-text)",
   },
   success: {
-    text: "#16A34A",
-    bg: "#F0FDF4",
+    text: "var(--color-success)",
+    bg: "var(--color-bg-secondary)",
     border: "var(--color-success)",
   },
   warning: {
-    text: "#D97706",
-    bg: "#FFFBEB",
+    text: "var(--color-warning)",
+    bg: "var(--color-bg-secondary)",
     border: "var(--color-warning)",
   },
   error: {
-    text: "#DC2626",
-    bg: "#FEF2F2",
-    border: "var(--color-error)",
+    text: "var(--color-category-bug-text)",
+    bg: "var(--color-category-bug-bg)",
+    border: "var(--color-category-bug-text)",
   },
   info: {
-    text: "#1D4ED8",
-    bg: "#EFF6FF",
-    border: "var(--color-info)",
+    text: "var(--color-category-idea-text)",
+    bg: "var(--color-category-idea-bg)",
+    border: "var(--color-category-idea-text)",
   },
 };
 
@@ -140,7 +141,7 @@ export function DataBubble({
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn(
         "rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-lg hover:border-[var(--color-border-default)]",
-        "bg-white border-[var(--color-border-subtle)]",
+        "bg-[var(--color-bg-card)] border-[var(--color-border-subtle)]",
         variant === "compact" ? "max-w-sm" : "w-full max-w-2xl",
         className
       )}
@@ -258,13 +259,26 @@ export function DataBubble({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                "text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium transition-all",
+                "text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium transition-all border",
                 action.variant === "outline"
-                  ? "border border-[var(--color-border-subtle)] text-[var(--color-text-primary)] hover:border-[var(--color-border-default)] hover:bg-[var(--color-bg-secondary)]"
+                  ? "border-[var(--color-border-subtle)] text-[var(--color-text-primary)] hover:border-[var(--color-border-default)] hover:bg-[var(--color-bg-secondary)] bg-transparent"
                   : action.variant === "secondary"
-                    ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)]"
-                    : "bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]"
+                    ? "border-transparent bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)]"
+                    : action.variant === "danger"
+                      ? ""
+                      : "border-transparent text-white"
               )}
+              style={
+                action.variant === "danger"
+                  ? {
+                      borderColor: "var(--color-category-bug-text)",
+                      color: "var(--color-category-bug-text)",
+                      backgroundColor: "var(--color-category-bug-bg)",
+                    }
+                  : action.variant === "default" || !action.variant
+                    ? { backgroundColor: "var(--color-accent)" }
+                    : undefined
+              }
             >
               {action.label}
             </motion.button>

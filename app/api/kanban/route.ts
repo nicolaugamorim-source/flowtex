@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function GET() {
   try {
@@ -121,6 +122,8 @@ export async function POST(request: NextRequest) {
       console.error("Error creating task:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await captureServerEvent(user.id, "kanban_task_created", { category: task.category, column_id: task.column_id });
 
     return NextResponse.json({ task });
   } catch (error) {

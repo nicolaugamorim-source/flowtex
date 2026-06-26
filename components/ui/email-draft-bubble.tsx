@@ -21,7 +21,7 @@ export const EmailDraftBubble = React.forwardRef<HTMLDivElement, EmailDraftBubbl
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="rounded-lg border border-[var(--color-border-subtle)] bg-white shadow-md overflow-hidden"
+        className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] shadow-md overflow-hidden"
       >
         {/* Header */}
         <div className="bg-[var(--color-bg-base)] border-b border-[var(--color-border-subtle)] p-4">
@@ -41,7 +41,7 @@ export const EmailDraftBubble = React.forwardRef<HTMLDivElement, EmailDraftBubbl
         </div>
 
         {/* Body */}
-        <div className="p-4 bg-white">
+        <div className="p-4 bg-[var(--color-bg-card)]">
           <div className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">
             Message
           </div>
@@ -55,7 +55,7 @@ export const EmailDraftBubble = React.forwardRef<HTMLDivElement, EmailDraftBubbl
           <button
             onClick={onRemake}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] bg-white border border-[var(--color-border-subtle)] rounded-lg hover:bg-[var(--color-bg-base)] hover:border-[var(--color-accent)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-card)] border border-[var(--color-border-subtle)] rounded-lg hover:bg-[var(--color-bg-base)] hover:border-[var(--color-border-strong)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RotateCcw className="w-4 h-4" />
             Remake
@@ -63,7 +63,8 @@ export const EmailDraftBubble = React.forwardRef<HTMLDivElement, EmailDraftBubbl
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-accent)] rounded-lg hover:bg-[#00C494] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "var(--color-accent)" }}
           >
             <Send className="w-4 h-4" />
             {isLoading ? "Sending..." : "Confirm"}

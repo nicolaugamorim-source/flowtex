@@ -62,6 +62,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className = "" }) => {
         <NavLink icon={<Calendar size={20} />} label="Calendar" expanded={isExpanded} />
         <NavLink icon={<Users size={20} />} label="Clients" expanded={isExpanded} href="/app/clients" />
         <NavLink icon={<BarChart3 size={20} />} label="Analytics" expanded={isExpanded} />
+        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-bg-card)] transition-colors">
+          Feedback
+        </button>
       </nav>
 
       {/* Bottom Actions */}

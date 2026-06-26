@@ -206,11 +206,16 @@ const SkeletonLoader = () => (
 
 const getUpcomingEvents = (events: CalendarEvent[]): CalendarEvent[] => {
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   return events.filter((event) => {
     const dateString = event.start.dateTime ?? event.start.date;
     if (!dateString) return false;
     const startTime = new Date(dateString);
-    return startTime > now;
+    // Include events from today onwards
+    return startTime >= today;
   });
 };
 

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Plus, GripVertical, Trash2, Search, X, SlidersHorizontal } from "lucide-react";
+import { Plus, GripVertical, Trash2, Archive, Search, X, SlidersHorizontal } from "lucide-react";
+import { trackActivity } from "@/lib/activity-tracker";
 
 interface Task {
   id: string;
@@ -14,6 +15,8 @@ interface Task {
   due_date?: string;
   tags?: string[];
   position: number;
+  archived?: boolean;
+  archived_at?: string | null;
 }
 
 interface NewTaskForm {
@@ -60,24 +63,42 @@ const getCategoryColor = (category: string) => {
 const TaskCard = ({
   task,
   onDelete,
+  onArchive,
   isDragging,
   deleteConfirmId,
   setDeleteConfirmId,
   onTitleUpdate,
+  onTagUpdate,
 }: {
   task: Task;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
   isDragging: boolean;
   deleteConfirmId: string | null;
   setDeleteConfirmId: (id: string | null) => void;
   onTitleUpdate: (taskId: string, newTitle: string) => void;
+  onTagUpdate: (taskId: string, field: "category" | "priority", value: string) => void;
 }) => {
+  const isDoneColumn = task.column_id === "done";
   const [trashHovered, setTrashHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
+  const [openTagMenu, setOpenTagMenu] = useState<"category" | "priority" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const tagMenuRef = useRef<HTMLDivElement>(null);
   const priorityBorderVar = priorityConfig[task.priority].borderVar;
   const categoryColor = getCategoryColor(task.category || "task");
+
+  useEffect(() => {
+    if (!openTagMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tagMenuRef.current && !tagMenuRef.current.contains(e.target as Node)) {
+        setOpenTagMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openTagMenu]);
 
   useEffect(() => {
     if (isEditing) {
@@ -163,21 +184,79 @@ const TaskCard = ({
               </p>
             )}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: `var(${categoryColor.bgVar})`, color: `var(${categoryColor.textVar})` }}
-              >
-                {categoryColor.label}
-              </span>
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: `var(${priorityBorderVar})20`,
-                  color: `var(${priorityConfig[task.priority].textVar})`,
-                }}
-              >
-                {priorityConfig[task.priority].label}
-              </span>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenTagMenu(openTagMenu === "category" ? null : "category");
+                  }}
+                  className="text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                  style={{ backgroundColor: `var(${categoryColor.bgVar})`, color: `var(${categoryColor.textVar})` }}
+                >
+                  {categoryColor.label}
+                </button>
+                {openTagMenu === "category" && (
+                  <div
+                    ref={tagMenuRef}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-full left-0 mt-1 z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-lg shadow-lg p-1.5 flex flex-col gap-1 min-w-[100px]"
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          onTagUpdate(task.id, "category", cat.id);
+                          setOpenTagMenu(null);
+                        }}
+                        className="text-xs font-medium px-2 py-1 rounded-full text-left hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: `var(${cat.bgVar})`, color: `var(${cat.textVar})` }}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenTagMenu(openTagMenu === "priority" ? null : "priority");
+                  }}
+                  className="text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                  style={{
+                    backgroundColor: `var(${priorityBorderVar})20`,
+                    color: `var(${priorityConfig[task.priority].textVar})`,
+                  }}
+                >
+                  {priorityConfig[task.priority].label}
+                </button>
+                {openTagMenu === "priority" && (
+                  <div
+                    ref={tagMenuRef}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-full left-0 mt-1 z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-lg shadow-lg p-1.5 flex flex-col gap-1 min-w-[100px]"
+                  >
+                    {(Object.keys(priorityConfig) as Array<keyof typeof priorityConfig>).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          onTagUpdate(task.id, "priority", p);
+                          setOpenTagMenu(null);
+                        }}
+                        className="text-xs font-medium px-2 py-1 rounded-full text-left hover:opacity-80 transition-opacity"
+                        style={{
+                          backgroundColor: `var(${priorityConfig[p].borderVar})20`,
+                          color: `var(${priorityConfig[p].textVar})`,
+                        }}
+                      >
+                        {priorityConfig[p].label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {task.description && (
               <p className="text-[11px] text-[var(--color-text-disabled)] mt-2 line-clamp-2">
@@ -193,7 +272,11 @@ const TaskCard = ({
             onClick={(e) => {
               e.stopPropagation();
               if (deleteConfirmId === task.id) {
-                onDelete(task.id);
+                if (isDoneColumn) {
+                  onArchive(task.id);
+                } else {
+                  onDelete(task.id);
+                }
                 setDeleteConfirmId(null);
               } else {
                 setDeleteConfirmId(task.id);
@@ -209,7 +292,9 @@ const TaskCard = ({
               border: deleteConfirmId === task.id ? "1px solid var(--color-error)" : "none",
             }}
           >
-            {deleteConfirmId === task.id ? "Delete?" : <Trash2 size={18} />}
+            {deleteConfirmId === task.id
+              ? (isDoneColumn ? "Archive?" : "Delete?")
+              : (isDoneColumn ? <Archive size={18} /> : <Trash2 size={18} />)}
           </button>
         </div>
       </div>
@@ -447,6 +532,7 @@ export default function KanbanPage() {
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const filterPopoverRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<"kanban" | "archived">("kanban");
 
   const [newTaskForm, setNewTaskForm] = useState<NewTaskForm>({
     title: "",
@@ -459,6 +545,14 @@ export default function KanbanPage() {
 
   useEffect(() => {
     fetchTasks();
+  }, []);
+
+  // Refresh in the background when a task is created/moved via the AI chat,
+  // so the board updates without the user needing to reload the page.
+  useEffect(() => {
+    const handleKanbanUpdated = () => fetchTasks(true);
+    window.addEventListener("flowtex:kanban-updated", handleKanbanUpdated);
+    return () => window.removeEventListener("flowtex:kanban-updated", handleKanbanUpdated);
   }, []);
 
   useEffect(() => {
@@ -474,8 +568,8 @@ export default function KanbanPage() {
     }
   }, [showFilterPopover]);
 
-  const fetchTasks = async () => {
-    setIsLoading(true);
+  const fetchTasks = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const response = await fetch("/api/kanban");
       const data = await response.json();
@@ -485,12 +579,13 @@ export default function KanbanPage() {
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      if (task.archived) return false;
       const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory =
         selectedCategories.length === 0 || selectedCategories.includes(task.category || "task");
@@ -499,6 +594,16 @@ export default function KanbanPage() {
       return matchesSearch && matchesCategory && matchesPriority;
     });
   }, [tasks, searchQuery, selectedCategories, selectedPriorities]);
+
+  const archivedTasks = useMemo(() => {
+    return tasks
+      .filter((task) => task.archived)
+      .sort((a, b) => {
+        const aTime = a.archived_at ? new Date(a.archived_at).getTime() : 0;
+        const bTime = b.archived_at ? new Date(b.archived_at).getTime() : 0;
+        return bTime - aTime;
+      });
+  }, [tasks]);
 
   const completedCount = tasks.filter((t) => t.column_id === "done").length;
   const totalCount = tasks.length;
@@ -521,15 +626,9 @@ export default function KanbanPage() {
 
     if (toIndex > fromIndex) {
       const columnsAdvanced = toIndex - fromIndex;
-      try {
-        await fetch('/api/activity/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action_type: 'task_moved', count: columnsAdvanced }),
-        });
-      } catch (err) {
-        console.error('Failed to track task moved activity:', err);
-      }
+      trackActivity('task_moved', columnsAdvanced).catch((err) =>
+        console.error('Failed to track task moved activity:', err)
+      );
     }
 
     // Get all tasks in the destination column, sorted by priority and position
@@ -610,6 +709,9 @@ export default function KanbanPage() {
       if (data.task) {
         // Replace temp task with real task from server
         setTasks(prevTasks => prevTasks.map(t => t.id === tempTask.id ? data.task : t));
+        trackActivity('task_created', 1).catch((err) =>
+          console.error('Failed to track task created activity:', err)
+        );
       }
     } catch (err) {
       console.error("Failed to create task:", err);
@@ -637,6 +739,9 @@ export default function KanbanPage() {
       const data = await response.json();
       if (data.task) {
         setTasks([...tasks, data.task]);
+        trackActivity('task_created', 1).catch((err) =>
+          console.error('Failed to track task created activity:', err)
+        );
         setShowNewTaskModal(false);
         setNewTaskForm({
           title: "",
@@ -660,6 +765,24 @@ export default function KanbanPage() {
     );
   };
 
+  const handleTagUpdate = async (taskId: string, field: "category" | "priority", value: string) => {
+    const previousTasks = tasks;
+    setTasks(prevTasks =>
+      prevTasks.map(t => (t.id === taskId ? { ...t, [field]: value } : t))
+    );
+
+    try {
+      await fetch(`/api/kanban/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+    } catch (err) {
+      console.error(`Failed to update task ${field}:`, err);
+      setTasks(previousTasks);
+    }
+  };
+
   const handleDeleteTask = async (taskId: string) => {
     // Store the task in case we need to rollback
     const deletedTask = tasks.find(t => t.id === taskId);
@@ -675,6 +798,34 @@ export default function KanbanPage() {
       // Restore task on error
       if (deletedTask) {
         setTasks([...tasks, deletedTask]);
+      }
+    }
+  };
+
+  const handleArchiveTask = async (taskId: string) => {
+    const archivedAt = new Date().toISOString();
+    const taskToArchive = tasks.find((t) => t.id === taskId);
+
+    // Optimistic update
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t.id === taskId ? { ...t, archived: true, archived_at: archivedAt } : t
+      )
+    );
+
+    try {
+      await fetch(`/api/kanban/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: true, archived_at: archivedAt }),
+      });
+    } catch (err) {
+      console.error("Failed to archive task:", err);
+      // Rollback on error
+      if (taskToArchive) {
+        setTasks((prevTasks) =>
+          prevTasks.map((t) => (t.id === taskId ? taskToArchive : t))
+        );
       }
     }
   };
@@ -702,7 +853,7 @@ export default function KanbanPage() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)]"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)]"
               />
               {searchQuery && (
                 <button
@@ -718,7 +869,7 @@ export default function KanbanPage() {
             <div className="relative" ref={filterPopoverRef}>
               <button
                 onClick={() => setShowFilterPopover(!showFilterPopover)}
-                className="relative px-3 py-2 text-xs border border-[0.5px] border-[var(--color-border-default)] rounded-lg bg-transparent hover:bg-[var(--color-bg-secondary)] transition-colors"
+                className="relative px-3 py-2 text-xs border border-[0.5px] border-[var(--color-border-default)] rounded-lg bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
               >
                 <SlidersHorizontal size={16} />
                 {activeFiltersCount > 0 && (
@@ -742,6 +893,14 @@ export default function KanbanPage() {
                 </div>
               )}
             </div>
+
+            {/* Archived/Kanban Toggle */}
+            <button
+              onClick={() => setView(view === "kanban" ? "archived" : "kanban")}
+              className="px-3 py-2 text-xs font-medium border border-[0.5px] border-[var(--color-border-default)] rounded-lg bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+            >
+              {view === "kanban" ? "Archived" : "Kanban"}
+            </button>
           </div>
 
           {/* Results count */}
@@ -753,7 +912,61 @@ export default function KanbanPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {view === "archived" ? (
+        <div className="px-8 py-6">
+          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Archived</h2>
+          {archivedTasks.length === 0 ? (
+            <p className="text-[var(--color-text-disabled)]">No archived tasks</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {archivedTasks.map((task) => {
+                const categoryColor = getCategoryColor(task.category || "task");
+                const priorityBorderVar = priorityConfig[task.priority].borderVar;
+                const archivedDate = task.archived_at ? new Date(task.archived_at) : null;
+                return (
+                  <div
+                    key={task.id}
+                    className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[10px] p-[14px] border-l-4"
+                    style={{ borderLeftColor: `var(${priorityBorderVar})` }}
+                  >
+                    <p className="text-[15px] font-bold text-[var(--color-text-primary)] break-words">
+                      {task.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: `var(${categoryColor.bgVar})`, color: `var(${categoryColor.textVar})` }}
+                      >
+                        {categoryColor.label}
+                      </span>
+                      <span
+                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: `var(${priorityBorderVar})20`,
+                          color: `var(${priorityConfig[task.priority].textVar})`,
+                        }}
+                      >
+                        {priorityConfig[task.priority].label}
+                      </span>
+                    </div>
+                    {task.description && (
+                      <p className="text-[11px] text-[var(--color-text-disabled)] mt-2 line-clamp-2">
+                        {task.description}
+                      </p>
+                    )}
+                    {archivedDate && (
+                      <p className="text-xs text-[var(--color-text-disabled)] mt-3">
+                        Archived: {archivedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
+                        {archivedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center h-96">
           <p className="text-[var(--color-text-disabled)]">Loading...</p>
         </div>
@@ -842,10 +1055,12 @@ export default function KanbanPage() {
                                       <TaskCard
                                         task={task}
                                         onDelete={handleDeleteTask}
+                                        onArchive={handleArchiveTask}
                                         isDragging={snapshot.isDragging}
                                         deleteConfirmId={deleteConfirmId}
                                         setDeleteConfirmId={setDeleteConfirmId}
                                         onTitleUpdate={handleTitleUpdate}
+                                        onTagUpdate={handleTagUpdate}
                                       />
                                     )}
                                   </div>

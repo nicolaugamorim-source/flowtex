@@ -1,13 +1,13 @@
 export const activityEventTarget = new EventTarget();
 
-export async function trackActivity(actionType: string): Promise<void> {
+export async function trackActivity(actionType: string, count: number = 1): Promise<void> {
   try {
     const response = await fetch("/api/activity/track", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ action_type: actionType }),
+      body: JSON.stringify({ action_type: actionType, count }),
     });
 
     if (response.ok) {

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AnimatedLine } from "@/components/ui/animated-line"
 import { cn } from "@/lib/utils"
+import { usePostHog } from "posthog-js/react"
 
 interface CTAProps {
   badge?: {
@@ -28,6 +29,8 @@ export function CTASection({
   withGlow = true,
   className,
 }: CTAProps) {
+  const posthog = usePostHog()
+
   return (
     <section className={cn("overflow-hidden pt-0 md:pt-0", className)}>
       <div className="relative mx-auto flex max-w-container flex-col items-center gap-6 px-8 py-12 text-center sm:gap-8 md:py-24">
@@ -76,7 +79,12 @@ export function CTASection({
           className="animate-fade-in-up delay-500"
           asChild
         >
-          <a href={action.href}>{action.text}</a>
+          <a
+            href={action.href}
+            onClick={() => posthog?.capture('cta_clicked', { button_label: action.text, position: 'footer' })}
+          >
+            {action.text}
+          </a>
         </Button>
 
         {/* Glow Effect */}

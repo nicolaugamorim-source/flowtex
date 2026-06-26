@@ -1,35 +1,59 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useAICommand } from "@/lib/ai-command-context";
 import { AIInputWithSearch } from "@/components/ui/ai-input-with-search";
-import { useChatBot } from "@/lib/use-chat-bot";
+import { useChatBot, Message } from "@/lib/use-chat-bot";
 import { useGoogle } from "@/lib/google-context";
 import { motion, AnimatePresence } from "framer-motion";
-import { DataBubble } from "@/components/ui/data-bubble";
+import { IntegrationBubble } from "@/components/ui/integration-bubble";
 import ReactMarkdown from "react-markdown";
 
 export function AICommandModal() {
-  const { isOpen, close, open } = useAICommand();
-  const { messages, isLoading, sendMessage } = useChatBot();
+  const { isOpen, close, open, seedMessages, consumeSeedMessages } = useAICommand();
+  const { messages, setMessages, isLoading, sendMessage } = useChatBot();
   const { googleAccessToken } = useGoogle();
   const hasMessages = messages.length > 0;
+
+  // While viewing a past conversation from history, stash the live chat so it
+  // can be restored once the user closes this view and opens the assistant normally again.
+  const [isViewingHistory, setIsViewingHistory] = useState(false);
+  const liveMessagesStash = useRef<Message[]>([]);
+
+  useEffect(() => {
+    if (isOpen && seedMessages) {
+      if (!isViewingHistory) {
+        liveMessagesStash.current = messages;
+      }
+      setMessages(seedMessages);
+      setIsViewingHistory(true);
+      consumeSeedMessages();
+    }
+  }, [isOpen, seedMessages, setMessages, consumeSeedMessages, isViewingHistory, messages]);
+
+  const handleClose = useCallback(() => {
+    if (isViewingHistory) {
+      setMessages(liveMessagesStash.current);
+      setIsViewingHistory(false);
+    }
+    close();
+  }, [isViewingHistory, setMessages, close]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.ctrlKey && e.altKey) {
         e.preventDefault();
         if (isOpen) {
-          close();
+          handleClose();
         } else {
           open();
         }
       }
       if (e.key === "Escape" && isOpen) {
-        close();
+        handleClose();
       }
     },
-    [open, close, isOpen]
+    [open, handleClose, isOpen]
   );
 
   useEffect(() => {
@@ -50,7 +74,7 @@ export function AICommandModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={close}
+            onClick={handleClose}
             className="fixed inset-0 bg-black/40 backdrop-blur-md z-40"
           />
 
@@ -59,6 +83,7 @@ export function AICommandModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={handleClose}
             className={`fixed z-50 flex flex-col items-center px-4 ${
               hasMessages
                 ? 'inset-0 top-0 w-full'
@@ -89,14 +114,15 @@ export function AICommandModal() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="flex-1 w-full max-w-4xl mx-auto mt-4 overflow-y-auto pb-4"
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 w-full max-w-4xl mx-auto mt-4 overflow-y-auto pb-4 pr-6 scrollbar-minimal"
               >
                 <div className="space-y-3">
                   {messages.map((msg) => (
                     <div key={msg.id} className="flex flex-col gap-2 w-full">
                       {msg.role === 'user' ? (
                         <div className="flex justify-end">
-                          <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] rounded-lg px-4 py-2 max-w-2xl text-base">
+                          <div className="bg-[var(--color-text-primary)] text-[var(--color-bg-base)] rounded-lg px-4 py-2 max-w-2xl text-base">
                             {msg.content}
                           </div>
                         </div>
@@ -122,15 +148,11 @@ export function AICommandModal() {
                           {msg.bubbles && msg.bubbles.length > 0 && (
                             <div className="flex flex-col gap-3 justify-start">
                               {msg.bubbles.map((bubble, idx) => (
-                                <DataBubble
+                                <IntegrationBubble
                                   key={idx}
-                                  type={bubble.type}
-                                  title={bubble.title}
-                                  subtitle={bubble.subtitle}
-                                  description={bubble.description}
-                                  metadata={bubble.metadata as any}
-                                  badge={bubble.badge}
-                                  actions={bubble.actions}
+                                  bubble={bubble}
+                                  sendMessage={sendMessage}
+                                  googleAccessToken={googleAccessToken || undefined}
                                 />
                               ))}
                             </div>

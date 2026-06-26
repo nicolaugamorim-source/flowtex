@@ -15,6 +15,8 @@ interface Task {
 }
 
 const priorityOrder = { high: 0, medium: 1, low: 2 };
+const stateOrder = { review: 0, in_progress: 1, todo: 2 };
+
 // Maps priority to CSS color variables (same as Kanban)
 const getPriorityColor = (priority: string): string => {
   const priorityMap: Record<string, string> = {
@@ -66,7 +68,13 @@ export const PriorityTasks = () => {
         if (data.tasks && Array.isArray(data.tasks)) {
           const filtered = data.tasks
             .filter((task: any) => task.column_id !== "done")
-            .sort((a: Task, b: Task) => priorityOrder[a.priority] - priorityOrder[b.priority])
+            .sort((a: Task, b: Task) => {
+              // First sort by priority
+              const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+              if (priorityDiff !== 0) return priorityDiff;
+              // Then sort by state (review > progress > backlog)
+              return (stateOrder[a.column_id as keyof typeof stateOrder] ?? 3) - (stateOrder[b.column_id as keyof typeof stateOrder] ?? 3);
+            })
             .slice(0, 4);
 
           setTasks(filtered);

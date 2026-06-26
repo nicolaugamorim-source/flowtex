@@ -11,8 +11,9 @@ import {
   Headphones, BookOpen, Star, Brain, Eye, Copy, TrendingUp, Check, Share2
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import NumberFlow from "@number-flow/react";
+import { usePostHog } from "posthog-js/react";
 
 interface PricingPlan {
   name: string;
@@ -66,13 +67,34 @@ export function Pricing({
 }: PricingProps) {
   const [isMonthly, setIsMonthly] = useState(true);
   const switchRef = useRef<HTMLButtonElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const posthog = usePostHog();
+  const hasFiredPricingViewed = useRef(false);
 
   const handleToggle = (checked: boolean) => {
     setIsMonthly(!checked);
   };
 
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasFiredPricingViewed.current) {
+          hasFiredPricingViewed.current = true;
+          posthog?.capture('pricing_viewed');
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [posthog]);
+
   return (
-    <section className="py-20 md:py-24 px-4 md:px-6 bg-[var(--color-bg-base)]">
+    <section ref={sectionRef} className="py-20 md:py-24 px-4 md:px-6 bg-[var(--color-bg-base)]">
       <div className="max-w-5xl mx-auto">
         <div className="text-center space-y-4 mb-12">
           <h2 className="text-4xl lg:text-5xl font-semibold tracking-tight text-[var(--color-text-primary)]">
@@ -151,6 +173,7 @@ export function Pricing({
 
                 <Link
                   href={plan.href}
+                  onClick={() => posthog?.capture('pricing_plan_clicked', { plan: plan.name.toLowerCase() })}
                   className={cn(
                     buttonVariants({
                       variant: plan.isPopular ? "default" : "outline",

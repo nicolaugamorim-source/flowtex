@@ -1,3 +1,4 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 export interface AIContextData {
@@ -56,13 +57,16 @@ export async function saveAIContext(
  * Get AI context for a user
  * Used in chat route to provide context to Claude
  */
-export async function getAIContext(userId: string): Promise<any | null> {
+export async function getAIContext(
+  userId: string,
+  client: SupabaseClient = supabase
+): Promise<any | null> {
   try {
     if (!userId) {
       throw new Error('userId is required');
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('ai_context')
       .select('*')
       .eq('user_id', userId)
@@ -126,34 +130,54 @@ export async function updateAIContext(
 
 /**
  * Build context string for AI system prompt
+ *
+ * Reads from `profiles`, not `ai_context` — onboarding reliably writes business
+ * info to profiles, but only opportunistically updates ai_context (which silently
+ * no-ops if that row doesn't exist yet), so ai_context can be empty even when the
+ * user has completed onboarding.
  */
-export async function buildAIContextString(userId: string): Promise<string> {
+export async function buildAIContextString(
+  userId: string,
+  client: SupabaseClient = supabase
+): Promise<string> {
   try {
-    const aiContext = await getAIContext(userId);
+    const { data: profile, error } = await client
+      .from('profiles')
+      .select('business_name, business_type, industry, business_brief, target_clients, main_tools')
+      .eq('id', userId)
+      .single();
 
-    if (!aiContext) {
+    if (error || !profile) {
       return '';
     }
 
     let contextString = '\n\nUSER CONTEXT:\n';
 
-    if (aiContext.business_brief) {
-      contextString += `Business Brief: ${aiContext.business_brief}\n`;
+    if (profile.business_name) {
+      contextString += `Business Name: ${profile.business_name}\n`;
     }
 
-    if (aiContext.industry) {
-      contextString += `Industry: ${aiContext.industry}\n`;
+    if (profile.business_type) {
+      contextString += `Business Type: ${profile.business_type}\n`;
     }
 
-    if (aiContext.key_goals) {
-      contextString += `Key Goals: ${aiContext.key_goals}\n`;
+    if (profile.industry) {
+      contextString += `Industry: ${profile.industry}\n`;
     }
 
-    if (aiContext.context) {
-      contextString += `Additional Context: ${aiContext.context}\n`;
+    if (profile.business_brief) {
+      contextString += `Business Brief: ${profile.business_brief}\n`;
     }
 
-    return contextString;
+    if (profile.target_clients) {
+      contextString += `Target Clients: ${profile.target_clients}\n`;
+    }
+
+    if (profile.main_tools) {
+      contextString += `Main Tools Used: ${profile.main_tools}\n`;
+    }
+
+    return contextString === '\n\nUSER CONTEXT:\n' ? '' : contextString;
   } catch (error) {
     console.error('❌ Error building AI context string:', error);
     return '';

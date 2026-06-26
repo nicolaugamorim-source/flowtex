@@ -9,6 +9,7 @@ import { CookieConsent } from "@/components/ui/cookie-consent";
 import { AICommandProvider } from "@/lib/ai-command-context";
 import { AICommandModal } from "@/components/ui/ai-command-modal";
 import { GoogleProvider } from "@/lib/google-context";
+import { PostHogProvider } from "./providers/posthog-provider";
 import "@/lib/cookie-reset";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${geist.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}>
       <body className="min-h-full flex flex-col overflow-x-hidden" style={{ backgroundColor: 'var(--color-bg-base)' }}>
+        <PostHogProvider>
         <ThemeProvider
           attribute="data-theme"
           defaultTheme="light"
@@ -76,6 +78,7 @@ export default function RootLayout({
             </AICommandProvider>
           </GoogleProvider>
         </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

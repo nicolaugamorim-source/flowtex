@@ -23,6 +23,7 @@ import {
     type TargetAndTransition,
     type Variants,
 } from 'framer-motion';
+import { usePostHog } from 'posthog-js/react';
 import { Dock } from '@/components/ui/dock-two';
 
 function cn(...classes: (string | undefined | null | boolean)[]): string {
@@ -420,6 +421,7 @@ interface Dot {
 }
 
 const HeroFlowtex: React.FC = () => {
+   const posthog = usePostHog();
    const canvasRef = useRef<HTMLCanvasElement>(null);
    const animationFrameId = useRef<number | null>(null);
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
@@ -690,6 +692,7 @@ const HeroFlowtex: React.FC = () => {
                         pricingSection?.scrollIntoView({ behavior: 'smooth' });
                     } },
                     { label: "Get Early Access", onClick: () => {
+                        posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
                         const pricingSection = document.getElementById('pricing');
                         pricingSection?.scrollIntoView({ behavior: 'smooth' });
                     }, isButton: true }
@@ -758,6 +761,7 @@ const HeroFlowtex: React.FC = () => {
             >
                 <motion.a
                     href="#pricing"
+                    onClick={() => posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'hero' })}
                     className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-8 py-3 rounded-md text-base hover:bg-[var(--color-accent-hover)] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
                     style={{ fontWeight: 600 }}
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -768,6 +772,7 @@ const HeroFlowtex: React.FC = () => {
                 </motion.a>
                 <motion.a
                     href="#how-it-works"
+                    onClick={() => posthog?.capture('cta_clicked', { button_label: 'Learn More', position: 'hero' })}
                     className="text-[var(--color-text-secondary)] px-6 py-3 rounded-md text-base font-medium border border-[var(--color-border-default)] hover:bg-[#F0F4F8] transition-colors duration-200"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

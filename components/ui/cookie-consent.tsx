@@ -110,6 +110,7 @@ function CookieConsent({
     setShowCustomizeDialog(false);
     setPreferences(prefs);
     onAccept?.(prefs);
+    window.dispatchEvent(new CustomEvent("cookie-consent-updated", { detail: prefs }));
   }, [onAccept]);
 
   const handleAcceptAll = React.useCallback(() => {

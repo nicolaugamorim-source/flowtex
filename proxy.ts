@@ -5,7 +5,7 @@ export const config = {
   matcher: ["/app", "/app/:path*", "/onboarding"],
 };
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   console.log("🛡️ [PROXY] Protecting route:", pathname);

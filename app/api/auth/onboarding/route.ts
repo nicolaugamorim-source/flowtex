@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,6 +109,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("✅ [ONBOARDING] Onboarding completed successfully");
+
+    if (onboarding_completed) {
+      await captureServerEvent(userId, "onboarding_completed", { business_type });
+    }
 
     return NextResponse.json({
       success: true,

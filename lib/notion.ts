@@ -21,29 +21,30 @@ async function getNotionToken(userId: string): Promise<string | null> {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const { data, error } = await supabaseAdmin
-      .from('user_integrations')
-      .select('notion_access_token, notion_connected')
-      .eq('id', userId)
+      .from('integrations')
+      .select('access_token, is_active')
+      .eq('user_id', userId)
+      .eq('provider', 'notion')
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Error querying user_integrations:', error);
+      console.error('❌ Error querying integrations:', error);
       return null;
     }
 
     if (!data) {
-      console.error('❌ No user_integrations record found for userId:', userId);
-      console.log('⚠️ Need to create initial record. User needs to connect Notion.');
+      console.error('❌ No Notion integration found for userId:', userId);
+      console.log('⚠️ User needs to connect Notion.');
       return null;
     }
 
-    if (!data.notion_access_token) {
-      console.error('❌ User has no Notion token saved. notion_connected:', data.notion_connected);
+    if (!data.is_active || !data.access_token) {
+      console.error('❌ User has no active Notion token saved. is_active:', data.is_active);
       return null;
     }
 
     console.log('✅ Found Notion token for user');
-    return data.notion_access_token;
+    return data.access_token;
   } catch (error) {
     console.error('Error getting Notion token:', error);
     return null;

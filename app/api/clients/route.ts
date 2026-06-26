@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { getGravatarUrl } from "@/lib/gravatar";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +39,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ clients });
+    const clientsWithAvatars = (clients || []).map((c) => ({ ...c, avatar_url: getGravatarUrl(c.email) }));
+
+    return NextResponse.json({ clients: clientsWithAvatars });
   } catch (error) {
     console.error("Error fetching clients:", error);
     return NextResponse.json({ error: "Failed to fetch clients" }, { status: 500 });
@@ -98,7 +102,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ client }, { status: 201 });
+    await captureServerEvent(user.id, "client_created", {});
+
+    return NextResponse.json({ client: { ...client, avatar_url: getGravatarUrl(client.email) } }, { status: 201 });
   } catch (error) {
     console.error("Error creating client:", error);
     return NextResponse.json({ error: "Failed to create client" }, { status: 500 });

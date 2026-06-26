@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { decodeMimeHeader } from "@/lib/google-gmail";
 
 export async function GET(
   request: NextRequest,
@@ -75,8 +76,8 @@ export async function GET(
 
       return {
         id: msg.id,
-        from: getHeader("From") || "Unknown",
-        subject: getHeader("Subject") || "(No subject)",
+        from: decodeMimeHeader(getHeader("From") || "Unknown"),
+        subject: decodeMimeHeader(getHeader("Subject") || "(No subject)"),
         date: getHeader("Date") || "",
         snippet: msg.snippet || "",
         isUnread: msg.labelIds?.includes("UNREAD") || false,

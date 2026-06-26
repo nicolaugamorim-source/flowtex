@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/google-gmail';
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { supabase } from '@/lib/supabase';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
+import { captureServerEvent } from '@/lib/posthog-server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,9 @@ export async function POST(request: NextRequest) {
     const result = await sendEmail(validAccessToken, to, subject, body);
 
     if (result.success) {
+      if (userId) {
+        await captureServerEvent(userId, "email_sent", {});
+      }
       return NextResponse.json({
         success: true,
         message: `Email sent to ${to}`,

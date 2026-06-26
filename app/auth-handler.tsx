@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { supabase } from "@/lib/supabase";
 import { saveTokenData } from "@/lib/google-token-manager";
 
 export function AuthHandler() {
   const router = useRouter();
+  const pathname = usePathname();
   const processedRef = useRef(false);
   const { setTheme } = useTheme();
 
@@ -38,7 +39,7 @@ export function AuthHandler() {
           // Load user's theme preference
           try {
             const { data: profile } = await supabase
-              .from("users")
+              .from("profiles")
               .select("theme")
               .eq("id", user.id)
               .single();
@@ -51,35 +52,44 @@ export function AuthHandler() {
             console.warn("⚠️ Failed to load theme preference:", error);
           }
 
-          // Try to save Google access token from session
+          // Save Google access token from session (from OAuth provider)
           if (session.provider_token) {
-            // Save with token manager (includes expiration tracking)
-            saveTokenData(session.provider_token, 3600); // Assume 1 hour expiry
-            console.log("✅ Saved provider_token with token manager");
+            console.log("✅ Google provider_token found, saving with token manager");
+            // Get refresh token if available (only on first auth)
+            const refreshToken = session.provider_refresh_token || undefined;
+            if (refreshToken) {
+              console.log("✅ Refresh token also found from provider");
+            }
+            // Save with token manager (includes expiration tracking and DB storage)
+            saveTokenData(session.provider_token, 3600, refreshToken);
+            console.log("✅ Saved provider_token to localStorage and integrations table");
+          } else {
+            console.warn("⚠️ No provider_token in session. Check that OAuth is properly configured.");
+            // Try to get from DB if it was saved previously
+            try {
+              const { data: integration } = await supabase
+                .from("integrations")
+                .select("access_token")
+                .eq("user_id", user.id)
+                .eq("provider", "google")
+                .single();
+
+              if (integration?.access_token) {
+                console.log("✅ Found previously saved token in integrations table");
+                localStorage.setItem("google_access_token", integration.access_token);
+              }
+            } catch (error) {
+              console.log("ℹ️ No previously saved Google token in database");
+            }
           }
 
-          // Extract Google OAuth data from identities
-          if (user?.identities) {
-            const googleIdentity = user.identities.find((id: any) => id.provider === "google");
-
-            console.log("🔍 Google identity data:", JSON.stringify(googleIdentity?.identity_data, null, 2));
-
-            if (googleIdentity?.identity_data?.access_token) {
-              localStorage.setItem("google_access_token", googleIdentity.identity_data.access_token);
-              console.log("✅ Saved access_token from identities to localStorage");
-            } else {
-              console.warn("⚠️ No access_token in identity_data");
-            }
-
-            if (googleIdentity?.identity_data?.refresh_token) {
-              console.log("✅ Refresh token found, saving to integrations table");
-            } else {
-              console.warn("⚠️ No refresh token in identity_data. This usually means the user already authorized this app before. Google only returns the refresh token on first authorization.");
-            }
+          // Only redirect to the dashboard when we're on a pre-auth page (e.g. the
+          // login page reloading mid-session) — never bounce the user away from
+          // wherever they already are inside the app (e.g. /app/kanban) on reload.
+          if (!pathname.startsWith("/app")) {
+            console.log("✅ Auth handler complete, redirecting to /app");
+            router.replace("/app");
           }
-
-          console.log("✅ Auth handler complete, redirecting to /app");
-          router.replace("/app");
         }
       } catch (error) {
         console.error("❌ Auth error:", error);
@@ -87,7 +97,7 @@ export function AuthHandler() {
     };
 
     handleAuthFlow();
-  }, [router]);
+  }, [router, pathname]);
 
   return null;
 }

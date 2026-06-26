@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { getUpcomingEvents, createEvent, getCalendarsList, findAndDeleteEvent, rescheduleEvent } from '@/lib/google-calendar';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { getUpcomingEvents, createEvent, getCalendarsList, findAndDeleteEvent, rescheduleEvent, findAndSendInvite } from '@/lib/google-calendar';
 import { getEmails, sendEmail, searchEmails, deleteEmail, markAsRead, getFullEmailContent } from '@/lib/google-gmail';
 import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
-import { saveChatMessage, getChatHistory, buildAIContextString } from '@/lib/database';
-import { supabase } from '@/lib/supabase';
+import { saveChatMessage, getChatHistory } from '@/lib/database';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
+import { captureServerEvent } from '@/lib/posthog-server';
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -57,58 +59,110 @@ function getLocalizedText(date: Date, action: 'created' | 'updated' | 'deleted',
   return { dayOfWeek, actionText };
 }
 
-// Improve event title with proper formatting and accent correction
+// Title-case an event title (English only), keeping small connector words lowercase
+// and acronyms (e.g. "CM") in all caps when the user already typed them that way.
 function improveEventTitle(title: string): string {
-  // Map of common words without accents to their corrected versions
-  const accentMap: { [key: string]: string } = {
-    'reuniao': 'Reunião',
-    'apresentacao': 'Apresentação',
-    'discussao': 'Discussão',
-    'avaliacao': 'Avaliação',
-    'planificacao': 'Planificação',
-    'revisao': 'Revisão',
-    'definicao': 'Definição',
-    'opcao': 'Opção',
+  const skipWords = ['a', 'an', 'the', 'to', 'of', 'in', 'on', 'at', 'for', 'and', 'or', 'with', 'by'];
+
+  const words = title.trim().split(/\s+/).map((word, index) => {
+    // Preserve words the user already typed in all caps (e.g. acronyms like "CM").
+    if (word.length > 1 && word === word.toUpperCase()) {
+      return word;
+    }
+
+    const lower = word.toLowerCase();
+    if (index > 0 && skipWords.includes(lower)) {
+      return lower;
+    }
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+
+  return words.join(' ');
+}
+
+// Extract a bare email address from a "Name <email@x.com>" or plain "email@x.com" string
+function extractEmailAddress(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  return match ? match[1] : from.trim();
+}
+
+// Resolve a relative date filter ("today", "tomorrow", "this week", weekday names) into a date range
+function resolveRelativeDateRange(filter?: string): { start: Date; end: Date } | null {
+  if (!filter) return null;
+  const f = filter.toLowerCase();
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const now = new Date();
+  const singleDay = (start: Date) => {
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
   };
 
-  // List of small words to skip when formatting
-  const skipWords = ['de', 'do', 'da', 'dos', 'das', 'para', 'por', 'em', 'com', 'e', 'ou', 'que', 'um', 'uma', 'uns', 'umas', 'o', 'a', 'os', 'as'];
-
-  // Split and process each word
-  const words = title.toLowerCase().trim().split(/\s+/).map(word => {
-    // Check if word needs accent correction
-    if (accentMap[word]) {
-      return accentMap[word];
-    }
-
-    // Capitalize if it's not a skip word, or if it's the first word
-    if (!skipWords.includes(word)) {
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    }
-    return word;
-  });
-
-  // Filter out skip words except in key positions
-  const importantWords = words.filter((word, index) => {
-    // Keep first word
-    if (index === 0) return true;
-    // Keep non-skip words
-    if (!skipWords.includes(word.toLowerCase())) return true;
-    return false;
-  });
-
-  // Join with hyphens for important words, spaces for small words
-  let result = '';
-  for (let i = 0; i < importantWords.length; i++) {
-    if (i > 0 && !skipWords.includes(importantWords[i].toLowerCase())) {
-      result += ' - ';
-    } else if (i > 0) {
-      result += ' ';
-    }
-    result += importantWords[i];
+  // "in N days/weeks/months", "in a day/week/month" — checked first since these
+  // are the most specific patterns.
+  const inMatch = f.match(/\bin\s+(a|an|\d+)\s+(day|days|week|weeks|month|months)\b/);
+  if (inMatch) {
+    const amount = inMatch[1] === 'a' || inMatch[1] === 'an' ? 1 : parseInt(inMatch[1]);
+    const unit = inMatch[2];
+    const start = startOfDay(now);
+    if (unit.startsWith('day')) start.setDate(start.getDate() + amount);
+    else if (unit.startsWith('week')) start.setDate(start.getDate() + amount * 7);
+    else if (unit.startsWith('month')) start.setMonth(start.getMonth() + amount);
+    return singleDay(start);
   }
 
-  return result;
+  if (f.includes('day after tomorrow')) {
+    const start = startOfDay(now);
+    start.setDate(start.getDate() + 2);
+    return singleDay(start);
+  }
+
+  if (f.includes('yesterday')) {
+    const start = startOfDay(now);
+    start.setDate(start.getDate() - 1);
+    return singleDay(start);
+  }
+
+  if (f.includes('today') || f.includes('hoje')) {
+    return singleDay(startOfDay(now));
+  }
+
+  if (f.includes('tomorrow') || f.includes('amanh')) {
+    const start = startOfDay(now);
+    start.setDate(start.getDate() + 1);
+    return singleDay(start);
+  }
+
+  if (f.includes('next week')) {
+    const start = startOfDay(now);
+    start.setDate(start.getDate() + 7);
+    return singleDay(start);
+  }
+
+  if (f.includes('next month')) {
+    const start = startOfDay(now);
+    start.setMonth(start.getMonth() + 1);
+    return singleDay(start);
+  }
+
+  if (f.includes('week') || f.includes('semana')) {
+    const start = startOfDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
+  }
+
+  const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const weekdayIndex = weekdays.findIndex((w) => f.includes(w));
+  if (weekdayIndex >= 0) {
+    const start = startOfDay(now);
+    let diff = weekdayIndex - start.getDay();
+    if (diff <= 0) diff += 7;
+    start.setDate(start.getDate() + diff);
+    return singleDay(start);
+  }
+
+  return null;
 }
 
 // Smart date parser
@@ -123,8 +177,18 @@ function parseSmartDate(dateStr: string): { start: string; end: string } | null 
   let month: number | null = null;
   let year: number | null = null;
 
-  // Extract day (1-31)
-  const dayMatch = dateStr.match(/\b(0?[1-9]|[12]\d|3[01])\b/);
+  // Relative date words ("today", "tomorrow", weekday names) — resolved before
+  // falling back to numeric day/month parsing.
+  const lowerDateStr = dateStr.toLowerCase();
+  const relativeRange = resolveRelativeDateRange(lowerDateStr);
+  if (relativeRange) {
+    day = relativeRange.start.getDate();
+    month = relativeRange.start.getMonth();
+    year = relativeRange.start.getFullYear();
+  }
+
+  // Extract day (1-31) — only if not already resolved from a relative word
+  const dayMatch = day === null ? dateStr.match(/\b(0?[1-9]|[12]\d|3[01])\b/) : null;
   if (dayMatch) day = parseInt(dayMatch[1]);
 
   // Extract month by name or number
@@ -143,10 +207,12 @@ function parseSmartDate(dateStr: string): { start: string; end: string } | null 
     dezembro: 11, december: 11, dec: 11,
   };
 
-  for (const [monthName, monthNum] of Object.entries(monthMap)) {
-    if (dateStr.toLowerCase().includes(monthName)) {
-      month = monthNum;
-      break;
+  if (month === null) {
+    for (const [monthName, monthNum] of Object.entries(monthMap)) {
+      if (dateStr.toLowerCase().includes(monthName)) {
+        month = monthNum;
+        break;
+      }
     }
   }
 
@@ -219,11 +285,30 @@ export async function POST(request: NextRequest) {
     console.log('Received googleAccessToken:', googleAccessToken ? 'YES' : 'NO');
     console.log('Active action:', activeAction);
 
+    // Authenticated server-side client (forwards the user's session cookies so RLS policies pass)
+    const cookieStore = await cookies();
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
     // Get userId from authenticated session
     let userId = requestUserId;
     if (!userId) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseServer.auth.getUser();
         userId = user?.id;
         if (userId) {
           console.log('✅ Got userId from Supabase session');
@@ -233,33 +318,48 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Saves the assistant's reply before sending it back, so tool-driven responses
+    // (calendar, email, Notion) are persisted just like plain-text ones.
+    const saveAssistantReply = async (payload: any) => {
+      if (userId) {
+        try {
+          await saveChatMessage(userId, {
+            role: 'assistant',
+            content: payload.content,
+          }, supabaseServer);
+        } catch (error) {
+          console.log('Could not save assistant message to database');
+        }
+        await captureServerEvent(userId, 'chat_message_sent', { has_tool_use: true });
+      }
+      return NextResponse.json(payload);
+    };
+
     // Ensure we have a valid access token (will refresh automatically if userId available)
     const validAccessToken = await ensureValidGoogleToken(googleAccessToken, userId);
 
-    // Fetch user's language preference and AI context from database
-    let userLanguage = 'en'; // default
-    let aiContextString = '';
+    // The assistant always replies in English, regardless of the user's profile
+    // language setting or the language they write in (MVP simplification).
+    const userLanguage: string = 'en';
+    let profile: {
+      business_name?: string;
+      business_type?: string;
+      industry?: string;
+      business_brief?: string;
+      target_clients?: string;
+      main_tools?: string;
+    } | null = null;
     if (userId) {
+      // Load the business profile directly (used to build the system prompt's identity section).
       try {
-        const { data: user } = await supabase
+        const { data } = await supabaseServer
           .from('profiles')
-          .select('language')
+          .select('business_name, business_type, industry, business_brief, target_clients, main_tools')
           .eq('id', userId)
           .single();
-
-        if (user?.language) {
-          userLanguage = user.language;
-          console.log('📝 User language:', userLanguage);
-        }
+        profile = data || null;
       } catch (error) {
-        console.log('Could not fetch user language, using default');
-      }
-
-      // Load AI context for better responses
-      try {
-        aiContextString = await buildAIContextString(userId);
-      } catch (error) {
-        console.log('Could not fetch AI context');
+        console.log('Could not fetch profile');
       }
     }
 
@@ -269,7 +369,7 @@ export async function POST(request: NextRequest) {
         await saveChatMessage(userId, {
           role: 'user',
           content: message,
-        });
+        }, supabaseServer);
       } catch (error) {
         console.log('Could not save user message to database');
       }
@@ -298,9 +398,12 @@ export async function POST(request: NextRequest) {
     let calendarContext = '';
     let calendarsInfo = '';
     let calendars: any[] = [];
+    let upcomingEvents: any[] = [];
+    let calendarFetchFailed = false;
     if (validAccessToken) {
       try {
         const events = await getUpcomingEvents(validAccessToken, 50, userId);
+        upcomingEvents = events;
         if (events.length > 0) {
           const eventsList = events
             .map((event: any) => {
@@ -330,11 +433,71 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error('Error fetching calendar data:', error);
+        calendarFetchFailed = true;
+      }
+    }
+
+    // Fetch current kanban tasks (excluding done) and clients for upfront context
+    let kanbanContext = '';
+    let clientsContext = '';
+    if (userId) {
+      try {
+        const { data: kanbanTasks } = await supabaseServer
+          .from('kanban_tasks')
+          .select('*')
+          .eq('user_id', userId)
+          .neq('column_id', 'done')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (kanbanTasks && kanbanTasks.length > 0) {
+          const tasksList = kanbanTasks
+            .map((t: any) => `- [${t.priority}] ${t.title} → ${t.column_id} (${t.category})`)
+            .join('\n');
+          kanbanContext = `\n\nCURRENT KANBAN (excluding done):\n${tasksList}`;
+        }
+      } catch (error) {
+        console.log('Could not fetch kanban tasks for context');
+      }
+
+      try {
+        const { data: clients } = await supabaseServer
+          .from('clients')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (clients && clients.length > 0) {
+          const clientsList = clients
+            .map((c: any) => `- ${c.name}${c.company ? ` @ ${c.company}` : ''} | ${c.status}${c.email ? ` | ${c.email}` : ''}${c.notes ? ` | notes: ${c.notes}` : ''}`)
+            .join('\n');
+          clientsContext = `\n\nCURRENT CLIENTS:\n${clientsList}`;
+        }
+      } catch (error) {
+        console.log('Could not fetch clients for context');
       }
     }
 
     // Define tools for Claude
     const tools = [
+      {
+        name: 'show_calendar_events',
+        description: 'Display one or more upcoming calendar events as visual cards. ALWAYS use this tool (instead of describing events in plain text) whenever the user asks about their schedule, meetings, or events — e.g. "what is my next meeting", "what do I have tomorrow", "what is on my calendar this week".',
+        input_schema: {
+          type: 'object',
+          properties: {
+            count: {
+              type: 'number',
+              description: 'How many events to show. Use 1 for "next meeting" style questions. Defaults to 1.',
+            },
+            date_filter: {
+              type: 'string',
+              description: 'Optional relative date filter: "today", "tomorrow", "this week", or a weekday name (e.g. "friday"). Leave empty to just show the next upcoming event(s).',
+            },
+          },
+        },
+      },
       {
         name: 'create_calendar_event',
         description: 'Create an event in Google Calendar. IMPORTANT: Always choose the correct calendar_id based on the event type. Analyze the event and find the matching calendar from the Available Calendars list. Never use "primary" - always use the specific calendar ID that matches the event type.',
@@ -351,7 +514,7 @@ export async function POST(request: NextRequest) {
             },
             date_string: {
               type: 'string',
-              description: 'Date description in natural language (e.g., "dia 15", "15 de julho", "15 de julho de 2026")',
+              description: 'Date description in natural language. Accepts relative phrases ("today", "tomorrow", "day after tomorrow", "next monday", "next week", "in 3 days", "in a month") or explicit dates ("dia 15", "July 15", "15 de julho de 2026"). Pass the user\'s phrase through as-is — do not convert it to an explicit date yourself.',
             },
             start_time: {
               type: 'string',
@@ -365,8 +528,26 @@ export async function POST(request: NextRequest) {
               type: 'string',
               description: 'REQUIRED: The exact calendar ID from the Available Calendars list. Match the calendar to the event type. For a work event like "reunião", use the Trabalho calendar ID.',
             },
+            client_name: {
+              type: 'string',
+              description: 'Name of the client/company this meeting is with, if mentioned (e.g. "with John from Acme", "reunião com a Acme"). Used to look up their email in the CRM and silently link them as an attendee — no invite email is sent. Leave empty if no client is mentioned.',
+            },
           },
           required: ['summary', 'date_string', 'calendar_id'],
+        },
+      },
+      {
+        name: 'send_calendar_invite',
+        description: 'Send a real calendar invite email to the client already linked to an event. Use this ONLY when the user explicitly asks to invite/notify the client (e.g. "send the invite to the client", "notifica o cliente deste evento") — never automatically after just creating an event.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            event_title: {
+              type: 'string',
+              description: 'The title or keyword of the event to send the invite for',
+            },
+          },
+          required: ['event_title'],
         },
       },
       {
@@ -598,6 +779,124 @@ export async function POST(request: NextRequest) {
           required: ['page_id', 'status'],
         },
       },
+      {
+        name: 'get_kanban_tasks',
+        description: 'Get the user\'s kanban tasks. Use this when the user asks about their tasks, priorities, what to do today, follow-ups, or anything related to their work pipeline.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            column: {
+              type: 'string',
+              enum: ['todo', 'in_progress', 'review', 'done', 'all'],
+              description: 'Filter by column. Defaults to "all".',
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'Filter by priority (optional).',
+            },
+          },
+        },
+      },
+      {
+        name: 'create_kanban_task',
+        description: 'Create a new task in the kanban board. Use this when the user asks to add a task, reminder, or to-do.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              description: 'Title of the task',
+            },
+            priority: {
+              type: 'string',
+              enum: ['low', 'medium', 'high'],
+              description: 'Task priority. Defaults to "medium".',
+            },
+            column: {
+              type: 'string',
+              enum: ['todo', 'in_progress', 'review', 'done'],
+              description: 'Column to place the task in. Defaults to "todo".',
+            },
+            category: {
+              type: 'string',
+              enum: ['task', 'client', 'idea', 'bug'],
+              description: 'Task category. Defaults to "task".',
+            },
+            description: {
+              type: 'string',
+              description: 'Additional details about the task (optional)',
+            },
+          },
+          required: ['title'],
+        },
+      },
+      {
+        name: 'move_kanban_task',
+        description: 'Move a kanban task to a different column. Use this when the user says a task is done, in progress, needs review, or asks to update its status.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            task_id: {
+              type: 'string',
+              description: 'The ID of the task to move (from get_kanban_tasks results)',
+            },
+            column: {
+              type: 'string',
+              enum: ['todo', 'in_progress', 'review', 'done'],
+              description: 'The column to move the task to',
+            },
+          },
+          required: ['task_id', 'column'],
+        },
+      },
+      {
+        name: 'get_clients',
+        description: 'Get the user\'s clients from the CRM. Use this when the user asks about clients, contacts, follow-ups, or who they are working with.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'Filter by client status (optional, e.g. "lead", "active")',
+            },
+          },
+        },
+      },
+      {
+        name: 'create_client',
+        description: 'Add a new client to the CRM. Use this when the user mentions a new client, contact, or lead to track.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              description: 'Name of the client or contact',
+            },
+            company: {
+              type: 'string',
+              description: 'Company name (optional)',
+            },
+            email: {
+              type: 'string',
+              description: 'Email address (optional)',
+            },
+            phone: {
+              type: 'string',
+              description: 'Phone number (optional)',
+            },
+            status: {
+              type: 'string',
+              description: 'Client status. Defaults to "lead".',
+            },
+            notes: {
+              type: 'string',
+              description: 'Additional notes (optional)',
+            },
+          },
+          required: ['name'],
+        },
+      },
     ];
 
     // Call Claude API with tools
@@ -633,12 +932,50 @@ You know the meeting details from the email/previous context. Use this informati
       actionContext = '\n\nCURRENT ACTION: The user is creating a to-do item or task. Help them organize their tasks.';
     }
 
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: `You are Flowtex, an intelligent workspace assistant for solopreneurs and small teams.
+    const systemPrompt = `You are the business operator for ${profile?.business_name || 'this business'}. You are not an assistant — you are an active partner who knows this business inside out and acts on it.
 
-You have access to the user's Gmail, Google Calendar, and Notion. You already know their project context, clients, and team.
+You have full access to the user's Gmail, Google Calendar, Notion, tasks, and clients. You already know their business, their clients, their priorities, and their current workload.
+
+Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+
+ABOUT THIS BUSINESS:
+- Business: ${profile?.business_name || 'Not set'}
+- Type: ${profile?.business_type || 'Not set'}
+- Industry: ${profile?.industry || 'Not set'}
+- Brief: ${profile?.business_brief || 'Not set'}
+- Target clients: ${profile?.target_clients || 'Not set'}
+- Tools used: ${profile?.main_tools || 'Not set'}
+
+MINDSET:
+- You are proactive, not passive. When you answer a question, also flag what the user should probably do next.
+- You reason before you respond. Before answering, identify: what is the real problem, what context is relevant, and what is the best possible action — not the easiest one.
+- You know this business. You do not ask for information you already have. You do not give generic advice. Every response is grounded in the user's actual context.
+- When you see an opportunity, a risk, or a next step the user hasn't thought of — say it.
+
+BEHAVIOUR:
+- Execute immediately. Do not ask for confirmation unless the action is irreversible.
+- If something is ambiguous, ask one short question before acting.
+- Never ask more than one question at a time. If you need clarification, pick the single most important question and ask only that.
+- Never re-ask for context already provided in this session.
+- Tone: semi-formal. Direct, clear, no filler. Not corporate, not casual.
+- No emojis unless quoting something that already contains one.
+- ALWAYS respond in English, no matter what language the user writes in. Never switch to Portuguese, Spanish, or any other language in your replies.
+- Keep responses short unless detail is explicitly needed or the situation demands analysis.
+
+WHEN THE USER ASKS SOMETHING LIKE "what follow-ups do I have today?" or similar:
+- Do not just list tasks. Analyse: who needs contact, when is the best time, what should be said, and why.
+- Cross-reference available CRM data, Gmail, and Kanban before answering.
+- Suggest the action, not just the information.
+
+WHEN THE USER ASKS FOR AN OPINION OR STRATEGY:
+- Give a real answer. Not "it depends." Say what you would do and why.
+- Be direct even if the answer is uncomfortable.
+
+Date Inputs (date_string parameter on calendar tools):
+- The date_string parameter understands relative phrases directly: "today", "tomorrow", "day after tomorrow", "yesterday", "next monday" (or any weekday), "next week", "next month", "in 3 days", "in a week", "in 2 weeks", "in a month", as well as explicit dates ("dia 15", "15 de julho", "July 15").
+- NEVER ask the user to convert a relative date into an explicit one yourself — just pass their exact relative phrase (e.g. "tomorrow") straight into date_string. The tool resolves it.
+- Only ask a clarifying question if the user's timing is genuinely ambiguous (e.g. they said nothing about when at all).
+- Default times if unspecified: 14:00-16:00.
 
 CONTEXT AWARENESS & SMART INFERENCE:
 - You have full context from recent emails, calendar events, and conversations
@@ -685,6 +1022,10 @@ Notion Navigation Rules:
   * Then create_notion_page with the returned ID
 - This allows you to create pages deep inside hierarchical structures
 
+Client Linking Rules:
+- When creating an event and the user mentions a client, contact, or company it's with (e.g. "with Acme", "reunião com a Acme", "call to John"), pass that name as client_name on create_calendar_event. It gets silently matched against the CRM and linked as an attendee — no invite is sent automatically.
+- Only call send_calendar_invite when the user explicitly asks to notify/invite the client (e.g. "send the invite", "avisa o cliente"). Never call it right after creating an event on your own initiative.
+
 Calendar Selection Rules:
 - ALWAYS analyze the event content to determine its type (work, personal, study, vacation, birthday, etc.)
 - ALWAYS match the event type to one of the available calendars by analyzing their names and descriptions
@@ -705,10 +1046,10 @@ Calendar Selection Rules:
 
 Calendar Knowledge:
 - You have full access to the user's calendar. You know their upcoming events, availability, and commitments.
-- Answer questions about their schedule: what meetings they have, what's next, when they're free, conflicts, etc.
-- When asked "what's next" or "o que vem a seguir", check the calendar and tell them the immediate upcoming event.
+- IMPORTANT: Whenever the user asks about their schedule, meetings, or events (e.g. "what's next", "what is my next meeting", "what do I have tomorrow", "o que vem a seguir"), ALWAYS call the show_calendar_events tool instead of describing the event(s) in plain text. Use count for "next" style questions and date_filter for "today"/"tomorrow"/"this week"/weekday questions.
+- The tool automatically caps the visual cards at 3 and asks the user to narrow down (a specific day or topic) if there are more. Do not add your own extra text on top of the tool's response — its message already handles this.
 - Provide helpful scheduling suggestions based on available time slots.
-- If they ask about today's schedule, tomorrow's schedule, or any specific day, analyze the calendar data and respond with their events for that day.
+- Use the calendar data (and the show_calendar_events tool) to answer questions about conflicts and availability.
 - When user asks to "reagendar" (reschedule) or "mover" an event, you should:
   1. First delete the old event using delete_calendar_event tool
   2. Then create a new event using create_calendar_event tool with the new time/date
@@ -723,20 +1064,19 @@ Complex Operations:
 - Always calculate times accurately and preserve event names
 
 Response Format for Calendar Actions:
-- When creating/scheduling events: Start with "Agendei [event name]:" or "Agendei para as [time]:" (very simple)
-- When rescheduling: Start with "Reagendei para as [time]:" or "Movei para [time]:"
-- When deleting: Start with "Removi o evento:" or "Apaguei a reunião:"
+- When creating/scheduling events: Start with "Scheduled [event name]:" or "Scheduled for [time]:" (very simple)
+- When rescheduling: Start with "Rescheduled to [time]:" or "Moved to [time]:"
+- When deleting: Start with "Removed the event:" or "Deleted the meeting:"
 - Keep the opening sentence VERY simple and short - just the action and time/date
-- Example: "Agendei para as 17h:" then show the event bubble
+- Example: "Scheduled for 5pm:" then show the event bubble
 - Do NOT include full explanations in the text - let the bubble show the details
 
-Rules:
-- Be direct and concise. No filler, no padding, no emojis.
-- Execute tasks immediately without asking for confirmation unless the action is irreversible.
-- If a command is ambiguous, ask one short clarifying question before acting.
-- Never re-ask for context already provided.
-- ALWAYS respond in the exact same language the user writes in. If they write in English, respond in English. If Portuguese, respond in Portuguese. If Spanish, respond in Spanish. Match their language perfectly.
-- Keep responses short — one to three sentences maximum unless detail is explicitly needed.${recentContext}${aiContextString}${calendarsInfo}${calendarContext}${actionContext}`,
+Quoting rule: never use emojis in your own writing, except when directly quoting something that already contains one (e.g. an email subject, a Notion page name/icon) — reproduce it as-is, don't add new ones.${recentContext}${calendarsInfo}${calendarContext}${kanbanContext}${clientsContext}${actionContext}`;
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system: systemPrompt,
       tools: tools as any,
       messages: messages,
     });
@@ -750,6 +1090,36 @@ Rules:
       console.log('Tool called:', toolUse?.name);
       console.log('Tool input:', JSON.stringify(toolUse?.input, null, 2));
 
+      // For read-only tools that fetch raw data (get_kanban_tasks, get_clients), feed the
+      // result back to Claude so it answers in natural language instead of dumping JSON
+      // straight at the user.
+      const respondWithToolResult = async (resultData: any) => {
+        const followUp = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [
+            ...messages,
+            { role: 'assistant', content: response.content },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'tool_result',
+                  tool_use_id: toolUse.id,
+                  content: JSON.stringify(resultData),
+                },
+              ],
+            },
+          ],
+        });
+
+        const textBlock = followUp.content.find((block: any) => block.type === 'text') as any;
+        const finalText = textBlock && 'text' in textBlock ? textBlock.text : 'No response';
+
+        return saveAssistantReply({ content: finalText, role: 'assistant' });
+      };
+
       if (toolUse && toolUse.name === 'reschedule_event' && validAccessToken) {
         const { old_event_title, summary, description, date_string, start_time, end_time, calendar_id } = toolUse.input;
 
@@ -758,8 +1128,8 @@ Rules:
         // Parse the date
         const dates = parseSmartDate(date_string);
         if (!dates) {
-          return NextResponse.json({
-            content: 'Não consegui interpretar a data. Tenta ser mais específico (e.g., "dia 15 de julho").',
+          return saveAssistantReply({
+            content: 'I could not understand that date. Try being more specific (e.g., "July 15").',
             role: 'assistant',
           });
         }
@@ -797,8 +1167,10 @@ Rules:
             const dateStr = startDateTime.toLocaleDateString('pt-PT');
             const timeStr = `${start_time || '14:00'} - ${end_time || '16:00'}`;
 
-            return NextResponse.json({
-              content: `Reagendei "${summary}" para ${date_string} das ${start_time || '14:00'} às ${end_time || '16:00'}.`,
+            if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'reschedule_event' });
+
+            return saveAssistantReply({
+              content: 'Rescheduled:',
               role: 'assistant',
               bubbles: [
                 {
@@ -807,13 +1179,11 @@ Rules:
                   subtitle: calendarName,
                   metadata: [
                     {
-                      icon: 'Calendar',
                       label: dayOfWeekStr.charAt(0).toUpperCase() + dayOfWeekStr.slice(1),
                       value: dateStr,
                       color: 'accent',
                     },
                     {
-                      icon: 'Clock',
                       label: userLanguage === 'pt' ? 'Horário' : 'Time',
                       value: timeStr,
                       color: 'accent',
@@ -827,7 +1197,7 @@ Rules:
               ],
             });
           } else {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: result.message,
               role: 'assistant',
             });
@@ -835,8 +1205,8 @@ Rules:
         } catch (error) {
           console.error('Error rescheduling event:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
-            content: `Erro ao reagendar o evento: ${errorMsg}`,
+          return saveAssistantReply({
+            content: `Error rescheduling the event: ${errorMsg}`,
             role: 'assistant',
           });
         }
@@ -854,8 +1224,9 @@ Rules:
 
           if (result.success) {
             console.log('✅ Event deleted successfully');
-            return NextResponse.json({
-              content: userLanguage === 'pt' ? `Removi o evento:` : `Removed event:`,
+            if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'delete_calendar_event' });
+            return saveAssistantReply({
+              content: 'Removed:',
               role: 'assistant',
               bubbles: [
                 {
@@ -863,13 +1234,11 @@ Rules:
                   title: result.deletedEvent,
                   metadata: [
                     {
-                      icon: 'Calendar',
                       label: result.deletedEventDayOfWeek || 'Date',
                       value: result.deletedEventDate || new Date().toLocaleDateString('pt-PT'),
                       color: 'default',
                     },
                     {
-                      icon: 'Clock',
                       label: userLanguage === 'pt' ? 'Horário' : 'Time',
                       value: result.deletedEventTime || '--:--',
                       color: 'default',
@@ -884,7 +1253,7 @@ Rules:
             });
           } else {
             console.log('❌ Event not found:', result.message);
-            return NextResponse.json({
+            return saveAssistantReply({
               content: result.message,
               role: 'assistant',
             });
@@ -893,15 +1262,124 @@ Rules:
           console.error('❌ Error deleting event:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
           console.error('Error details:', errorMsg);
-          return NextResponse.json({
-            content: `Erro ao deletar o evento: ${errorMsg}`,
+          return saveAssistantReply({
+            content: `Error deleting the event: ${errorMsg}`,
             role: 'assistant',
           });
         }
       }
 
+      if (toolUse && toolUse.name === 'send_calendar_invite' && validAccessToken) {
+        const { event_title } = toolUse.input;
+
+        try {
+          const result = await findAndSendInvite(validAccessToken, event_title);
+
+          if (result.success) {
+            if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'send_calendar_invite' });
+            return saveAssistantReply({
+              content: `Invite sent to ${result.attendeeEmail} for "${result.eventTitle}".`,
+              role: 'assistant',
+            });
+          } else {
+            return saveAssistantReply({
+              content: result.message,
+              role: 'assistant',
+            });
+          }
+        } catch (error) {
+          console.error('Error sending calendar invite:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error sending the invite: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'show_calendar_events' && validAccessToken) {
+        const { count = 1, date_filter } = toolUse.input;
+
+        const range = resolveRelativeDateRange(date_filter);
+        let matched = upcomingEvents;
+
+        if (range) {
+          matched = upcomingEvents.filter((event: any) => {
+            const start = new Date(event.start?.dateTime || event.start?.date);
+            return start >= range.start && start < range.end;
+          });
+        } else {
+          matched = upcomingEvents.slice(0, count);
+        }
+
+        if (matched.length === 0) {
+          return saveAssistantReply({
+            content: calendarFetchFailed
+              ? (userLanguage === 'pt'
+                  ? 'Não consegui aceder ao teu calendário agora. Tenta novamente em instantes.'
+                  : 'I could not reach your calendar right now. Please try again in a moment.')
+              : (userLanguage === 'pt'
+                  ? 'Não encontrei nenhum evento nesse período.'
+                  : 'No events found for that period.'),
+            role: 'assistant',
+          });
+        }
+
+        if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'show_calendar_events' });
+
+        const locale = userLanguage === 'pt' ? 'pt-PT' : userLanguage === 'es' ? 'es-ES' : 'en-US';
+        const MAX_SHOWN = 3;
+        const shown = matched.slice(0, MAX_SHOWN);
+        const remaining = matched.length - shown.length;
+
+        let content: string;
+        if (matched.length === 1) {
+          content = userLanguage === 'pt' ? 'Aqui está o evento:' : 'Here is the event:';
+        } else if (remaining > 0) {
+          content = userLanguage === 'pt'
+            ? `Encontrei ${matched.length} eventos. A mostrar os primeiros ${MAX_SHOWN} — e mais ${remaining}. Queres ver algo específico ou um dia em particular?`
+            : `Found ${matched.length} events. Showing the first ${MAX_SHOWN} — and ${remaining} more. Want to see something specific, or a particular day?`;
+        } else {
+          content = userLanguage === 'pt' ? `Encontrei ${matched.length} eventos:` : `Found ${matched.length} events:`;
+        }
+
+        return saveAssistantReply({
+          content,
+          role: 'assistant',
+          bubbles: shown.map((event: any) => {
+            const startDate = new Date(event.start?.dateTime || event.start?.date);
+            const endDate = new Date(event.end?.dateTime || event.end?.date);
+            const dayOfWeek = startDate.toLocaleDateString(locale, { weekday: 'long' });
+            const timeStr = event.start?.dateTime
+              ? `${startDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`
+              : (userLanguage === 'pt' ? 'Dia inteiro' : 'All day');
+
+            return {
+              type: 'event',
+              title: event.summary || (userLanguage === 'pt' ? 'Sem título' : 'Untitled'),
+              metadata: [
+                {
+                  label: dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1),
+                  value: startDate.toLocaleDateString(locale),
+                  color: 'accent',
+                },
+                {
+                  label: userLanguage === 'pt' ? 'Horário' : 'Time',
+                  value: timeStr,
+                  color: 'accent',
+                },
+              ],
+              badge: {
+                label: userLanguage === 'pt' ? 'Próximo' : 'Upcoming',
+                color: 'success',
+              },
+            };
+          }),
+        });
+      }
+
       if (toolUse && toolUse.name === 'create_calendar_event' && validAccessToken) {
-        const { summary, description, date_string, start_time, end_time, calendar_id } = toolUse.input;
+        const { summary, description, date_string, start_time, end_time, calendar_id, client_name } = toolUse.input;
 
         // Improve the event title with proper formatting and accents
         const improvedSummary = improveEventTitle(summary);
@@ -913,14 +1391,38 @@ Rules:
           date_string,
           start_time,
           end_time,
-          calendar_id
+          calendar_id,
+          client_name,
         });
+
+        // If a client/company was mentioned, look them up in the CRM and silently
+        // attach their email as an attendee (no invite sent) for reliable linking later.
+        let attendeeEmail: string | undefined;
+        let matchedClientName: string | undefined;
+        if (client_name && userId) {
+          try {
+            const { data: matchedClients } = await supabaseServer
+              .from('clients')
+              .select('name, company, email')
+              .eq('user_id', userId)
+              .or(`name.ilike.%${client_name}%,company.ilike.%${client_name}%`)
+              .limit(1);
+
+            const match = matchedClients?.[0];
+            if (match?.email) {
+              attendeeEmail = match.email;
+              matchedClientName = match.name;
+            }
+          } catch (error) {
+            console.log('Could not look up client for attendee linking');
+          }
+        }
 
         // Parse the date
         const dates = parseSmartDate(date_string);
         if (!dates) {
-          return NextResponse.json({
-            content: 'Não consegui interpretar a data. Tenta ser mais específico (e.g., "dia 15 de julho").',
+          return saveAssistantReply({
+            content: 'I could not understand that date. Try being more specific (e.g., "July 15").',
             role: 'assistant',
           });
         }
@@ -954,9 +1456,15 @@ Rules:
             startTime: startDateTime.toISOString(),
             endTime: endDateTime.toISOString(),
             calendarId: calendar_id,
+            attendeeEmail,
           });
 
-          console.log('Event created successfully:', event?.id);
+          console.log('Event created successfully:', event?.id, attendeeEmail ? `linked to ${attendeeEmail}` : '');
+
+          if (userId) {
+            await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_calendar_event' });
+            await captureServerEvent(userId, 'calendar_event_created', {});
+          }
 
           // Find the calendar name
           const selectedCalendar = calendars?.find((cal: any) => cal.id === calendar_id);
@@ -968,26 +1476,10 @@ Rules:
           const timeStr = `${start_time || '14:00'} - ${end_time || '16:00'}`;
 
           // Get localized day name and action text
-          const { dayOfWeek: dayOfWeekStr, actionText } = getLocalizedText(startDateTime, 'created', userLanguage);
+          const { dayOfWeek: dayOfWeekStr } = getLocalizedText(startDateTime, 'created', userLanguage);
 
-          // Let Claude generate the response in the user's language
-          const responseMessages = [...messages, { role: 'user' as const, content: message }];
-
-          const confirmationResponse = await client.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 100,
-            system: `You have just scheduled an event. Respond with a VERY SHORT confirmation message (1 sentence max).
-Respond in the EXACT same language as the user's message.
-If user wrote in English, respond in English. If Portuguese, respond in Portuguese.
-Be concise and just confirm what was scheduled.`,
-            messages: responseMessages,
-          });
-
-          const confirmationText = confirmationResponse.content[0];
-          const confirmationContent = confirmationText && 'text' in confirmationText ? confirmationText.text : `Scheduled for ${start_time || '14:00'}:`;
-
-          return NextResponse.json({
-            content: confirmationContent,
+          return saveAssistantReply({
+            content: 'Scheduled:',
             role: 'assistant',
             bubbles: [
               {
@@ -996,17 +1488,18 @@ Be concise and just confirm what was scheduled.`,
                 subtitle: calendarName,
                 metadata: [
                   {
-                    icon: 'Calendar',
                     label: dayOfWeekStr,
                     value: dateStr,
                     color: 'accent',
                   },
                   {
-                    icon: 'Clock',
                     label: userLanguage === 'pt' ? 'Horário' : 'Time',
                     value: timeStr,
                     color: 'accent',
                   },
+                  ...(matchedClientName
+                    ? [{ label: userLanguage === 'pt' ? 'Cliente' : 'Client', value: matchedClientName, color: 'accent' as const }]
+                    : []),
                 ],
                 badge: {
                   label: userLanguage === 'pt' ? 'Agendado' : 'Scheduled',
@@ -1019,8 +1512,8 @@ Be concise and just confirm what was scheduled.`,
           console.error('Error creating event:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
           console.error('Error details:', errorMsg);
-          return NextResponse.json({
-            content: `Erro ao criar o evento no calendário: ${errorMsg}`,
+          return saveAssistantReply({
+            content: `Error creating the calendar event: ${errorMsg}`,
             role: 'assistant',
           });
         }
@@ -1036,7 +1529,7 @@ Be concise and just confirm what was scheduled.`,
 
           if (!email || !email.body) {
             console.log('⚠️ Email or body is empty:', email);
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? 'Desculpa, o email não tem conteúdo ou não consegui ler.'
                 : 'Sorry, the email has no content or I couldn\'t read it.',
@@ -1044,29 +1537,40 @@ Be concise and just confirm what was scheduled.`,
             });
           }
 
-          // Return full email content to Claude with clear formatting
-          const emailContent = `
-📧 EMAIL COMPLETO:
+          if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'read_email_full' });
 
-De: ${email.from}
-Para: ${email.to}
-Assunto: ${email.subject}
-Data: ${email.date}
-
----
-
-${email.body}
-
----`;
-
-          return NextResponse.json({
-            content: emailContent,
+          return saveAssistantReply({
+            content: email.body,
             role: 'assistant',
+            bubbles: [
+              {
+                type: 'email',
+                title: email.subject,
+                subtitle: email.from,
+                metadata: [
+                  {
+                    label: userLanguage === 'pt' ? 'Para' : 'To',
+                    value: email.to,
+                    color: 'default',
+                  },
+                  {
+                    label: userLanguage === 'pt' ? 'Data' : 'Date',
+                    value: email.date,
+                    color: 'default',
+                  },
+                ],
+                meta: {
+                  emailId: email_id,
+                  fromEmail: extractEmailAddress(email.from),
+                  subject: email.subject,
+                },
+              },
+            ],
           });
         } catch (error) {
           console.error('Error reading full email:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao ler email completo: ${errorMsg}`
               : `Error reading full email: ${errorMsg}`,
@@ -1085,8 +1589,10 @@ ${email.body}
 
           console.log(`✅ Found ${emails.length} emails`);
 
+          if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'search_emails' });
+
           if (emails.length === 0) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt' ? 'Não encontrei nenhum email com essa pesquisa.' : 'I didn\'t find any emails matching that search.',
               role: 'assistant',
             });
@@ -1108,7 +1614,8 @@ ${email.body}
                 model: 'claude-haiku-4-5-20251001',
                 max_tokens: 300,
                 system: `You are an email summarizer. ${languageInstructions[userLanguage as keyof typeof languageInstructions] || languageInstructions.en}
-Include the main points and action items if any. Do not add headers or markdown formatting.`,
+Include the main points and action items if any. Do not add headers or markdown formatting.
+Tone: semi-formal. Never use emojis, even if the original email contains them.`,
                 messages: [
                   {
                     role: 'user',
@@ -1133,14 +1640,8 @@ Include the main points and action items if any. Do not add headers or markdown 
                 day: 'numeric'
               });
 
-              const contentMessages = {
-                pt: `Aqui está o resumo do teu último email não lido:`,
-                en: `Here's the summary of your last unread email:`,
-                es: `Aquí está el resumen de tu último email no leído:`,
-              };
-
-              return NextResponse.json({
-                content: contentMessages[userLanguage as keyof typeof contentMessages] || contentMessages.en,
+              return saveAssistantReply({
+                content: userLanguage === 'pt' ? 'Email não lido:' : 'Unread email:',
                 role: 'assistant',
                 bubbles: [
                   {
@@ -1150,7 +1651,6 @@ Include the main points and action items if any. Do not add headers or markdown 
                     description: summary,
                     metadata: [
                       {
-                        icon: 'Calendar',
                         label: userLanguage === 'pt' ? 'Data' : 'Date',
                         value: formattedDate,
                         color: 'default',
@@ -1159,6 +1659,11 @@ Include the main points and action items if any. Do not add headers or markdown 
                     badge: {
                       label: userLanguage === 'pt' ? 'Não lido' : 'Unread',
                       color: 'warning',
+                    },
+                    meta: {
+                      emailId: latestEmail.id,
+                      fromEmail: extractEmailAddress(latestEmail.from),
+                      subject: latestEmail.subject,
                     },
                   },
                 ],
@@ -1178,34 +1683,29 @@ Include the main points and action items if any. Do not add headers or markdown 
                 value: email.date.split(/\s+\d{2}:\d{2}:\d{2}/)[0], // Remove time and timezone
                 color: 'default' as const,
               },
-              {
-                label: 'ID',
-                value: email.id,
-                color: 'default' as const,
-              },
             ],
             badge: {
               label: userLanguage === 'pt' ? 'Email' : 'Email',
               color: 'default' as const,
             },
+            meta: {
+              emailId: email.id,
+              fromEmail: extractEmailAddress(email.from),
+              subject: email.subject,
+            },
           }));
 
-          // Also pass full email data to Claude in the system message
-          const emailsContext = emails.map(e =>
-            `Email ID: ${e.id}\nFrom: ${e.from}\nSubject: ${e.subject}\nDate: ${e.date}\nPreview: ${e.body.substring(0, 500)}...`
-          ).join('\n\n---\n\n');
-
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
-              ? `Encontrei ${emails.length} email(s):\n\n${emailsContext}`
-              : `Found ${emails.length} email(s):\n\n${emailsContext}`,
+              ? `Encontrei ${emails.length} email(s):`
+              : `Found ${emails.length} email(s):`,
             role: 'assistant',
             bubbles: emailBubbles,
           });
         } catch (error) {
           console.error('Error searching emails:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao procurar emails: ${errorMsg}`
               : `Error searching emails: ${errorMsg}`,
@@ -1219,18 +1719,18 @@ Include the main points and action items if any. Do not add headers or markdown 
 
         console.log('📧 Drafting email for:', to);
 
+        if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'draft_email' });
+
         // Return draft bubble instead of sending
-        return NextResponse.json({
-          content: userLanguage === 'pt'
-            ? 'Aqui está o draft do email. Revisa e confirma para enviar:'
-            : 'Here is the email draft. Review and confirm to send:',
+        return saveAssistantReply({
+          content: userLanguage === 'pt' ? 'Draft:' : 'Draft:',
           role: 'assistant',
           bubbles: [
             {
               type: 'email_draft',
-              to,
-              subject,
-              body,
+              title: subject,
+              subtitle: to,
+              meta: { to, subject, body },
             },
           ],
         });
@@ -1245,7 +1745,7 @@ Include the main points and action items if any. Do not add headers or markdown 
           const emails = await searchEmails(validAccessToken, query, 1);
 
           if (emails.length === 0) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? 'Não encontrei nenhum email para deletar.'
                 : 'I didn\'t find any email to delete.',
@@ -1255,16 +1755,18 @@ Include the main points and action items if any. Do not add headers or markdown 
 
           await deleteEmail(validAccessToken, emails[0].id);
 
-          return NextResponse.json({
+          if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'delete_email' });
+
+          return saveAssistantReply({
             content: userLanguage === 'pt'
-              ? `✅ Email "${emails[0].subject}" deletado com sucesso`
-              : `✅ Email "${emails[0].subject}" deleted successfully`,
+              ? `Email "${emails[0].subject}" eliminado com sucesso.`
+              : `Email "${emails[0].subject}" deleted successfully.`,
             role: 'assistant',
           });
         } catch (error) {
           console.error('Error deleting email:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao deletar email: ${errorMsg}`
               : `Error deleting email: ${errorMsg}`,
@@ -1284,7 +1786,7 @@ Include the main points and action items if any. Do not add headers or markdown 
           const pages = await searchNotionPages(userId, query);
 
           if (pages.length === 0) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? `Não encontrei nada com "${query}". Qual é o nome exato da página/database que queres?`
                 : `I didn't find anything with "${query}". What's the exact name of the page/database?`,
@@ -1292,21 +1794,24 @@ Include the main points and action items if any. Do not add headers or markdown 
             });
           }
 
+          if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'search_notion' });
+
           // Show top 5 closest matches and ask for confirmation
           const topMatches = pages.slice(0, 5);
-          const matchesList = topMatches
-            .map((p: any, idx: number) => {
-              const title = p.properties?.title?.[0]?.plain_text || p.title?.[0]?.plain_text || 'Untitled';
-              const icon = p.icon?.emoji || '📄';
-              return `${idx + 1}. ${icon} ${title}`;
-            })
-            .join('\n');
 
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
-              ? `Encontrei essas opções. Qual é a que queres?\n${matchesList}`
-              : `I found these options. Which one is it?\n${matchesList}`,
+              ? `Encontrei estas opções. Qual delas é a que procuras?`
+              : `I found these options. Which one is it?`,
             role: 'assistant',
+            bubbles: topMatches.map((p: any) => {
+              const title = p.properties?.title?.[0]?.plain_text || p.title?.[0]?.plain_text || 'Untitled';
+              const icon = p.icon?.emoji;
+              return {
+                type: 'notion',
+                title: icon ? `${icon} ${title}` : title,
+              };
+            }),
             _notionResults: pages.map((p: any) => ({
               id: p.id,
               title: p.properties?.title?.[0]?.plain_text || p.title?.[0]?.plain_text || 'Untitled',
@@ -1314,7 +1819,7 @@ Include the main points and action items if any. Do not add headers or markdown 
           });
         } catch (error) {
           console.error('Error searching Notion:', error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? 'Erro ao buscar no Notion. Certifique-se de que o Notion está conectado.'
               : 'Error searching Notion. Make sure Notion is connected.',
@@ -1342,16 +1847,28 @@ Include the main points and action items if any. Do not add headers or markdown 
 
           const page = await createNotionPage(userId, parent_id, title, properties);
 
-          return NextResponse.json({
-            content: userLanguage === 'pt'
-              ? `Página "${title}" criada com sucesso no Notion.`
-              : `Page "${title}" created successfully in Notion.`,
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_notion_page' });
+          await captureServerEvent(userId, 'notion_page_created', {});
+
+          return saveAssistantReply({
+            content: userLanguage === 'pt' ? `Criada:` : `Created:`,
             role: 'assistant',
+            bubbles: [
+              {
+                type: 'notion',
+                title,
+                description: description || undefined,
+                badge: {
+                  label: status || (userLanguage === 'pt' ? 'Criada' : 'Created'),
+                  color: 'success',
+                },
+              },
+            ],
           });
         } catch (error) {
           console.error('Error creating Notion page:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao criar página: ${errorMsg}`
               : `Error creating page: ${errorMsg}`,
@@ -1369,8 +1886,10 @@ Include the main points and action items if any. Do not add headers or markdown 
         try {
           const items = await getNotionDatabase(userId, database_id);
 
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'query_notion_database' });
+
           if (items.length === 0) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? 'Este database está vazio.'
                 : 'This database is empty.',
@@ -1378,20 +1897,24 @@ Include the main points and action items if any. Do not add headers or markdown 
             });
           }
 
-          const itemsList = items
-            .slice(0, 10)
-            .map((item: any) => `- ${item.properties?.title?.[0]?.plain_text || item.id}`)
-            .join('\n');
+          const topItems = items.slice(0, 10);
 
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
-              ? `Encontrei ${items.length} item(ns):\n${itemsList}${items.length > 10 ? '...' : ''}`
-              : `Found ${items.length} item(s):\n${itemsList}${items.length > 10 ? '...' : ''}`,
+              ? `Encontrei ${items.length} item(ns) neste database${items.length > 10 ? ' (a mostrar os primeiros 10)' : ''}:`
+              : `Found ${items.length} item(s) in this database${items.length > 10 ? ' (showing the first 10)' : ''}:`,
             role: 'assistant',
+            bubbles: topItems.map((item: any) => ({
+              type: 'notion',
+              title: item.properties?.title?.[0]?.plain_text || 'Untitled',
+              badge: item.properties?.Status?.status?.name
+                ? { label: item.properties.Status.status.name, color: 'info' }
+                : undefined,
+            })),
           });
         } catch (error) {
           console.error('Error querying Notion database:', error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? 'Erro ao consultar o database.'
               : 'Error querying database.',
@@ -1409,7 +1932,7 @@ Include the main points and action items if any. Do not add headers or markdown 
           const pages = await listNotionRootPages(userId);
 
           if (pages.length === 0) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? 'Não encontrei nenhuma página no Notion.'
                 : 'No pages found in your Notion.',
@@ -1433,28 +1956,29 @@ Include the main points and action items if any. Do not add headers or markdown 
                 return null;
               }
 
-              const icon = p.icon?.emoji || '📄';
+              const icon = p.icon?.emoji;
               return { title, icon, id: p.id };
             })
-            .filter((p): p is { title: string; icon: string; id: string } => p !== null)
+            .filter((p): p is { title: string; icon: string | undefined; id: string } => p !== null)
             .slice(0, 10); // Limit to top 10
 
-          // Format response as clean list
-          const formattedList = pagesWithTitles
-            .map(p => `- ${p.icon} ${p.title}`)
-            .join('\n');
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'list_notion_pages' });
 
           const heading = userLanguage === 'pt'
-            ? 'Aqui estão suas principais páginas do Notion:'
+            ? 'Aqui estão as tuas principais páginas do Notion:'
             : 'Here are your main Notion pages:';
 
-          return NextResponse.json({
-            content: `${heading}\n${formattedList}`,
+          return saveAssistantReply({
+            content: heading,
             role: 'assistant',
+            bubbles: pagesWithTitles.map((p) => ({
+              type: 'notion',
+              title: p.icon ? `${p.icon} ${p.title}` : p.title,
+            })),
           });
         } catch (error) {
           console.error('Error listing Notion pages:', error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? 'Erro ao listar páginas do Notion.'
               : 'Error listing Notion pages.',
@@ -1470,7 +1994,7 @@ Include the main points and action items if any. Do not add headers or markdown 
         console.log('Navigating Notion path:', path, 'userId:', userId);
 
         if (!userId) {
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? 'Erro: não consegui identificar seu usuário. Tenta fazer login novamente.'
               : 'Error: Could not identify your user. Try logging in again.',
@@ -1482,7 +2006,7 @@ Include the main points and action items if any. Do not add headers or markdown 
           const result = await navigateNotionPath(userId, path);
 
           if (!result) {
-            return NextResponse.json({
+            return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? `Não consegui encontrar o caminho: ${path.join(' > ')}`
                 : `I couldn't find the path: ${path.join(' > ')}`,
@@ -1490,16 +2014,23 @@ Include the main points and action items if any. Do not add headers or markdown 
             });
           }
 
-          return NextResponse.json({
-            content: userLanguage === 'pt'
-              ? `Encontrei: "${result.title}"`
-              : `Found: "${result.title}"`,
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'navigate_notion_path' });
+
+          return saveAssistantReply({
+            content: userLanguage === 'pt' ? `Encontrada:` : `Found:`,
             role: 'assistant',
+            bubbles: [
+              {
+                type: 'notion',
+                title: result.title,
+                subtitle: path.join(' > '),
+              },
+            ],
             _notionPathResult: result,
           });
         } catch (error) {
           console.error('Error navigating Notion path:', error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? 'Erro ao navegar no Notion.'
               : 'Error navigating Notion.',
@@ -1517,16 +2048,23 @@ Include the main points and action items if any. Do not add headers or markdown 
         try {
           await deleteNotionPage(userId, page_id);
 
-          return NextResponse.json({
-            content: userLanguage === 'pt'
-              ? `Página "${page_name}" removida com sucesso.`
-              : `Page "${page_name}" deleted successfully.`,
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'delete_notion_page' });
+
+          return saveAssistantReply({
+            content: userLanguage === 'pt' ? `Removida:` : `Deleted:`,
             role: 'assistant',
+            bubbles: [
+              {
+                type: 'notion',
+                title: page_name,
+                badge: { label: userLanguage === 'pt' ? 'Removida' : 'Deleted', color: 'error' },
+              },
+            ],
           });
         } catch (error) {
           console.error('Error deleting Notion page:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao deletar página: ${errorMsg}`
               : `Error deleting page: ${errorMsg}`,
@@ -1550,19 +2088,215 @@ Include the main points and action items if any. Do not add headers or markdown 
             },
           });
 
-          return NextResponse.json({
-            content: userLanguage === 'pt'
-              ? `Status atualizado para "${status}".`
-              : `Status updated to "${status}".`,
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'update_notion_page_status' });
+
+          return saveAssistantReply({
+            content: userLanguage === 'pt' ? `Atualizada:` : `Updated:`,
             role: 'assistant',
+            bubbles: [
+              {
+                type: 'notion',
+                title: userLanguage === 'pt' ? 'Página do Notion' : 'Notion Page',
+                badge: { label: status, color: 'info' },
+              },
+            ],
           });
         } catch (error) {
           console.error('Error updating Notion page status:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
-          return NextResponse.json({
+          return saveAssistantReply({
             content: userLanguage === 'pt'
               ? `Erro ao atualizar status: ${errorMsg}`
               : `Error updating status: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'get_kanban_tasks' && userId) {
+        const { column = 'all', priority } = toolUse.input;
+
+        try {
+          let query = supabaseServer
+            .from('kanban_tasks')
+            .select('*')
+            .eq('user_id', userId);
+
+          if (column && column !== 'all') {
+            query = query.eq('column_id', column);
+          }
+          if (priority) {
+            query = query.eq('priority', priority);
+          }
+
+          const { data: tasks, error } = await query.order('created_at', { ascending: false });
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'get_kanban_tasks' });
+
+          return await respondWithToolResult(tasks || []);
+        } catch (error) {
+          console.error('Error fetching kanban tasks:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error fetching tasks: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'create_kanban_task' && userId) {
+        const { title, priority = 'medium', column = 'todo', category = 'task', description } = toolUse.input;
+
+        try {
+          const { data: task, error } = await supabaseServer
+            .from('kanban_tasks')
+            .insert([
+              {
+                user_id: userId,
+                title,
+                priority,
+                column_id: column,
+                category,
+                description: description || null,
+              },
+            ])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_kanban_task' });
+
+          return saveAssistantReply({
+            content: 'Added:',
+            role: 'assistant',
+            bubbles: [
+              {
+                type: 'task',
+                title: task.title,
+                description: task.description || undefined,
+                badge: { label: task.priority, color: task.priority === 'high' ? 'error' : task.priority === 'low' ? 'default' : 'warning' },
+              },
+            ],
+          });
+        } catch (error) {
+          console.error('Error creating kanban task:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error creating task: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'move_kanban_task' && userId) {
+        const { task_id, column } = toolUse.input;
+
+        try {
+          const { data: task, error } = await supabaseServer
+            .from('kanban_tasks')
+            .update({ column_id: column })
+            .eq('id', task_id)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'move_kanban_task' });
+
+          return saveAssistantReply({
+            content: 'Moved:',
+            role: 'assistant',
+            bubbles: [
+              {
+                type: 'task',
+                title: task.title,
+                badge: { label: column, color: 'success' },
+              },
+            ],
+          });
+        } catch (error) {
+          console.error('Error moving kanban task:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error moving task: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'get_clients' && userId) {
+        const { status } = toolUse.input;
+
+        try {
+          let query = supabaseServer
+            .from('clients')
+            .select('*')
+            .eq('user_id', userId);
+
+          if (status) {
+            query = query.eq('status', status);
+          }
+
+          const { data: clients, error } = await query.order('created_at', { ascending: false });
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'get_clients' });
+
+          return await respondWithToolResult(clients || []);
+        } catch (error) {
+          console.error('Error fetching clients:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error fetching clients: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && toolUse.name === 'create_client' && userId) {
+        const { name, company, email, phone, status = 'lead', notes } = toolUse.input;
+
+        try {
+          const { data: client, error } = await supabaseServer
+            .from('clients')
+            .insert([
+              {
+                user_id: userId,
+                name,
+                company: company || null,
+                email: email || null,
+                phone: phone || null,
+                status,
+                notes: notes || null,
+              },
+            ])
+            .select()
+            .single();
+
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_client' });
+
+          return saveAssistantReply({
+            content: 'Added:',
+            role: 'assistant',
+            bubbles: [
+              {
+                type: 'custom',
+                title: client.name,
+                subtitle: client.company || undefined,
+                badge: { label: client.status, color: 'info' },
+              },
+            ],
+          });
+        } catch (error) {
+          console.error('Error creating client:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          return saveAssistantReply({
+            content: `Error creating client: ${errorMsg}`,
             role: 'assistant',
           });
         }
@@ -1573,79 +2307,11 @@ Include the main points and action items if any. Do not add headers or markdown 
     const textContent = response.content.find((block: any) => block.type === 'text');
     const responseContent = textContent && 'text' in textContent ? textContent.text : 'No response';
 
-    // Check if response mentions events and extract them for visual display
-    let eventsToDisplay: any[] = [];
-    if (responseContent && validAccessToken) {
-      // Look for event mentions (very simple pattern: if response mentions "reunião", "evento", "agendado", etc.)
-      const eventKeywords = ['reunião', 'evento', 'agendado', 'marcado', 'calendário', 'próxima', 'tenho', 'tens', 'dia', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
-      const hasEventMention = eventKeywords.some(keyword =>
-        responseContent.toLowerCase().includes(keyword)
-      );
-
-      if (hasEventMention) {
-        // Get all events and find ones mentioned in the response
-        try {
-          const allCalendarEvents = await getUpcomingEvents(validAccessToken, 50);
-
-          // Try to match events mentioned in the response
-          allCalendarEvents.forEach((event: any) => {
-            const eventTitle = event.summary?.toLowerCase() || '';
-            const responseLC = responseContent.toLowerCase();
-
-            // Check if event title is mentioned in response
-            if (eventTitle && responseLC.includes(eventTitle)) {
-              const startTime = new Date(event.start?.dateTime || event.start?.date);
-              const endTime = new Date(event.end?.dateTime || event.end?.date);
-
-              // Avoid duplicates
-              if (!eventsToDisplay.find(e => e.title === event.summary)) {
-                eventsToDisplay.push({
-                  title: event.summary,
-                  date: startTime.toLocaleDateString('pt-PT'),
-                  time: event.start?.dateTime
-                    ? `${startTime.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`
-                    : startTime.toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-                  dayOfWeek: startTime.toLocaleDateString('pt-PT', { weekday: 'long' }).charAt(0).toUpperCase() + startTime.toLocaleDateString('pt-PT', { weekday: 'long' }).slice(1),
-                  calendar: 'Calendário',
-                });
-              }
-            }
-          });
-        } catch (error) {
-          console.error('Error fetching events for display:', error);
-        }
-      }
-    }
-
     const response_data: any = {
       content: responseContent,
       role: 'assistant',
     };
     // Fim do if (response.stop_reason === 'tool_use')
-
-    // Convert event display data to bubbles if events were found
-    if (eventsToDisplay.length > 0) {
-      response_data.bubbles = eventsToDisplay.map(evt => ({
-        type: 'event' as const,
-        title: evt.title,
-        metadata: [
-          {
-            label: evt.dayOfWeek,
-            value: evt.date,
-            color: 'accent' as const,
-          },
-          {
-            label: userLanguage === 'pt' ? 'Horário' : 'Time',
-            value: evt.time,
-            color: 'accent' as const,
-          },
-        ],
-        badge: {
-          label: userLanguage === 'pt' ? 'Próxima' : 'Upcoming',
-          color: 'success' as const,
-        },
-      }));
-    }
 
     // Save assistant response to database
     if (userId) {
@@ -1655,10 +2321,11 @@ Include the main points and action items if any. Do not add headers or markdown 
           content: responseContent,
           input_tokens: response.usage?.input_tokens || 0,
           output_tokens: response.usage?.output_tokens || 0,
-        });
+        }, supabaseServer);
       } catch (error) {
         console.log('Could not save assistant message to database');
       }
+      await captureServerEvent(userId, 'chat_message_sent', { has_tool_use: false });
     }
 
     return NextResponse.json(response_data);
@@ -1670,7 +2337,7 @@ Include the main points and action items if any. Do not add headers or markdown 
 
     return NextResponse.json(
       {
-        error: 'Erro ao processar mensagem',
+        error: 'Error processing message',
         details: errorMessage,
       },
       { status: 500 }
