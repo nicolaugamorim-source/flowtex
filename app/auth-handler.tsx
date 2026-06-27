@@ -85,8 +85,10 @@ export function AuthHandler() {
 
           // Only redirect to the dashboard when we're on a pre-auth page (e.g. the
           // login page reloading mid-session) — never bounce the user away from
-          // wherever they already are inside the app (e.g. /app/kanban) on reload.
-          if (!pathname.startsWith("/app")) {
+          // wherever they already are inside the app (e.g. /app/kanban) on reload,
+          // and never bounce them off the landing page, which should stay visible
+          // (with its own "Go to Flowtex" CTA) even when logged in.
+          if (pathname !== "/" && !pathname.startsWith("/app")) {
             console.log("✅ Auth handler complete, redirecting to /app");
             router.replace("/app");
           }

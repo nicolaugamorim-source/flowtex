@@ -25,6 +25,7 @@ import {
 } from 'framer-motion';
 import { usePostHog } from 'posthog-js/react';
 import { Dock } from '@/components/ui/dock-two';
+import { supabase } from '@/lib/supabase';
 
 function cn(...classes: (string | undefined | null | boolean)[]): string {
   return classes.filter(Boolean).join(" ");
@@ -427,6 +428,17 @@ const HeroFlowtex: React.FC = () => {
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
    const [isScrolled, setIsScrolled] = useState<boolean>(false);
+   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+
+   useEffect(() => {
+       supabase.auth.getSession().then(({ data: { session } }) => {
+           setIsLoggedIn(!!session);
+       });
+       const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+           setIsLoggedIn(!!session);
+       });
+       return () => subscription.subscription.unsubscribe();
+   }, []);
 
    const { scrollY } = useScroll();
    useMotionValueEvent(scrollY, "change", (latest) => {
@@ -691,11 +703,16 @@ const HeroFlowtex: React.FC = () => {
                         const pricingSection = document.getElementById('pricing');
                         pricingSection?.scrollIntoView({ behavior: 'smooth' });
                     } },
-                    { label: "Get Early Access", onClick: () => {
-                        posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
-                        const pricingSection = document.getElementById('pricing');
-                        pricingSection?.scrollIntoView({ behavior: 'smooth' });
-                    }, isButton: true }
+                    isLoggedIn
+                        ? { label: "Go to Flowtex", onClick: () => {
+                            posthog?.capture('cta_clicked', { button_label: 'Go to Flowtex', position: 'nav' });
+                            window.location.href = '/app';
+                        }, isButton: true }
+                        : { label: "Get Early Access", onClick: () => {
+                            posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
+                            const pricingSection = document.getElementById('pricing');
+                            pricingSection?.scrollIntoView({ behavior: 'smooth' });
+                        }, isButton: true }
                 ]} />
             </div>
         </div>
@@ -760,15 +777,15 @@ const HeroFlowtex: React.FC = () => {
                 className="flex flex-col sm:flex-row items-start gap-4 justify-start w-full mb-12"
             >
                 <motion.a
-                    href="#pricing"
-                    onClick={() => posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'hero' })}
+                    href={isLoggedIn ? "/app" : "#pricing"}
+                    onClick={() => posthog?.capture('cta_clicked', { button_label: isLoggedIn ? 'Go to Flowtex' : 'Get Early Access', position: 'hero' })}
                     className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-8 py-3 rounded-md text-base hover:bg-[var(--color-accent-hover)] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
                     style={{ fontWeight: 600 }}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                    Get Early Access
+                    {isLoggedIn ? "Go to Flowtex" : "Get Early Access"}
                 </motion.a>
                 <motion.a
                     href="#how-it-works"
