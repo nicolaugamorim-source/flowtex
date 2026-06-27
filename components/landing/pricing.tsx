@@ -178,7 +178,7 @@ export function Pricing({
                     disabled
                     className={cn(
                       buttonVariants({
-                        variant: plan.isPopular ? "default" : "outline",
+                        variant: "default",
                         size: "lg",
                       }),
                       "w-full justify-center mt-auto opacity-50 cursor-not-allowed pointer-events-none",
@@ -192,7 +192,7 @@ export function Pricing({
                     onClick={() => posthog?.capture('pricing_plan_clicked', { plan: plan.name.toLowerCase() })}
                     className={cn(
                       buttonVariants({
-                        variant: plan.isPopular ? "default" : "outline",
+                        variant: "default",
                         size: "lg",
                       }),
                       "w-full justify-center mt-auto",
