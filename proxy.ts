@@ -26,6 +26,17 @@ export default async function proxy(request: NextRequest) {
 
     console.log("✅ [PROXY] Session found for user:", session.user.email);
 
+    // Stripe redirects here the instant checkout completes, which can race
+    // the webhook that syncs subscription_status to the profile (the
+    // webhook is usually near-instant but isn't guaranteed to land before
+    // this very first request). Trust this one redirect — it only happens
+    // right after Stripe itself confirms the payment — and let the (by-then
+    // synced) profile gate every subsequent navigation normally.
+    if (request.nextUrl.searchParams.get("checkout") === "success") {
+      console.log("✅ [PROXY] Post-checkout redirect, allowing through once");
+      return response;
+    }
+
     try {
       // Check user's subscription status and onboarding status
       const { data: profile, error: profileError } = await supabase
