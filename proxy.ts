@@ -99,9 +99,11 @@ export default async function proxy(request: NextRequest) {
         isExpired: trialEndsAt && trialEndsAt <= now,
       });
 
-      // Check if subscription is active or valid trial
-      const isActiveSubscription =
-        subscriptionStatus === "active" && trialEndsAt && trialEndsAt > now;
+      // Check if subscription is active or valid trial. "active" means
+      // Stripe is already billing them — it must not depend on trial_ends_at,
+      // which Stripe leaves set to the historical (now-past) trial end date
+      // even after the subscription has converted to a paying one.
+      const isActiveSubscription = subscriptionStatus === "active";
 
       const isValidTrial =
         subscriptionStatus === "trialing" &&

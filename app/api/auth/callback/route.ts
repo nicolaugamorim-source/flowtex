@@ -114,10 +114,9 @@ export async function GET(request: NextRequest) {
           email: user.email ?? "",
           full_name: user.user_metadata?.full_name ?? "",
           avatar_url: user.user_metadata?.avatar_url ?? "",
-          subscription_status: "trialing",
-          trial_ends_at: new Date(
-            Date.now() + 14 * 24 * 60 * 60 * 1000
-          ).toISOString(),
+          // No free-trial grant here — the only trial is the 7-day Stripe
+          // trial started from /pricing checkout. Until they check out,
+          // subscription_status stays null and proxy.ts sends them to /pricing.
           onboarding_completed: false,
         },
         { onConflict: "id", ignoreDuplicates: true }
