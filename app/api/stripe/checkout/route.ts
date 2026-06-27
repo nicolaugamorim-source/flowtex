@@ -1,84 +1,115 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const PLANS = {
-  solo: {
-    name: 'Solo',
-    price: 2999, // in cents
-    interval: 'month',
-  },
-  team: {
-    name: 'Team',
-    price: 4999, // in cents
-    interval: 'month',
-  },
-};
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import { getStripe, PLAN_PRICE_IDS, TRIAL_PERIOD_DAYS } from "@/lib/stripe";
+import { getRequestIp, hashIp } from "@/lib/hash-ip";
 
 export async function GET(request: NextRequest) {
   try {
-    const plan = request.nextUrl.searchParams.get('plan');
+    const plan = request.nextUrl.searchParams.get("plan");
+    const priceId = plan ? PLAN_PRICE_IDS[plan] : null;
 
-    if (!plan || !PLANS[plan as keyof typeof PLANS]) {
-      return NextResponse.json(
-        { error: 'Invalid plan' },
-        { status: 400 }
-      );
+    if (!priceId) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Missing Supabase credentials');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("stripe_customer_id, trial_used_at")
+      .eq("id", user.id)
+      .single();
+
+    const stripe = getStripe();
+
+    // Reuse the Stripe customer if we already created one for this user.
+    let customerId = profile?.stripe_customer_id ?? null;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email ?? undefined,
+        metadata: { user_id: user.id },
+      });
+      customerId = customer.id;
+      await supabaseAdmin
+        .from("profiles")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", user.id);
+    }
+
+    // Trial eligibility: never used one before, and this IP hasn't backed a
+    // trial recently. The IP check only withholds the trial — it never blocks
+    // the purchase itself, to avoid punishing shared/office networks.
+    let trialEligible = !profile?.trial_used_at;
+
+    if (trialEligible) {
+      const ip = getRequestIp(request);
+      if (ip) {
+        const ipHash = hashIp(ip);
+        const lookback = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: recentSignup } = await supabaseAdmin
+          .from("trial_signups")
+          .select("id")
+          .eq("ip_hash", ipHash)
+          .gte("created_at", lookback)
+          .limit(1)
+          .maybeSingle();
+
+        if (recentSignup) {
+          trialEligible = false;
+        } else {
+          await supabaseAdmin.from("trial_signups").insert({ ip_hash: ipHash, user_id: user.id });
+        }
+      }
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: trialEligible
+        ? { trial_period_days: TRIAL_PERIOD_DAYS, metadata: { user_id: user.id } }
+        : { metadata: { user_id: user.id } },
+      success_url: `${appUrl}/app?checkout=success`,
+      cancel_url: `${appUrl}/pricing?checkout=cancelled`,
     });
 
-    // Get current user from session cookie
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      console.error('❌ [STRIPE CHECKOUT] No session found');
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (!session.url) {
+      throw new Error("Stripe did not return a checkout URL");
     }
 
-    const user = session.user;
-
-    console.log('💳 [STRIPE CHECKOUT] Starting checkout for user:', user.id);
-    console.log('📦 [STRIPE CHECKOUT] Plan:', plan);
-
-    // TODO: Integrate with Stripe to create checkout session
-    // For now, redirect to a success page as placeholder
-
-    // Update profile with selected plan
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        plan: plan,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('❌ [STRIPE CHECKOUT] Failed to update profile:', updateError);
-    }
-
-    console.log('✅ [STRIPE CHECKOUT] Plan saved to profile');
-
-    // For now, redirect to /app (in production, this would be Stripe checkout)
-    return NextResponse.redirect(new URL('/app', request.url));
+    return NextResponse.redirect(session.url);
   } catch (error) {
-    console.error('❌ [STRIPE CHECKOUT] Error:', error);
-    return NextResponse.json(
-      { error: 'Checkout failed' },
-      { status: 500 }
-    );
+    console.error("❌ [STRIPE CHECKOUT] Error:", error);
+    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }

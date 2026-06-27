@@ -210,6 +210,33 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              <div className="h-px bg-[var(--color-border-subtle)]" />
+
+              {/* Billing Section */}
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
+                <div className="w-full space-y-1.5 md:col-span-4">
+                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
+                    Billing
+                  </h3>
+                  <p className="text-[var(--color-text-muted)] text-sm">
+                    Manage your subscription, payment method, and invoices
+                  </p>
+                </div>
+
+                <div className="md:col-span-6">
+                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'var(--color-bg-card)', border: '0.5px solid var(--color-border-default)' }}>
+                    <p style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>Subscription</p>
+                    <a
+                      href="/api/stripe/portal"
+                      className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                      style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-primary)' }}
+                    >
+                      Manage billing
+                    </a>
+                  </div>
+                </div>
+              </div>
+
             </motion.div>
           </div>
         </section>
