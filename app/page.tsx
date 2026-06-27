@@ -37,9 +37,10 @@ const pricingPlans = [
       "Real-time project visibility for the whole team",
     ],
     description: "",
-    buttonText: "Get your team in sync",
+    buttonText: "In development",
     href: "/login",
     isPopular: true,
+    disabled: true,
   },
   {
     name: "Enterprise",

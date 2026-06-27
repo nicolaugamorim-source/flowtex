@@ -44,9 +44,10 @@ const pricingPlans = [
       "Real-time project visibility for the whole team",
     ],
     description: "",
-    buttonText: "Get your team in sync",
+    buttonText: "In development",
     href: "/api/stripe/checkout?plan=team",
     isPopular: true,
+    disabled: true,
   },
   {
     name: "Enterprise",

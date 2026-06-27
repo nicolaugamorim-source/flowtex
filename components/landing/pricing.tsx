@@ -25,6 +25,7 @@ interface PricingPlan {
   buttonText: string;
   href: string;
   isPopular: boolean;
+  disabled?: boolean;
 }
 
 interface PricingProps {
@@ -171,19 +172,35 @@ export function Pricing({
                   })}
                 </ul>
 
-                <Link
-                  href={plan.href}
-                  onClick={() => posthog?.capture('pricing_plan_clicked', { plan: plan.name.toLowerCase() })}
-                  className={cn(
-                    buttonVariants({
-                      variant: plan.isPopular ? "default" : "outline",
-                      size: "lg",
-                    }),
-                    "w-full justify-center mt-auto",
-                  )}
-                >
-                  {plan.buttonText}
-                </Link>
+                {plan.disabled ? (
+                  <button
+                    type="button"
+                    disabled
+                    className={cn(
+                      buttonVariants({
+                        variant: plan.isPopular ? "default" : "outline",
+                        size: "lg",
+                      }),
+                      "w-full justify-center mt-auto opacity-50 cursor-not-allowed pointer-events-none",
+                    )}
+                  >
+                    {plan.buttonText}
+                  </button>
+                ) : (
+                  <Link
+                    href={plan.href}
+                    onClick={() => posthog?.capture('pricing_plan_clicked', { plan: plan.name.toLowerCase() })}
+                    className={cn(
+                      buttonVariants({
+                        variant: plan.isPopular ? "default" : "outline",
+                        size: "lg",
+                      }),
+                      "w-full justify-center mt-auto",
+                    )}
+                  >
+                    {plan.buttonText}
+                  </Link>
+                )}
               </div>
               </div>
             </motion.div>
