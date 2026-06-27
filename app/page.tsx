@@ -55,9 +55,10 @@ const pricingPlans = [
       "Custom onboarding",
     ],
     description: "",
-    buttonText: "Talk to us",
+    buttonText: "In development",
     href: "/contact",
     isPopular: false,
+    disabled: true,
   },
 ];
 
