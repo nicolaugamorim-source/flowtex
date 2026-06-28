@@ -21,13 +21,22 @@ async function syncSubscriptionToProfile(subscription: Stripe.Subscription) {
   const supabaseAdmin = getSupabaseAdmin();
   const userId = subscription.metadata?.user_id;
 
-  const update = {
+  const update: Record<string, unknown> = {
     stripe_subscription_id: subscription.id,
     subscription_status: toProfileStatus(subscription.status),
     trial_ends_at: subscription.trial_end
       ? new Date(subscription.trial_end * 1000).toISOString()
       : null,
   };
+
+  // Mark the account's one trial as used as soon as a trialing subscription
+  // is seen at all — this must not depend on being able to read the card's
+  // fingerprint (enforceCardTrialLimit below), or a payment method that
+  // isn't attached to the subscription yet would leave trial_used_at unset
+  // forever, letting that account restart the trial on every resubscribe.
+  if (subscription.status === "trialing") {
+    update.trial_used_at = new Date().toISOString();
+  }
 
   if (userId) {
     await supabaseAdmin.from("profiles").update(update).eq("id", userId);
@@ -75,13 +84,6 @@ async function enforceCardTrialLimit(subscription: Stripe.Subscription) {
   await supabaseAdmin
     .from("used_trial_cards")
     .upsert({ card_fingerprint: fingerprint, user_id: userId ?? null });
-
-  if (userId) {
-    await supabaseAdmin
-      .from("profiles")
-      .update({ trial_used_at: new Date().toISOString() })
-      .eq("id", userId);
-  }
 }
 
 export async function POST(request: NextRequest) {
