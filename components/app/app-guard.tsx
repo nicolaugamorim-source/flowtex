@@ -14,6 +14,11 @@ interface AppGuardProps {
 
 type GateState = "loading" | "no-session" | "onboarding-required" | "no-plan" | "ok";
 
+// How often to re-check subscription/trial status while the tab stays open
+// on /app. Without this, a trial expiring (or a payment failing) mid-session
+// would only be caught on the next full navigation/login, not live.
+const RECHECK_INTERVAL_MS = 60_000;
+
 function GuardLoading() {
   return (
     <div className="w-full h-screen flex items-center justify-center bg-[var(--color-bg-base)]">
@@ -54,25 +59,26 @@ function AppGuardInner({ children }: AppGuardProps) {
       }
 
       const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+      const now = new Date();
       const isActiveSubscription = profile.subscription_status === "active";
-      const isValidTrial =
-        profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt > new Date();
+      const isValidTrial = profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt > now;
 
-      if (!isActiveSubscription && !isValidTrial) {
-        // Stripe's success redirect can land here before its webhook has
-        // finished syncing subscription_status — trust this one-time param
-        // (it only appears right after Stripe itself confirms payment)
-        // instead of bouncing a paying user to /pricing.
-        if (justCheckedOut) {
-          setGate("ok");
-          return;
-        }
-        // No message gate for this one — go straight to pricing.
-        router.replace("/pricing");
+      if (isActiveSubscription || isValidTrial) {
+        setGate("ok");
         return;
       }
 
-      setGate("ok");
+      // Stripe's success redirect can land here before its webhook has
+      // finished syncing subscription_status — trust this one-time param
+      // (it only appears right after Stripe itself confirms payment)
+      // instead of bouncing a paying user to /pricing.
+      if (justCheckedOut) {
+        setGate("ok");
+        return;
+      }
+
+      const trialExpired = profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt <= now;
+      router.replace(trialExpired ? "/expired" : "/pricing");
     };
 
     const init = async () => {
@@ -85,7 +91,23 @@ function AppGuardInner({ children }: AppGuardProps) {
         checkAccess(newSession?.user?.id);
       });
 
-      return () => subscription?.unsubscribe();
+      const recheck = () => {
+        supabase.auth.getSession().then(({ data: { session: current } }) => {
+          if (isMounted) checkAccess(current?.user?.id);
+        });
+      };
+
+      const intervalId = setInterval(recheck, RECHECK_INTERVAL_MS);
+      const onVisible = () => {
+        if (document.visibilityState === "visible") recheck();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+
+      return () => {
+        subscription?.unsubscribe();
+        clearInterval(intervalId);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
     };
 
     const cleanupPromise = init();
