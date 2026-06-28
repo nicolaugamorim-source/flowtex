@@ -85,11 +85,6 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleSkip = () => {
-    // Skip to pricing with minimal data
-    setStep(2);
-  };
-
   const handleSubmit = async () => {
     setIsSaving(true);
     setError(null);
@@ -323,17 +318,6 @@ export default function OnboardingPage() {
 
           {/* Buttons */}
           <div className="mt-8 flex gap-4">
-            {step === 2 && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSkip}
-                disabled={isSaving}
-                className="flex-1 border-gray-200 text-gray-900"
-              >
-                Skip for now
-              </Button>
-            )}
             <Button
               type="submit"
               disabled={isSaving}
