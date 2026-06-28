@@ -117,8 +117,15 @@ export default function OnboardingPage() {
         throw new Error(errorData.error || "Failed to save onboarding");
       }
 
+      const { subscription_status, trial_ends_at } = await response.json();
       console.log("✅ Onboarding completed");
-      router.push("/pricing");
+
+      const trialEndsAt = trial_ends_at ? new Date(trial_ends_at) : null;
+      const hasActivePlan =
+        subscription_status === "active" ||
+        (subscription_status === "trialing" && trialEndsAt && trialEndsAt > new Date());
+
+      router.push(hasActivePlan ? "/app" : "/pricing");
     } catch (err) {
       console.error("❌ Onboarding error:", err);
       setError(err instanceof Error ? err.message : "Failed to save onboarding");

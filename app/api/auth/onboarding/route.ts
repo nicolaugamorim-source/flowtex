@@ -114,9 +114,13 @@ export async function POST(request: NextRequest) {
       await captureServerEvent(userId, "onboarding_completed", { business_type });
     }
 
+    const updatedProfile = updateData?.[0];
+
     return NextResponse.json({
       success: true,
       message: "Onboarding completed",
+      subscription_status: updatedProfile?.subscription_status ?? null,
+      trial_ends_at: updatedProfile?.trial_ends_at ?? null,
     });
   } catch (error) {
     console.error("❌ [ONBOARDING] Error:", error);

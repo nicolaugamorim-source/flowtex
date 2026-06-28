@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     const { data: profile, error: profileError2 } = await supabase
       .from("profiles")
-      .select("onboarding_completed, subscription_status")
+      .select("onboarding_completed, subscription_status, trial_ends_at")
       .eq("id", user.id)
       .single();
 
@@ -159,17 +159,28 @@ export async function GET(request: NextRequest) {
       console.warn("⚠️ [AUTH CALLBACK] Profile fetch warning:", profileError2);
     }
 
+    // Onboarding comes first, unconditionally — a brand new user has no
+    // subscription yet, and checking subscription before onboarding would
+    // send them straight to /pricing without ever collecting their data.
     if (!profile?.onboarding_completed) {
       console.log("🔄 [AUTH CALLBACK] Redirecting to /onboarding");
       return NextResponse.redirect(`${siteUrl}/onboarding`);
     }
 
-    if (
-      profile?.subscription_status === "active" ||
-      profile?.subscription_status === "trialing"
-    ) {
+    if (profile.subscription_status === "active") {
       console.log("🔄 [AUTH CALLBACK] Redirecting to /app");
       return NextResponse.redirect(`${siteUrl}/app`);
+    }
+
+    const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+    if (profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt > new Date()) {
+      console.log("🔄 [AUTH CALLBACK] Redirecting to /app");
+      return NextResponse.redirect(`${siteUrl}/app`);
+    }
+
+    if (profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt <= new Date()) {
+      console.log("🔄 [AUTH CALLBACK] Trial expired, redirecting to /expired");
+      return NextResponse.redirect(`${siteUrl}/expired`);
     }
 
     console.log("🔄 [AUTH CALLBACK] Redirecting to /pricing");
