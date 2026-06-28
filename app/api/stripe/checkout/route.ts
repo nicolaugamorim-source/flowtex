@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
+    console.log('[TRIAL] profile:', JSON.stringify(profile))
+
     const stripe = getStripe();
 
     // Reuse the Stripe customer if we already created one for this user.
@@ -69,8 +71,13 @@ export async function GET(request: NextRequest) {
     // the purchase itself, to avoid punishing shared/office networks.
     let trialEligible = !profile?.trial_used_at;
 
+    console.log('[TRIAL] eligible after profile check:', trialEligible)
+
     if (trialEligible) {
       const ip = getRequestIp(request);
+
+      console.log('[TRIAL] ip:', ip)
+
       if (ip) {
         const ipHash = hashIp(ip);
         const lookback = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -82,6 +89,8 @@ export async function GET(request: NextRequest) {
           .limit(1)
           .maybeSingle();
 
+        console.log('[TRIAL] recentSignup:', JSON.stringify(recentSignup))
+
         if (recentSignup) {
           trialEligible = false;
         } else {
@@ -89,6 +98,8 @@ export async function GET(request: NextRequest) {
         }
       }
     }
+
+    console.log('[TRIAL] final eligible:', trialEligible)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
