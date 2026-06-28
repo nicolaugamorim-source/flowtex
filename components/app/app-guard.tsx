@@ -1,102 +1,113 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import UniqueLoading from "@/components/ui/morph-loading";
 import { UpgradeRequired } from "./upgrade-required";
+import { LoginRequired } from "./login-required";
+import { OnboardingRequired } from "./onboarding-required";
 
 interface AppGuardProps {
   children: React.ReactNode;
 }
 
-export function AppGuard({ children }: AppGuardProps) {
+type GateState = "loading" | "no-session" | "onboarding-required" | "no-plan" | "ok";
+
+function GuardLoading() {
+  return (
+    <div className="w-full h-screen flex items-center justify-center bg-[var(--color-bg-base)]">
+      <div className="text-center">
+        <UniqueLoading variant="morph" size="lg" />
+        <p className="text-[var(--color-text-muted)] mt-6">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+function AppGuardInner({ children }: AppGuardProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const justCheckedOut = searchParams.get("checkout") === "success";
+  const [gate, setGate] = useState<GateState>("loading");
 
   useEffect(() => {
     let isMounted = true;
-    let redirectTimeout: NodeJS.Timeout;
 
-    const initAuth = async () => {
-      try {
-        // First, try to get existing session
-        const { data: { session } } = await supabase.auth.getSession();
+    const checkAccess = async (userId: string | undefined) => {
+      if (!userId) {
+        if (isMounted) setGate("no-session");
+        return;
+      }
 
-        if (!isMounted) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed, subscription_status, trial_ends_at")
+        .eq("id", userId)
+        .single();
 
-        if (session?.user) {
-          console.log("✅ Session found:", session.user.email);
-          setUser(session.user);
-          setHasAccess(true);
-          setIsLoading(false);
+      if (!isMounted) return;
+
+      if (!profile?.onboarding_completed) {
+        setGate("onboarding-required");
+        return;
+      }
+
+      const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+      const isActiveSubscription = profile.subscription_status === "active";
+      const isValidTrial =
+        profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt > new Date();
+
+      if (!isActiveSubscription && !isValidTrial) {
+        // Stripe's success redirect can land here before its webhook has
+        // finished syncing subscription_status — trust this one-time param
+        // (it only appears right after Stripe itself confirms payment)
+        // instead of bouncing a paying user to /pricing.
+        if (justCheckedOut) {
+          setGate("ok");
           return;
         }
-
-        // If no session, wait for auth state changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, newSession) => {
-            if (!isMounted) return;
-
-            console.log("🔄 Auth event:", event, newSession?.user?.email);
-
-            if (newSession?.user) {
-              setUser(newSession.user);
-              setHasAccess(true);
-              setIsLoading(false);
-            } else {
-              setHasAccess(false);
-              setIsLoading(false);
-
-              // Only redirect after a small delay to ensure session is really gone
-              redirectTimeout = setTimeout(() => {
-                if (isMounted && !newSession?.user) {
-                  console.log("❌ No session, redirecting to login");
-                  router.push("/login");
-                }
-              }, 500);
-            }
-          }
-        );
-
-        return () => {
-          subscription?.unsubscribe();
-        };
-      } catch (error) {
-        console.error("Auth init error:", error);
-        if (isMounted) {
-          setIsLoading(false);
-          redirectTimeout = setTimeout(() => {
-            if (isMounted) router.push("/login");
-          }, 500);
-        }
+        // No message gate for this one — go straight to pricing.
+        router.replace("/pricing");
+        return;
       }
+
+      setGate("ok");
     };
 
-    initAuth();
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      await checkAccess(session?.user?.id);
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+        if (!isMounted) return;
+        checkAccess(newSession?.user?.id);
+      });
+
+      return () => subscription?.unsubscribe();
+    };
+
+    const cleanupPromise = init();
 
     return () => {
       isMounted = false;
-      if (redirectTimeout) clearTimeout(redirectTimeout);
+      cleanupPromise.then((cleanup) => cleanup?.());
     };
-  }, [router]);
+  }, [router, justCheckedOut]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-[var(--color-bg-base)]">
-        <div className="text-center">
-          <UniqueLoading variant="morph" size="lg" />
-          <p className="text-[var(--color-text-muted)] mt-6">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return <UpgradeRequired />;
-  }
+  if (gate === "loading") return <GuardLoading />;
+  if (gate === "no-session") return <LoginRequired />;
+  if (gate === "onboarding-required") return <OnboardingRequired />;
+  if (gate === "no-plan") return <UpgradeRequired />;
 
   return <>{children}</>;
+}
+
+export function AppGuard({ children }: AppGuardProps) {
+  return (
+    <Suspense fallback={<GuardLoading />}>
+      <AppGuardInner>{children}</AppGuardInner>
+    </Suspense>
+  );
 }
