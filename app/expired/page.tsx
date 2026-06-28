@@ -16,6 +16,7 @@ export default function ExpiredPage() {
 
         <Link
           href="/api/stripe/checkout?plan=solo"
+          prefetch={false}
           className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-lg transition-colors"
           style={{ backgroundColor: "var(--color-accent)", color: "var(--color-text-primary)" }}
         >

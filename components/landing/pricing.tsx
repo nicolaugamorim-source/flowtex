@@ -189,6 +189,7 @@ export function Pricing({
                 ) : (
                   <Link
                     href={plan.href}
+                    prefetch={false}
                     onClick={() => posthog?.capture('pricing_plan_clicked', { plan: plan.name.toLowerCase() })}
                     className={cn(
                       buttonVariants({

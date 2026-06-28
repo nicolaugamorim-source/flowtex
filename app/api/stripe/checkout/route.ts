@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
           .from("trial_signups")
           .select("id")
           .eq("ip_hash", ipHash)
+          .neq("user_id", user.id)
           .gte("created_at", lookback)
           .limit(1)
           .maybeSingle();
