@@ -693,8 +693,7 @@ const HeroFlowtex: React.FC = () => {
                         }, isButton: true }
                         : { label: "Get Early Access", onClick: () => {
                             posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
-                            const pricingSection = document.getElementById('pricing');
-                            pricingSection?.scrollIntoView({ behavior: 'smooth' });
+                            window.location.href = '/login';
                         }, isButton: true }
                 ]} />
             </div>
@@ -751,7 +750,7 @@ const HeroFlowtex: React.FC = () => {
                 className="flex flex-col sm:flex-row items-start gap-4 justify-start w-full mb-12"
             >
                 <motion.a
-                    href={isLoggedIn ? "/app" : "#pricing"}
+                    href={isLoggedIn ? "/app" : "/login"}
                     onClick={() => posthog?.capture('cta_clicked', { button_label: isLoggedIn ? 'Go to Flowtex' : 'Get Early Access', position: 'hero' })}
                     className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-8 py-3 rounded-md text-base hover:bg-[var(--color-accent-hover)] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
                     style={{ fontWeight: 600 }}
