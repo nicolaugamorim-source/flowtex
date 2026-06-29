@@ -89,9 +89,10 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
 
       console.log("[API PROTECTION] Subscription status:", subscriptionStatus);
 
-      // Check if subscription is valid
-      const isActiveSubscription =
-        subscriptionStatus === "active" && trialEndsAt && trialEndsAt > now;
+      // Check if subscription is valid. An "active" status is valid on its own —
+      // Stripe can leave trial_ends_at set to a past value even after the
+      // subscription becomes active, so it must not gate the active case.
+      const isActiveSubscription = subscriptionStatus === "active";
 
       const isValidTrial =
         subscriptionStatus === "trialing" && trialEndsAt && trialEndsAt > now;
