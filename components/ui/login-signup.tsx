@@ -266,6 +266,9 @@ export function LoginForm() {
         <div className="space-y-1 mb-8 text-center">
           <img src="/logo.svg" alt="Flowtex" width={96} height={96} className="mx-auto" />
           <h1 className="text-5xl font-semibold text-gray-900 whitespace-nowrap">Welcome back</h1>
+          <p className="text-sm text-gray-500 max-w-xs mx-auto pt-2">
+            Sign in with Google so Flowtex can connect to Gmail, Calendar, and your other integrations.
+          </p>
         </div>
 
         <div className="space-y-4 w-full max-w-xs">
