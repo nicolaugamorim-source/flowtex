@@ -68,10 +68,10 @@ export const AppDashboardMockup = () => {
       {/* Top Section - Greeting + Calendar */}
       <div className="grid grid-cols-2 gap-3 items-center">
         <div className="flex flex-col items-center justify-center text-center">
-          <p className="text-[var(--color-text-primary)] text-2xl font-bold leading-tight">
+          <p className="text-[var(--color-text-primary)] text-4xl font-bold leading-tight">
             Good morning
           </p>
-          <p className="text-[var(--color-text-muted)] text-[9px] italic font-light max-w-[180px] mt-1">
+          <p className="text-[var(--color-text-muted)] text-xs italic font-light max-w-[220px] mt-2">
             "Make something people want." — Paul Graham
           </p>
         </div>
@@ -163,22 +163,26 @@ export const AppDashboardMockup = () => {
         </div>
 
         {/* Daily streak */}
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col items-center justify-center gap-2 min-h-0">
-          <div className="flex items-center gap-2">
-            <p className="text-4xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
+        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col gap-2 min-h-0">
+          <div className="flex items-center gap-2 justify-center">
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
             <div className="flex flex-col gap-0 leading-tight">
-              <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
-              <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
+              <p className="text-[9px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
+              <p className="text-[9px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
             </div>
           </div>
           <p className="text-[var(--color-text-disabled)] text-center">Today's activity: 5 actions</p>
-          <div className="flex gap-[3px] justify-center overflow-hidden">
+          <div
+            className="grid gap-[2px] flex-1"
+            style={{ gridTemplateColumns: `repeat(${ACTIVITY_GRAPH.length}, 1fr)` }}
+          >
             {ACTIVITY_GRAPH.map((week, weekIdx) => (
-              <div key={weekIdx} className="flex flex-col gap-[3px]">
+              <div key={weekIdx} className="grid gap-[2px]" style={{ gridTemplateRows: "repeat(7, 1fr)" }}>
                 {week.map((level, dayIdx) => (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    style={{ width: "7px", height: "7px", borderRadius: "1.5px", backgroundColor: activityColor(level) }}
+                    className="rounded-[1.5px]"
+                    style={{ backgroundColor: activityColor(level) }}
                   />
                 ))}
               </div>
