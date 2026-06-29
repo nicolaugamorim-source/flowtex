@@ -139,10 +139,10 @@ export const AppDashboardMockup = () => {
                 className="bg-[var(--color-bg-elevated)] px-2 rounded-md border border-[var(--color-border-default)] h-9 flex items-center justify-between gap-2"
               >
                 <div className="flex-1 flex flex-col min-w-0">
-                  <p className={`text-xs truncate ${email.unread ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+                  <p className={`text-xs truncate ${email.unread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
                     {email.sender}
                   </p>
-                  <p className={`text-[10px] truncate ${email.unread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+                  <p className={`text-[10px] truncate ${email.unread ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
                     {email.subject}
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export const AppDashboardMockup = () => {
                   {week.map((level, dayIdx) => (
                     <div
                       key={`${weekIdx}-${dayIdx}`}
-                      className="w-1.5 h-1.5 rounded-[1px]"
+                      className="w-2 h-2 rounded-[1px]"
                       style={{ backgroundColor: activityColor(level) }}
                     />
                   ))}
