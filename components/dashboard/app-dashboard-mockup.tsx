@@ -44,6 +44,9 @@ const columnColor: Record<string, string> = {
   Review: "var(--color-column-review)",
 };
 
+const CURRENT_STREAK = 12;
+const TOTAL_DAYS = 27 * 7;
+
 const ACTIVITY_SEED = [
   0, 1, 0, 2, 0, 0, 1, 0, 0, 3, 1, 0, 0, 2, 0, 1, 0, 0, 4, 1, 0, 2, 0, 0, 1, 0, 0,
   1, 0, 3, 0, 1, 0, 0, 2, 0, 0, 1, 0, 4, 0, 1, 0, 0, 2, 1, 0, 0, 3, 0, 1, 0, 0, 2, 0,
@@ -53,8 +56,20 @@ const ACTIVITY_SEED = [
   3, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 3, 1, 0, 0, 2, 0, 0, 1, 0, 0, 2, 0, 1, 0,
 ];
 
+// Flattened, chronological (oldest -> today, last cell = today), forced to
+// end with exactly CURRENT_STREAK consecutive active days so the "12 day
+// streak" number always matches what the heatmap actually shows.
+const ACTIVITY_FLAT = Array.from(
+  { length: TOTAL_DAYS },
+  (_, i) => ACTIVITY_SEED[i % ACTIVITY_SEED.length]
+);
+ACTIVITY_FLAT[TOTAL_DAYS - CURRENT_STREAK - 1] = 0;
+for (let i = TOTAL_DAYS - CURRENT_STREAK; i < TOTAL_DAYS; i++) {
+  ACTIVITY_FLAT[i] = ACTIVITY_FLAT[i] > 0 ? ACTIVITY_FLAT[i] : 1;
+}
+
 const ACTIVITY_GRAPH = Array.from({ length: 27 }, (_, week) =>
-  Array.from({ length: 7 }, (_, day) => ACTIVITY_SEED[(week * 7 + day) % ACTIVITY_SEED.length])
+  Array.from({ length: 7 }, (_, day) => ACTIVITY_FLAT[week * 7 + day])
 );
 
 const activityColor = (level: number) => {
@@ -177,7 +192,7 @@ export const AppDashboardMockup = () => {
         {/* Daily streak */}
         <div className="bg-[var(--color-bg-card)] rounded-xl border border-[var(--color-border-default)] p-3 h-full flex flex-col gap-2 min-w-0 min-h-0">
           <div className="flex items-center justify-center gap-2">
-            <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">{CURRENT_STREAK}</p>
             <div className="flex flex-col gap-0 leading-tight">
               <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
               <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
