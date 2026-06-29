@@ -139,7 +139,7 @@ export const AppDashboardMockup = () => {
                 className="bg-[var(--color-bg-elevated)] px-2 rounded-md border border-[var(--color-border-default)] h-9 flex items-center justify-between gap-2"
               >
                 <div className="flex-1 flex flex-col min-w-0">
-                  <p className={`text-xs truncate ${email.unread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+                  <p className={`text-xs truncate ${email.unread ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
                     {email.sender}
                   </p>
                   <p className={`text-[10px] truncate ${email.unread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
@@ -185,13 +185,13 @@ export const AppDashboardMockup = () => {
           </div>
           <p className="text-[10px] text-[var(--color-text-disabled)] text-center">Today's activity: 5 actions</p>
           <div className="flex flex-col items-center justify-center gap-1.5 flex-1 min-h-0 min-w-0 overflow-hidden">
-            <div className="flex gap-px justify-center min-w-0">
+            <div className="flex gap-[1px] justify-center min-w-0">
               {ACTIVITY_GRAPH.map((week, weekIdx) => (
-                <div key={weekIdx} className="flex flex-col gap-px">
+                <div key={weekIdx} className="flex flex-col gap-[1px]">
                   {week.map((level, dayIdx) => (
                     <div
                       key={`${weekIdx}-${dayIdx}`}
-                      className="w-1 h-1 rounded-[1px]"
+                      className="w-1.5 h-1.5 rounded-[1px]"
                       style={{ backgroundColor: activityColor(level) }}
                     />
                   ))}
@@ -200,11 +200,11 @@ export const AppDashboardMockup = () => {
             </div>
             <div className="flex items-center justify-center gap-1 text-[9px] text-[var(--color-text-disabled)]">
               <span>Less</span>
-              <div className="w-1.5 h-1.5 rounded-[1px]" style={{ backgroundColor: "var(--color-bg-base)", border: "1px solid var(--color-border-default)" }} />
-              <div className="w-1.5 h-1.5 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-light)" }} />
-              <div className="w-1.5 h-1.5 rounded-[1px]" style={{ backgroundColor: "var(--color-accent)" }} />
-              <div className="w-1.5 h-1.5 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-hover)" }} />
-              <div className="w-1.5 h-1.5 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-pressed)" }} />
+              <div className="w-2 h-2 rounded-[1px]" style={{ backgroundColor: "var(--color-bg-base)", border: "1px solid var(--color-border-default)" }} />
+              <div className="w-2 h-2 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-light)" }} />
+              <div className="w-2 h-2 rounded-[1px]" style={{ backgroundColor: "var(--color-accent)" }} />
+              <div className="w-2 h-2 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-hover)" }} />
+              <div className="w-2 h-2 rounded-[1px]" style={{ backgroundColor: "var(--color-accent-pressed)" }} />
               <span>More</span>
             </div>
           </div>
