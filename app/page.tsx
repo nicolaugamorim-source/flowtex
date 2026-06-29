@@ -21,7 +21,7 @@ const pricingPlans = [
     description: "",
     buttonText: "Get early access",
     href: "/login",
-    isPopular: false,
+    isPopular: true,
   },
   {
     name: "Team",
@@ -39,7 +39,7 @@ const pricingPlans = [
     description: "",
     buttonText: "In development",
     href: "/login",
-    isPopular: true,
+    isPopular: false,
     disabled: true,
   },
   {
