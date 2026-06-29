@@ -4,7 +4,7 @@ export function resetCookiePreferences() {
   try {
     localStorage.removeItem("cookie_preferences");
     localStorage.removeItem("cookie_consent_given");
-    console.log("✅ Cookie preferences reset! Reload the page to see the banner again.");
+    console.log("Cookie preferences reset! Reload the page to see the banner again.");
     window.location.reload();
   } catch (error) {
     console.error("Error resetting cookies:", error);

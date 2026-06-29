@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Persists the authenticated user's theme preference (light/dark) to their profile.
 export async function PATCH(request: NextRequest) {
   try {
     const cookieStore = await cookies();

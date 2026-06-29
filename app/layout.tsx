@@ -1,3 +1,5 @@
+// Root layout for the whole app — sets up fonts, theming, analytics, and the
+// global auth handler that runs on every page.
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -50,6 +52,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Root layout — wires up fonts, theming, analytics, cookie consent, and the
+// global AI command modal/provider shared across every page.
 export default function RootLayout({
   children,
 }: Readonly<{

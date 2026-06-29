@@ -1,5 +1,6 @@
 "use client";
 
+// Shows the user's past AI chat conversations with search/filter over the history.
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getFullChatHistory } from "@/lib/database";
@@ -41,6 +42,7 @@ function formatTime(dateStr: string) {
   });
 }
 
+// Lists the user's past AI chat messages, grouped by day, with search.
 export default function ChatHistoryPage() {
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [loading, setLoading] = useState(true);

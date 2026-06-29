@@ -1,3 +1,5 @@
+// Layout for the authenticated /app section — wraps pages with the sidebar,
+// the subscription/access guard, and the shared data cache provider.
 import { AppCacheProvider } from "@/lib/app-cache";
 import { SidebarWrapper } from "@/components/app/sidebar-wrapper";
 import { AppGuard } from "@/components/app/app-guard";

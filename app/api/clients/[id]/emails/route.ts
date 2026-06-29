@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { decodeMimeHeader } from "@/lib/google-gmail";
 
+// Returns Gmail emails associated with a specific client (by matched email address).
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

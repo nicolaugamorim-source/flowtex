@@ -1,5 +1,6 @@
 "use client";
 
+// Gmail inbox view inside the app — list, read, mark-read and delete emails.
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -195,6 +196,8 @@ const EmailListItem = ({
   );
 };
 
+// Gmail inbox view inside the app — lists/reads/marks-read/deletes emails
+// via the Gmail API, with local caching to avoid refetching on every visit.
 export default function InboxPage() {
   const searchParams = useSearchParams();
   const { cache, setCache, isStale } = useAppCache();
@@ -293,7 +296,7 @@ export default function InboxPage() {
 
       // Call API to mark as read in Gmail
       try {
-        console.log("📧 [INBOX] Marking email as read:", email.id);
+        console.log("[INBOX] Marking email as read:", email.id);
         const response = await fetch("/api/gmail/mark-read", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -303,15 +306,15 @@ export default function InboxPage() {
         const data = await response.json();
         if (!response.ok) {
           console.error(
-            "❌ [INBOX] Failed to mark as read:",
+            "[INBOX] Failed to mark as read:",
             response.status,
             data
           );
         } else {
-          console.log("✅ [INBOX] Marked as read in Gmail:", email.id);
+          console.log("[INBOX] Marked as read in Gmail:", email.id);
         }
       } catch (err) {
-        console.error("❌ [INBOX] Mark as read error:", err);
+        console.error("[INBOX] Mark as read error:", err);
       }
     }
 
@@ -339,11 +342,11 @@ export default function InboxPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        console.error("❌ [INBOX] Failed to delete email:", data);
+        console.error("[INBOX] Failed to delete email:", data);
         return;
       }
 
-      console.log("✅ [INBOX] Deleted email from Gmail:", emailId);
+      console.log("[INBOX] Deleted email from Gmail:", emailId);
 
       const updatedEmails = emails.filter((e) => e.id !== emailId);
       setEmails(updatedEmails);
@@ -353,7 +356,7 @@ export default function InboxPage() {
         setSelectedEmail(null);
       }
     } catch (err) {
-      console.error("❌ [INBOX] Delete email error:", err);
+      console.error("[INBOX] Delete email error:", err);
     }
   };
 

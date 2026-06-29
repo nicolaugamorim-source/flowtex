@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
+// Prepares the Notion OAuth flow: generates a state token tied to the
+// authenticated user and returns the Notion authorization URL to redirect to.
 export async function POST(request: NextRequest) {
   try {
     const clientId = process.env.NOTION_CLIENT_ID;
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('❌ User auth error:', userError);
+      console.error('User auth error:', userError);
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
@@ -64,10 +66,10 @@ export async function POST(request: NextRequest) {
       state: state,
     });
 
-    console.log('✅ Notion OAuth prepared for user:', user.id);
+    console.log('Notion OAuth prepared for user:', user.id);
     return NextResponse.json({ authUrl: notionAuthUrl });
   } catch (error) {
-    console.error('❌ Error in notion prepare:', error);
+    console.error('Error in notion prepare:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

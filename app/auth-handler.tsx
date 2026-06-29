@@ -20,21 +20,21 @@ export function AuthHandler() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        console.log("🔐 Auth session check:", session ? "HAS_SESSION" : "NO_SESSION");
+        console.log("Auth session check:", session ? "HAS_SESSION" : "NO_SESSION");
 
         if (session) {
-          console.log("✅ Session found");
+          console.log("Session found");
 
           // Get user data
           const { data: { user } } = await supabase.auth.getUser();
 
           if (!user) {
-            console.error("❌ No user found");
+            console.error("No user found");
             return;
           }
 
           // Profile was already created in the OAuth callback
-          console.log("✅ User authenticated:", user.id);
+          console.log("User authenticated:", user.id);
 
           // Load user's theme preference
           try {
@@ -46,25 +46,25 @@ export function AuthHandler() {
 
             if (profile?.theme) {
               setTheme(profile.theme);
-              console.log("✅ Loaded theme preference:", profile.theme);
+              console.log("Loaded theme preference:", profile.theme);
             }
           } catch (error) {
-            console.warn("⚠️ Failed to load theme preference:", error);
+            console.warn("Failed to load theme preference:", error);
           }
 
           // Save Google access token from session (from OAuth provider)
           if (session.provider_token) {
-            console.log("✅ Google provider_token found, saving with token manager");
+            console.log("Google provider_token found, saving with token manager");
             // Get refresh token if available (only on first auth)
             const refreshToken = session.provider_refresh_token || undefined;
             if (refreshToken) {
-              console.log("✅ Refresh token also found from provider");
+              console.log("Refresh token also found from provider");
             }
             // Save with token manager (includes expiration tracking and DB storage)
             saveTokenData(session.provider_token, 3600, refreshToken);
-            console.log("✅ Saved provider_token to localStorage and integrations table");
+            console.log("Saved provider_token to localStorage and integrations table");
           } else {
-            console.warn("⚠️ No provider_token in session. Check that OAuth is properly configured.");
+            console.warn("No provider_token in session. Check that OAuth is properly configured.");
             // Try to get from DB if it was saved previously
             try {
               const { data: integration } = await supabase
@@ -75,11 +75,11 @@ export function AuthHandler() {
                 .single();
 
               if (integration?.access_token) {
-                console.log("✅ Found previously saved token in integrations table");
+                console.log("Found previously saved token in integrations table");
                 localStorage.setItem("google_access_token", integration.access_token);
               }
             } catch (error) {
-              console.log("ℹ️ No previously saved Google token in database");
+              console.log("No previously saved Google token in database");
             }
           }
 
@@ -89,12 +89,12 @@ export function AuthHandler() {
           // and never bounce them off the landing page, which should stay visible
           // (with its own "Go to Flowtex" CTA) even when logged in.
           if (pathname !== "/" && !pathname.startsWith("/app")) {
-            console.log("✅ Auth handler complete, redirecting to /app");
+            console.log("Auth handler complete, redirecting to /app");
             router.replace("/app");
           }
         }
       } catch (error) {
-        console.error("❌ Auth error:", error);
+        console.error("Auth error:", error);
       }
     };
 

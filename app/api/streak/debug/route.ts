@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Dev-only endpoint to manually set a user's streak count for testing.
 export async function POST(request: NextRequest) {
   // Only allow in development
   if (process.env.NODE_ENV !== "development") {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     const { streak } = await request.json();
 
-    console.log(`🐛 [STREAK DEBUG] Setting streak to ${streak} for user ${user.id}`);
+    console.log(`[STREAK DEBUG] Setting streak to ${streak} for user ${user.id}`);
 
     // Update streak directly in database
     const today = new Date().toISOString().split("T")[0];
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log(`✅ [STREAK DEBUG] Streak set to ${streak}`);
+    console.log(`[STREAK DEBUG] Streak set to ${streak}`);
 
     return NextResponse.json({ success: true, streak });
   } catch (error) {

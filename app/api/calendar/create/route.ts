@@ -4,6 +4,7 @@ import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { supabase } from '@/lib/supabase';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 
+// Creates a new Google Calendar event on behalf of the authenticated, subscribed user.
 export async function POST(request: NextRequest) {
   try {
     // Check subscription

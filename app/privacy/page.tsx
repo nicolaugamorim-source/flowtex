@@ -1,5 +1,6 @@
 import { Footer } from "@/components/ui/footer";
 
+// Public privacy policy page.
 export default function PrivacyPage() {
   return (
     <>

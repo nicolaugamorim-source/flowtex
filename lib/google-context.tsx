@@ -21,7 +21,7 @@ export function GoogleProvider({ children }: { children: React.ReactNode }) {
         const testToken = typeof window !== "undefined" ? localStorage.getItem("test_google_token") : null;
         if (testToken) {
           setGoogleAccessToken(testToken);
-          console.log("✅ Test token loaded (DEV MODE)");
+          console.log("Test token loaded (DEV MODE)");
           return;
         }
 
@@ -29,7 +29,7 @@ export function GoogleProvider({ children }: { children: React.ReactNode }) {
         const savedToken = typeof window !== "undefined" ? localStorage.getItem("google_access_token") : null;
         if (savedToken) {
           setGoogleAccessToken(savedToken);
-          console.log("✅ Google token loaded from localStorage");
+          console.log("Google token loaded from localStorage");
           setIsLoading(false);
           return;
         }
@@ -42,9 +42,9 @@ export function GoogleProvider({ children }: { children: React.ReactNode }) {
 
         if (session?.provider_token) {
           setGoogleAccessToken(session.provider_token);
-          console.log("✅ Google token set from session");
+          console.log("Google token set from session");
         } else {
-          console.log("⚠️  No Google token available");
+          console.log("No Google token available");
         }
       } catch (error) {
         console.error("Error getting Google access token:", error);

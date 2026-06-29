@@ -12,25 +12,25 @@ export async function ensureValidGoogleToken(
 ): Promise<string | null> {
   // If we have userId, always try to refresh first
   if (userId) {
-    console.log('🔄 Attempting to refresh Google access token...');
+    console.log('Attempting to refresh Google access token...');
     const refreshedToken = await refreshGoogleAccessToken(userId);
 
     if (refreshedToken) {
-      console.log('✅ Token refreshed successfully from refresh token');
+      console.log('Token refreshed successfully from refresh token');
       return refreshedToken;
     }
 
     // Refresh failed, log but continue
-    console.log('⚠️ Token refresh failed, falling back to frontend token');
+    console.log('Token refresh failed, falling back to frontend token');
   }
 
   // Fall back to current token from frontend
   if (currentToken) {
-    console.log('⚠️ Using token from frontend (may be expired)');
+    console.log('Using token from frontend (may be expired)');
     return currentToken;
   }
 
-  console.log('❌ No valid token available');
+  console.log('No valid token available');
   return null;
 }
 

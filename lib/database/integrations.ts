@@ -48,10 +48,10 @@ export async function saveGoogleIntegration(
 
     if (error) throw error;
 
-    console.log('✅ Google integration saved for user:', userId);
+    console.log('Google integration saved for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error saving Google integration:', error);
+    console.error('Error saving Google integration:', error);
     return { success: false, error };
   }
 }
@@ -91,10 +91,10 @@ export async function saveNotionIntegration(
 
     if (error) throw error;
 
-    console.log('✅ Notion integration saved for user:', userId);
+    console.log('Notion integration saved for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error saving Notion integration:', error);
+    console.error('Error saving Notion integration:', error);
     return { success: false, error };
   }
 }
@@ -118,7 +118,7 @@ export async function getIntegrations(userId: string): Promise<any[]> {
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching integrations:', error);
+    console.error('Error fetching integrations:', error);
     return [];
   }
 }
@@ -150,7 +150,7 @@ export async function getIntegration(userId: string, provider: string): Promise<
 
     return data;
   } catch (error) {
-    console.error('❌ Error fetching integration:', error);
+    console.error('Error fetching integration:', error);
     return null;
   }
 }
@@ -183,10 +183,10 @@ export async function updateIntegrationToken(
 
     if (error) throw error;
 
-    console.log(`✅ ${provider} token updated for user:`, userId);
+    console.log(`${provider} token updated for user:`, userId);
     return { success: true };
   } catch (error) {
-    console.error(`❌ Error updating ${provider} token:`, error);
+    console.error(`Error updating ${provider} token:`, error);
     return { success: false, error };
   }
 }
@@ -215,10 +215,10 @@ export async function deactivateIntegration(
 
     if (error) throw error;
 
-    console.log(`✅ ${provider} integration deactivated for user:`, userId);
+    console.log(`${provider} integration deactivated for user:`, userId);
     return { success: true };
   } catch (error) {
-    console.error(`❌ Error deactivating ${provider} integration:`, error);
+    console.error(`Error deactivating ${provider} integration:`, error);
     return { success: false, error };
   }
 }
@@ -234,7 +234,7 @@ export async function isIntegrationConnected(
     const integration = await getIntegration(userId, provider);
     return integration !== null && integration.is_active === true;
   } catch (error) {
-    console.error('❌ Error checking integration status:', error);
+    console.error('Error checking integration status:', error);
     return false;
   }
 }

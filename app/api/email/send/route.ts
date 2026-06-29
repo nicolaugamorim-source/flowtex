@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 import { captureServerEvent } from '@/lib/posthog-server';
 
+// Sends an email via Gmail on behalf of the authenticated, subscribed user.
 export async function POST(request: NextRequest) {
   try {
     // Check subscription

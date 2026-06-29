@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 
+// Post-Stripe-checkout confirmation page. Reads trial/subscription details
+// from the success URL's query params to show what the user just signed up for.
 function formatDate(dateOnly: string): string {
   // dateOnly is "YYYY-MM-DD" — parse at midnight UTC so the date never
   // shifts a day depending on the viewer's timezone.

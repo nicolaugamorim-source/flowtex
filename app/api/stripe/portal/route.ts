@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { getStripe } from "@/lib/stripe";
 
+// Redirects the user to their Stripe customer billing portal.
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(portalSession.url);
   } catch (error) {
-    console.error("❌ [STRIPE PORTAL] Error:", error);
+    console.error("[STRIPE PORTAL] Error:", error);
     return NextResponse.json({ error: "Could not open billing portal" }, { status: 500 });
   }
 }

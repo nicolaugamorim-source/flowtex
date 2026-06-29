@@ -1,5 +1,6 @@
 import { Footer } from "@/components/ui/footer";
 
+// Public marketing page with contact details/form for prospects to reach the team.
 export default function ContactPage() {
 
   return (

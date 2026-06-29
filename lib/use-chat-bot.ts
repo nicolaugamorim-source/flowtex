@@ -55,7 +55,7 @@ export function useChatBot() {
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
 
-    console.log('📤 Sending message with userId:', userId ? 'YES' : 'NO');
+    console.log('Sending message with userId:', userId ? 'YES' : 'NO');
 
     // Track first AI message of the day
     const today = new Date().toISOString().split('T')[0];
@@ -72,7 +72,7 @@ export function useChatBot() {
     let freshAccessToken = await getValidAccessToken();
 
     if (!freshAccessToken && googleAccessToken) {
-      console.log('⚠️ Could not get fresh token, using provided token');
+      console.log('Could not get fresh token, using provided token');
       freshAccessToken = googleAccessToken;
     }
 

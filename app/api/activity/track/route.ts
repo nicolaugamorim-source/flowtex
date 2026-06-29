@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Records a user activity event (e.g. AI message sent, task completed) used to drive the streak counter.
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -47,14 +48,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error("❌ Activity tracking error:", error);
+      console.error("Activity tracking error:", error);
       return NextResponse.json(
         { error: "Failed to track activity" },
         { status: 500 }
       );
     }
 
-    console.log(`✅ Activity tracked: ${action_type} (+${count} for user ${userId})`);
+    console.log(`Activity tracked: ${action_type} (+${count} for user ${userId})`);
 
     return NextResponse.json({
       success: true,
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       count,
     });
   } catch (error) {
-    console.error("❌ Error tracking activity:", error);
+    console.error("Error tracking activity:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

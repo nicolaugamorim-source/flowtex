@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Returns calendar meetings associated with a specific client.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

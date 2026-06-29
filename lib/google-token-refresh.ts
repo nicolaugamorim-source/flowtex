@@ -10,11 +10,11 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
     const googleIntegration = await getIntegration(userId, 'google');
 
     if (!googleIntegration?.refresh_token) {
-      console.error('❌ No refresh token found for user');
+      console.error('No refresh token found for user');
       return null;
     }
 
-    console.log('🔄 Refreshing Google access token...');
+    console.log('Refreshing Google access token...');
 
     // Exchange refresh token for new access token
     const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -32,7 +32,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('❌ Token refresh failed:', error);
+      console.error('Token refresh failed:', error);
       return null;
     }
 
@@ -41,11 +41,11 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
     const expiresIn = data.expires_in; // Usually 3600 seconds = 1 hour
 
     if (!newAccessToken) {
-      console.error('❌ No access token in refresh response');
+      console.error('No access token in refresh response');
       return null;
     }
 
-    console.log('✅ Successfully refreshed Google access token');
+    console.log('Successfully refreshed Google access token');
 
     // Update the token in the integrations table
     let tokenExpiresAt: string | undefined;
@@ -61,7 +61,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
 
     return newAccessToken;
   } catch (error) {
-    console.error('❌ Error refreshing Google token:', error);
+    console.error('Error refreshing Google token:', error);
     return null;
   }
 }

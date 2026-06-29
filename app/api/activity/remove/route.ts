@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Removes/undoes a previously tracked activity entry for the authenticated user.
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();

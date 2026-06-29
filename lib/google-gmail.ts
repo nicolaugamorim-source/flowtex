@@ -227,7 +227,7 @@ function extractTextFromParts(parts: any[]): string {
 
 export async function getFullEmailContent(accessToken: string, messageId: string): Promise<EmailMessage | null> {
   try {
-    console.log('📖 Fetching full email content for ID:', messageId);
+    console.log('Fetching full email content for ID:', messageId);
     const auth = await getGmailClient(accessToken);
 
     const fullMessage = await gmail.users.messages.get({
@@ -238,7 +238,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
     });
 
     if (!fullMessage.data) {
-      console.error('❌ No message data returned');
+      console.error('No message data returned');
       return null;
     }
 
@@ -253,7 +253,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       if (textPart?.body?.data) {
         try {
           body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
-          console.log('✅ Found text/plain part');
+          console.log('Found text/plain part');
         } catch (e) {
           console.error('Error decoding text/plain:', e);
         }
@@ -265,7 +265,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
         if (htmlPart?.body?.data) {
           try {
             body = Buffer.from(htmlPart.body.data, 'base64').toString('utf-8');
-            console.log('✅ Found text/html part');
+            console.log('Found text/html part');
           } catch (e) {
             console.error('Error decoding text/html:', e);
           }
@@ -276,14 +276,14 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       if (!body) {
         body = extractTextFromParts(fullMessage.data.payload.parts);
         if (body) {
-          console.log('✅ Extracted from nested parts');
+          console.log('Extracted from nested parts');
         }
       }
     } else if (fullMessage.data.payload?.body?.data) {
       // Simple email without parts
       try {
         body = Buffer.from(fullMessage.data.payload.body.data, 'base64').toString('utf-8');
-        console.log('✅ Found simple body');
+        console.log('Found simple body');
       } catch (e) {
         console.error('Error decoding body:', e);
       }
@@ -292,7 +292,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
     // Clean up excessive newlines
     body = body.replace(/\n\n\n+/g, '\n\n').trim();
 
-    console.log('✅ Email fetched successfully, body length:', body.length);
+    console.log('Email fetched successfully, body length:', body.length);
 
     return {
       id: messageId,
@@ -304,7 +304,7 @@ export async function getFullEmailContent(accessToken: string, messageId: string
       date: getHeader('Date'),
     };
   } catch (error) {
-    console.error('❌ Error fetching full email:', error);
+    console.error('Error fetching full email:', error);
     return null;
   }
 }

@@ -52,10 +52,10 @@ export async function addToWaitlist(
 
     if (error) throw error;
 
-    console.log('✅ Email added to waitlist:', data.email);
+    console.log('Email added to waitlist:', data.email);
     return { success: true, message: 'Added to waitlist' };
   } catch (error) {
-    console.error('❌ Error adding to waitlist:', error);
+    console.error('Error adding to waitlist:', error);
     return { success: false, error };
   }
 }
@@ -83,7 +83,7 @@ export async function isOnWaitlist(email: string): Promise<boolean> {
 
     return !!data;
   } catch (error) {
-    console.error('❌ Error checking waitlist:', error);
+    console.error('Error checking waitlist:', error);
     return false;
   }
 }
@@ -101,7 +101,7 @@ export async function getWaitlistCount(): Promise<number> {
 
     return count || 0;
   } catch (error) {
-    console.error('❌ Error getting waitlist count:', error);
+    console.error('Error getting waitlist count:', error);
     return 0;
   }
 }
@@ -121,7 +121,7 @@ export async function getWaitlistEntries(limit: number = 100): Promise<any[]> {
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching waitlist entries:', error);
+    console.error('Error fetching waitlist entries:', error);
     return [];
   }
 }
@@ -142,10 +142,10 @@ export async function removeFromWaitlist(email: string): Promise<{ success: bool
 
     if (error) throw error;
 
-    console.log('✅ Removed from waitlist:', email);
+    console.log('Removed from waitlist:', email);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error removing from waitlist:', error);
+    console.error('Error removing from waitlist:', error);
     return { success: false, error };
   }
 }

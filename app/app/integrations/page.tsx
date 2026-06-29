@@ -1,5 +1,6 @@
 "use client";
 
+// Lets the user connect/disconnect third-party integrations (Google, Notion, etc).
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { IntegrationShowcase, Integration } from "@/components/ui/integration-showcase";
@@ -21,6 +22,8 @@ const integrationsData: Integration[] = [
   },
 ];
 
+// Lets the user connect/manage third-party integrations (currently Notion,
+// with more planned). Shows connection status and handles the OAuth redirect flow.
 export default function IntegrationsPage() {
   const searchParams = useSearchParams();
   const [notionConnected, setNotionConnected] = useState(false);

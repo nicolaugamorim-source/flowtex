@@ -8,6 +8,9 @@ function getAbsoluteUrl(path: string): string {
   return `${baseUrl}${path}`;
 }
 
+// Notion OAuth callback — exchanges the authorization code for an access
+// token and saves the integration for the user identified by the state cookie.
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,12 +18,12 @@ export async function GET(request: NextRequest) {
     const returnedState = searchParams.get('state');
 
     if (!code) {
-      console.error('❌ No authorization code received from Notion');
+      console.error('No authorization code received from Notion');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_code'));
     }
 
     if (!returnedState) {
-      console.error('❌ No state received from Notion');
+      console.error('No state received from Notion');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_state'));
     }
 
@@ -30,12 +33,12 @@ export async function GET(request: NextRequest) {
     const userId = cookieStore.get('notion_user_id')?.value;
 
     if (!savedState || savedState !== returnedState) {
-      console.error('❌ Invalid or expired state');
+      console.error('Invalid or expired state');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=invalid_state'));
     }
 
     if (!userId) {
-      console.error('❌ No user ID in cookie');
+      console.error('No user ID in cookie');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_user_id'));
     }
 
@@ -47,25 +50,25 @@ export async function GET(request: NextRequest) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('❌ Missing Supabase credentials');
+      console.error('Missing Supabase credentials');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=supabase_not_configured'));
     }
 
     // Use service role for saving (we have userId from cookie, not from auth)
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-    console.log('✅ User ID from cookie:', userId);
+    console.log('User ID from cookie:', userId);
 
     const clientId = process.env.NOTION_CLIENT_ID;
     const clientSecret = process.env.NOTION_CLIENT_SECRET;
     const redirectUri = process.env.NOTION_REDIRECT_URI;
 
     if (!clientId || !clientSecret || !redirectUri) {
-      console.error('❌ Missing Notion environment variables');
+      console.error('Missing Notion environment variables');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=notion_not_configured'));
     }
 
     // Exchange authorization code for access token
-    console.log('🔄 Exchanging authorization code for Notion access token...');
+    console.log('Exchanging authorization code for Notion access token...');
 
     const tokenResponse = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'POST',
@@ -82,18 +85,18 @@ export async function GET(request: NextRequest) {
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
-      console.error('❌ Notion token exchange failed:', errorData);
+      console.error('Notion token exchange failed:', errorData);
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=token_exchange_failed'));
     }
 
     const tokenData = await tokenResponse.json();
 
     if (!tokenData.access_token) {
-      console.error('❌ No access token in Notion response');
+      console.error('No access token in Notion response');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_access_token'));
     }
 
-    console.log('✅ Got Notion access token');
+    console.log('Got Notion access token');
 
     // Save Notion integration to database using service role
     const { error: saveError } = await supabaseAdmin
@@ -117,18 +120,18 @@ export async function GET(request: NextRequest) {
       );
 
     if (saveError) {
-      console.error('❌ Error saving Notion integration:', saveError);
+      console.error('Error saving Notion integration:', saveError);
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=save_failed'));
     }
 
-    console.log('✅ Notion integration saved for user:', userId);
+    console.log('Notion integration saved for user:', userId);
 
     await captureServerEvent(userId, 'integration_connected', { integration: 'notion' });
 
     // Redirect back with success
     return NextResponse.redirect(getAbsoluteUrl('/app/integrations?notion=success'));
   } catch (error) {
-    console.error('❌ Notion OAuth callback error:', error);
+    console.error('Notion OAuth callback error:', error);
     return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=callback_error'));
   }
 }

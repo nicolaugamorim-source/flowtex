@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 import { decodeMimeHeader } from "@/lib/google-gmail";
 
+// Fetches a single Gmail message's full content by ID.
 const decodeBase64 = (str: string): string => {
   try {
     return Buffer.from(str, "base64").toString("utf-8");
@@ -93,7 +94,7 @@ export async function GET(
       return NextResponse.json({ error: "Gmail not connected" }, { status: 400 });
     }
 
-    console.log("📧 [GMAIL MESSAGE] Fetching message:", id);
+    console.log("[GMAIL MESSAGE] Fetching message:", id);
 
     const response = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
@@ -105,7 +106,7 @@ export async function GET(
     );
 
     if (!response.ok) {
-      console.error("❌ [GMAIL MESSAGE] Gmail API error:", response.status);
+      console.error("[GMAIL MESSAGE] Gmail API error:", response.status);
       return NextResponse.json(
         { error: "Failed to fetch message" },
         { status: 500 }
@@ -122,7 +123,7 @@ export async function GET(
     const { body, mimeType } = extractEmailBody(messageData.payload);
     const isUnread = (messageData.labelIds ?? []).includes("UNREAD");
 
-    console.log("✅ [GMAIL MESSAGE] Message fetched:", { subject, isUnread, mimeType });
+    console.log("[GMAIL MESSAGE] Message fetched:", { subject, isUnread, mimeType });
 
     return NextResponse.json({
       id: messageData.id,
@@ -135,7 +136,7 @@ export async function GET(
       mimeType,
     });
   } catch (error) {
-    console.error("❌ [GMAIL MESSAGE] Error:", error);
+    console.error("[GMAIL MESSAGE] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch message" },
       { status: 500 }

@@ -1,5 +1,6 @@
 "use client";
 
+// Drag-and-drop kanban board for tracking tasks across status columns.
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Plus, GripVertical, Trash2, Archive, Search, X, SlidersHorizontal } from "lucide-react";
@@ -521,6 +522,8 @@ const FilterPopover = ({
   );
 };
 
+// Task management board (kanban-style columns). Tasks can also be created
+// from the AI chat, which dispatches a 'flowtex:kanban-updated' event this page listens for.
 export default function KanbanPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);

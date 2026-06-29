@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Lists the user's Google calendars (for the calendar-selection onboarding step).
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -25,10 +26,10 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized"}, { status: 401 });
     }
 
-    console.log("🔄 [CALENDAR LIST] Fetching calendars for user:", user.id);
+    console.log("[CALENDAR LIST] Fetching calendars for user:", user.id);
 
     // Get Google access token from integrations table
     const { data: integration, error: integrationError } = await supabase
@@ -40,14 +41,14 @@ export async function GET() {
       .single();
 
     if (integrationError || !integration?.access_token) {
-      console.log("⚠️ [CALENDAR LIST] Google not connected");
+      console.log("[CALENDAR LIST] Google not connected");
       return NextResponse.json(
         { error: "Google not connected", calendars: [] },
         { status: 400 }
       );
     }
 
-    console.log("✅ [CALENDAR LIST] Google integration found");
+    console.log("[CALENDAR LIST] Google integration found");
 
     // Fetch from Google Calendar API
     const response = await fetch(
@@ -60,7 +61,7 @@ export async function GET() {
     );
 
     if (!response.ok) {
-      console.error("❌ [CALENDAR LIST] Google API error:", response.status);
+      console.error("[CALENDAR LIST] Google API error:", response.status);
       return NextResponse.json(
         { error: "Failed to fetch calendars", calendars: [] },
         { status: 500 }
@@ -70,7 +71,7 @@ export async function GET() {
     const data = await response.json();
     const calendars = data.items ?? [];
 
-    console.log("📊 [CALENDAR LIST] Calendars found:", calendars.length);
+    console.log("[CALENDAR LIST] Calendars found:", calendars.length);
 
     // Map calendars to required fields
     const mappedCalendars = calendars.map((cal: any) => ({
@@ -83,7 +84,7 @@ export async function GET() {
 
     return NextResponse.json({ calendars: mappedCalendars });
   } catch (error) {
-    console.error("❌ [CALENDAR LIST] Error:", error);
+    console.error("[CALENDAR LIST] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch calendars", calendars: [] },
       { status: 500 }

@@ -7,6 +7,8 @@ import { decodeMimeHeader } from "@/lib/google-gmail";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Generates an AI-written insight/summary about a client from their recent
+// emails, using the Anthropic API.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

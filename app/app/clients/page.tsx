@@ -1,5 +1,6 @@
 "use client";
 
+// CRM-style clients page — list, create, edit and view per-client emails/meetings.
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Plus, Search, Trash2, Edit2, Mail, Calendar, FileText, Users, X, Sparkles, RefreshCw } from "lucide-react";
 import { useGoogle } from "@/lib/google-context";
@@ -789,6 +790,8 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
   );
 };
 
+// Client/CRM dashboard — lists clients with notes, last-contact info, and
+// per-client emails/meetings pulled from connected integrations.
 export default function ClientsPage() {
   const { googleAccessToken } = useGoogle();
   const [clients, setClients] = useState<Client[]>([]);

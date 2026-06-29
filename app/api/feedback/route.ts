@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Stores user-submitted feedback.
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log("✅ Feedback saved:", {
+    console.log("Feedback saved:", {
       id: data.id,
       user_id: data.user_id,
       email: data.email,

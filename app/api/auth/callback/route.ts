@@ -8,19 +8,19 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  console.log("🔐 [AUTH CALLBACK] Starting OAuth callback...");
-  console.log("📋 [AUTH CALLBACK] Code received:", code ? "YES" : "NO");
-  console.log("📍 [AUTH CALLBACK] Site URL:", siteUrl);
+  console.log("[AUTH CALLBACK] Starting OAuth callback...");
+  console.log("[AUTH CALLBACK] Code received:", code ? "YES" : "NO");
+  console.log("[AUTH CALLBACK] Site URL:", siteUrl);
 
   if (!code) {
-    console.error("❌ [AUTH CALLBACK] No code in callback");
+    console.error("[AUTH CALLBACK] No code in callback");
     return NextResponse.redirect(`${siteUrl}/login?error=no_code`);
   }
 
   try {
     const cookieStore = await cookies();
 
-    console.log("📝 [AUTH CALLBACK] Creating Supabase SSR client...");
+    console.log("[AUTH CALLBACK] Creating Supabase SSR client...");
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
         cookies: {
           getAll() {
             const allCookies = cookieStore.getAll();
-            console.log("🍪 [AUTH CALLBACK] Reading cookies:", allCookies.map((c) => c.name).join(", "));
+            console.log("[AUTH CALLBACK] Reading cookies:", allCookies.map((c) => c.name).join(", "));
             return allCookies;
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
-              console.log("🍪 [AUTH CALLBACK] Setting cookie:", name);
+              console.log("[AUTH CALLBACK] Setting cookie:", name);
               cookieStore.set(name, value, options);
             });
           },
@@ -42,24 +42,24 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log("🔄 [AUTH CALLBACK] Exchanging code for session...");
+    console.log("[AUTH CALLBACK] Exchanging code for session...");
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error("❌ [AUTH CALLBACK] Session exchange error:", error);
+      console.error("[AUTH CALLBACK] Session exchange error:", error);
       return NextResponse.redirect(`${siteUrl}/login?error=auth_failed`);
     }
 
     if (!data.user) {
-      console.error("❌ [AUTH CALLBACK] No user in session data");
+      console.error("[AUTH CALLBACK] No user in session data");
       return NextResponse.redirect(`${siteUrl}/login?error=no_user`);
     }
 
     const user = data.user;
 
-    console.log("✅ [AUTH CALLBACK] Session exchanged successfully");
-    console.log("👤 [AUTH CALLBACK] User authenticated:", user.email);
+    console.log("[AUTH CALLBACK] Session exchanged successfully");
+    console.log("[AUTH CALLBACK] User authenticated:", user.email);
 
     // Determine if this is a brand new user (no profile row yet) before we upsert one.
     const { data: existingProfile } = await supabase
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     const isNewUser = !existingProfile;
 
     // Save Google tokens to integrations table
-    console.log("📝 [AUTH CALLBACK] Saving Google tokens to integrations...");
+    console.log("[AUTH CALLBACK] Saving Google tokens to integrations...");
 
     const providerToken = data.session?.provider_token;
     const providerRefreshToken = data.session?.provider_refresh_token;
@@ -94,17 +94,17 @@ export async function GET(request: NextRequest) {
       );
 
       if (integrationError) {
-        console.warn("⚠️ [AUTH CALLBACK] Integration save warning:", integrationError);
+        console.warn("[AUTH CALLBACK] Integration save warning:", integrationError);
       } else {
-        console.log("✅ [AUTH CALLBACK] Google tokens saved to integrations");
+        console.log("[AUTH CALLBACK] Google tokens saved to integrations");
         await captureServerEvent(user.id, "integration_connected", { integration: "google" });
       }
     } else {
-      console.warn("⚠️ [AUTH CALLBACK] No provider token found in session");
+      console.warn("[AUTH CALLBACK] No provider token found in session");
     }
 
     // Create profile if doesn't exist
-    console.log("📝 [AUTH CALLBACK] Creating/updating profile...");
+    console.log("[AUTH CALLBACK] Creating/updating profile...");
 
     const { error: profileError } = await supabase
       .from("profiles")
@@ -123,9 +123,9 @@ export async function GET(request: NextRequest) {
       );
 
     if (profileError) {
-      console.warn("⚠️ [AUTH CALLBACK] Profile upsert warning:", profileError);
+      console.warn("[AUTH CALLBACK] Profile upsert warning:", profileError);
     } else {
-      console.log("✅ [AUTH CALLBACK] Profile created/updated");
+      console.log("[AUTH CALLBACK] Profile created/updated");
     }
 
     await captureServerEvent(user.id, isNewUser ? "user_signed_up" : "user_logged_in", {
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Create ai_context if doesn't exist
-    console.log("📝 [AUTH CALLBACK] Creating AI context...");
+    console.log("[AUTH CALLBACK] Creating AI context...");
 
     const { error: aiError } = await supabase.from("ai_context").upsert(
       { user_id: user.id },
@@ -141,13 +141,13 @@ export async function GET(request: NextRequest) {
     );
 
     if (aiError) {
-      console.warn("⚠️ [AUTH CALLBACK] AI context warning:", aiError);
+      console.warn("[AUTH CALLBACK] AI context warning:", aiError);
     } else {
-      console.log("✅ [AUTH CALLBACK] AI context created");
+      console.log("[AUTH CALLBACK] AI context created");
     }
 
     // Check profile for redirect
-    console.log("🔍 [AUTH CALLBACK] Checking profile for redirect...");
+    console.log("[AUTH CALLBACK] Checking profile for redirect...");
 
     const { data: profile, error: profileError2 } = await supabase
       .from("profiles")
@@ -156,38 +156,38 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError2) {
-      console.warn("⚠️ [AUTH CALLBACK] Profile fetch warning:", profileError2);
+      console.warn("[AUTH CALLBACK] Profile fetch warning:", profileError2);
     }
 
     // Onboarding comes first, unconditionally — a brand new user has no
     // subscription yet, and checking subscription before onboarding would
     // send them straight to /pricing without ever collecting their data.
     if (!profile?.onboarding_completed) {
-      console.log("🔄 [AUTH CALLBACK] Redirecting to /onboarding");
+      console.log("[AUTH CALLBACK] Redirecting to /onboarding");
       return NextResponse.redirect(`${siteUrl}/onboarding`);
     }
 
     if (profile.subscription_status === "active") {
-      console.log("🔄 [AUTH CALLBACK] Redirecting to /app");
+      console.log("[AUTH CALLBACK] Redirecting to /app");
       return NextResponse.redirect(`${siteUrl}/app`);
     }
 
     const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
     if (profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt > new Date()) {
-      console.log("🔄 [AUTH CALLBACK] Redirecting to /app");
+      console.log("[AUTH CALLBACK] Redirecting to /app");
       return NextResponse.redirect(`${siteUrl}/app`);
     }
 
     if (profile.subscription_status === "trialing" && trialEndsAt && trialEndsAt <= new Date()) {
-      console.log("🔄 [AUTH CALLBACK] Trial expired, redirecting to /expired");
+      console.log("[AUTH CALLBACK] Trial expired, redirecting to /expired");
       return NextResponse.redirect(`${siteUrl}/expired`);
     }
 
-    console.log("🔄 [AUTH CALLBACK] Redirecting to /pricing");
+    console.log("[AUTH CALLBACK] Redirecting to /pricing");
     return NextResponse.redirect(`${siteUrl}/pricing`);
   } catch (error) {
-    console.error("❌ [AUTH CALLBACK] Error:", error);
-    console.error("❌ [AUTH CALLBACK] Details:", error instanceof Error ? error.message : error);
+    console.error("[AUTH CALLBACK] Error:", error);
+    console.error("[AUTH CALLBACK] Details:", error instanceof Error ? error.message : error);
     return NextResponse.redirect(`${siteUrl}/login?error=callback_error`);
   }
 }

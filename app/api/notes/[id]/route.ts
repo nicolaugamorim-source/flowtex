@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Updates a single quick note (e.g. marking it done or editing its content).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

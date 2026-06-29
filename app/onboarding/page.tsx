@@ -1,5 +1,6 @@
 "use client";
 
+// Multi-step onboarding form collected right after signup, before pricing.
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Multi-step onboarding flow shown to new users before they reach the main app.
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -113,7 +115,7 @@ export default function OnboardingPage() {
       }
 
       const { subscription_status, trial_ends_at } = await response.json();
-      console.log("✅ Onboarding completed");
+      console.log("Onboarding completed");
 
       const trialEndsAt = trial_ends_at ? new Date(trial_ends_at) : null;
       const hasActivePlan =
@@ -122,7 +124,7 @@ export default function OnboardingPage() {
 
       router.push(hasActivePlan ? "/app" : "/pricing");
     } catch (err) {
-      console.error("❌ Onboarding error:", err);
+      console.error("Onboarding error:", err);
       setError(err instanceof Error ? err.message : "Failed to save onboarding");
     } finally {
       setIsSaving(false);

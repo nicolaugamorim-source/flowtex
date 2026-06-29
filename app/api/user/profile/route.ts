@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+// Returns the authenticated user's profile row.
 export async function GET(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error("❌ [USER PROFILE] Profile fetch error:", profileError);
+      console.error("[USER PROFILE] Profile fetch error:", profileError);
       return NextResponse.json(
         { error: "Failed to fetch profile" },
         { status: 500 }
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ profile });
   } catch (error) {
-    console.error("❌ [USER PROFILE] Error:", error);
+    console.error("[USER PROFILE] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }

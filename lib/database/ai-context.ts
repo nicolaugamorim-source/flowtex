@@ -45,10 +45,10 @@ export async function saveAIContext(
 
     if (error) throw error;
 
-    console.log('✅ AI context saved for user:', userId);
+    console.log('AI context saved for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error saving AI context:', error);
+    console.error('Error saving AI context:', error);
     return { success: false, error };
   }
 }
@@ -82,7 +82,7 @@ export async function getAIContext(
 
     return data;
   } catch (error) {
-    console.error('❌ Error fetching AI context:', error);
+    console.error('Error fetching AI context:', error);
     return null;
   }
 }
@@ -120,10 +120,10 @@ export async function updateAIContext(
 
     if (error) throw error;
 
-    console.log('✅ AI context updated for user:', userId);
+    console.log('AI context updated for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error updating AI context:', error);
+    console.error('Error updating AI context:', error);
     return { success: false, error };
   }
 }
@@ -179,7 +179,7 @@ export async function buildAIContextString(
 
     return contextString === '\n\nUSER CONTEXT:\n' ? '' : contextString;
   } catch (error) {
-    console.error('❌ Error building AI context string:', error);
+    console.error('Error building AI context string:', error);
     return '';
   }
 }

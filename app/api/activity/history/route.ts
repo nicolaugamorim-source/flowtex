@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Returns the authenticated user's activity log (used for the streak/activity feed).
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();

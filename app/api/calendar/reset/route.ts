@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Clears the user's selected-calendars configuration (e.g. to redo calendar setup).
 export async function POST() {
   try {
     const cookieStore = await cookies();
@@ -39,15 +40,15 @@ export async function POST() {
       .eq("provider", "google");
 
     if (updateError) {
-      console.error("❌ [CALENDAR RESET] Update error:", updateError);
+      console.error("[CALENDAR RESET] Update error:", updateError);
       throw updateError;
     }
 
-    console.log("✅ [CALENDAR RESET] Calendar configuration reset");
+    console.log("[CALENDAR RESET] Calendar configuration reset");
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ [CALENDAR RESET] Error:", error);
+    console.error("[CALENDAR RESET] Error:", error);
     return NextResponse.json(
       { error: "Failed to reset calendar configuration" },
       { status: 500 }

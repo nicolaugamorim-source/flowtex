@@ -1,3 +1,4 @@
+// Public marketing landing page assembled from the landing/* sections.
 import HeroFlowtex from "@/components/landing/hero-flowtex";
 import { FeaturesCards } from "@/components/landing/features-cards";
 import { Features } from "@/components/landing/features-2";
@@ -62,6 +63,7 @@ const pricingPlans = [
   },
 ];
 
+// Public marketing landing page (hero, features, pricing teaser, CTA, footer).
 export default function Home() {
   return (
     <>

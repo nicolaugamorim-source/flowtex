@@ -51,13 +51,13 @@ export async function saveTokenData(
           },
           { onConflict: 'user_id,provider' }
         );
-      console.log('✅ Google tokens saved to integrations table');
+      console.log('Google tokens saved to integrations table');
     }
   } catch (error) {
-    console.error('⚠️ Could not save tokens to DB:', error);
+    console.error('Could not save tokens to DB:', error);
   }
 
-  console.log('✅ Token data saved (expires in', Math.round(expiresIn / 60), 'min)');
+  console.log('Token data saved (expires in', Math.round(expiresIn / 60), 'min)');
 }
 
 /**
@@ -76,7 +76,7 @@ export function getTokenData(): TokenData | null {
       return tokenData;
     }
 
-    console.log('⏰ Token expired, needs refresh');
+    console.log('Token expired, needs refresh');
     return null;
   } catch (error) {
     console.error('Error reading token data:', error);
@@ -91,16 +91,16 @@ export async function getValidAccessToken(): Promise<string | null> {
   // Try to get cached token from localStorage
   const tokenData = getTokenData();
   if (tokenData) {
-    console.log('✅ Using cached access token');
+    console.log('Using cached access token');
     return tokenData.accessToken;
   }
 
   // Token expired or doesn't exist - try to refresh
-  console.log('🔄 Attempting to refresh token...');
+  console.log('Attempting to refresh token...');
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.log('❌ No user logged in');
+    console.log('No user logged in');
     return null;
   }
 
@@ -114,9 +114,9 @@ export async function getValidAccessToken(): Promise<string | null> {
       .single();
 
     if (queryError) {
-      console.log('⚠️ Could not query integrations table:', queryError.message);
+      console.log('Could not query integrations table:', queryError.message);
     } else if (integration?.access_token) {
-      console.log('✅ Found token in integrations table');
+      console.log('Found token in integrations table');
       // Save to localStorage for faster access next time
       saveTokenData(integration.access_token, 3600, integration.refresh_token || undefined);
       return integration.access_token;
@@ -133,10 +133,10 @@ export async function getValidAccessToken(): Promise<string | null> {
       const data = await response.json();
       // Save the refreshed token
       saveTokenData(data.accessToken, 3600);
-      console.log('✅ Token refreshed successfully');
+      console.log('Token refreshed successfully');
       return data.accessToken;
     } else {
-      console.log('⚠️ Refresh endpoint returned:', response.status);
+      console.log('Refresh endpoint returned:', response.status);
     }
   } catch (error) {
     console.error('Error refreshing token:', error);
@@ -145,11 +145,11 @@ export async function getValidAccessToken(): Promise<string | null> {
   // Last resort - check localStorage
   const stored = localStorage.getItem('google_access_token');
   if (stored) {
-    console.log('⚠️ Using token from localStorage (may be expired)');
+    console.log('Using token from localStorage (may be expired)');
     return stored;
   }
 
-  console.log('❌ No valid token available');
+  console.log('No valid token available');
   return null;
 }
 
@@ -159,5 +159,5 @@ export async function getValidAccessToken(): Promise<string | null> {
 export function clearTokenData() {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem('google_access_token');
-  console.log('✅ Token data cleared');
+  console.log('Token data cleared');
 }

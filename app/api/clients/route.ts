@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { captureServerEvent } from "@/lib/posthog-server";
 
+// Lists/creates clients for the authenticated user (the CRM dashboard's data source).
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();

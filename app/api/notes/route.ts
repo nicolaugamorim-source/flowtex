@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Returns the authenticated user's open quick notes (most recent 10).
 export async function GET() {
   try {
     const cookieStore = await cookies();

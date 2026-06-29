@@ -59,7 +59,7 @@ export function useProfile(): UseProfileReturn {
         setProfile(null);
       }
     } catch (err) {
-      console.error('❌ Error loading profile:', err);
+      console.error('Error loading profile:', err);
       setError(err instanceof Error ? err : new Error('Failed to load profile'));
     } finally {
       setLoading(false);

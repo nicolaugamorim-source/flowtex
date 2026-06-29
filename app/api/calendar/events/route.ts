@@ -4,6 +4,7 @@ import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { supabase } from '@/lib/supabase';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 
+// Returns the authenticated user's upcoming Google Calendar events.
 export async function GET(request: NextRequest) {
   try {
     // Check subscription

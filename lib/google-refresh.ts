@@ -25,7 +25,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
       .single();
 
     if (error || !integration?.refresh_token) {
-      console.log('❌ No Google refresh token found for user', userId);
+      console.log('No Google refresh token found for user', userId);
       return null;
     }
 
@@ -49,7 +49,7 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
     const newAccessToken = credentials.access_token;
 
     if (!newAccessToken) {
-      console.error('❌ Failed to get new access token');
+      console.error('Failed to get new access token');
       return null;
     }
 
@@ -68,14 +68,14 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
         .eq('user_id', userId)
         .eq('provider', 'google');
 
-      console.log('✅ Access token refreshed and saved to database');
+      console.log('Access token refreshed and saved to database');
     } catch (updateError) {
-      console.warn('⚠️ Token refreshed but failed to save to database:', updateError);
+      console.warn('Token refreshed but failed to save to database:', updateError);
     }
 
     return newAccessToken;
   } catch (error) {
-    console.error('❌ Error refreshing token:', error);
+    console.error('Error refreshing token:', error);
     return null;
   }
 }

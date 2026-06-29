@@ -33,7 +33,7 @@ export function SidebarWrapper() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          console.log("👤 User metadata:", user.user_metadata);
+          console.log("User metadata:", user.user_metadata);
 
           const email = user.email || "user@flowtex.com";
           setUserEmail(email);
@@ -41,7 +41,7 @@ export function SidebarWrapper() {
 
           // Get avatar from Google metadata
           const googleAvatar = user.user_metadata?.avatar_url;
-          console.log("🖼️ Avatar URL:", googleAvatar);
+          console.log("Avatar URL:", googleAvatar);
           setAvatarUrl(googleAvatar);
 
           // Get user profile

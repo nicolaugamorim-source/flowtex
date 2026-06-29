@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Saves which of the user's Google calendars should be used by the app.
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -30,8 +31,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { calendarIds } = body;
 
-    console.log("📝 [CALENDAR SELECT] Calendar IDs to save:", calendarIds);
-    console.log("📝 [CALENDAR SELECT] User ID:", user.id);
+    console.log("[CALENDAR SELECT] Calendar IDs to save:", calendarIds);
+    console.log("[CALENDAR SELECT] User ID:", user.id);
 
     if (!Array.isArray(calendarIds) || calendarIds.length === 0) {
       return NextResponse.json(
@@ -51,11 +52,11 @@ export async function POST(request: NextRequest) {
       .eq("provider", "google")
       .select();
 
-    console.log("📊 [CALENDAR SELECT] Update result:", data);
-    console.log("❌ [CALENDAR SELECT] Update error:", error);
+    console.log("[CALENDAR SELECT] Update result:", data);
+    console.log("[CALENDAR SELECT] Update error:", error);
 
     if (error) {
-      console.error("❌ [CALENDAR SELECT] Supabase error details:", {
+      console.error("[CALENDAR SELECT] Supabase error details:", {
         message: error.message,
         code: error.code,
         details: error.details,
@@ -64,11 +65,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log("✅ [CALENDAR SELECT] Calendars saved successfully");
+    console.log("[CALENDAR SELECT] Calendars saved successfully");
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("❌ [CALENDAR SELECT] Unexpected error:", err);
+    console.error("[CALENDAR SELECT] Unexpected error:", err);
     const errorMessage = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

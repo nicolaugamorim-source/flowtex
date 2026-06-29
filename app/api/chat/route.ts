@@ -9,6 +9,8 @@ import { saveChatMessage, getChatHistory } from '@/lib/database';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 import { captureServerEvent } from '@/lib/posthog-server';
 
+// Main AI chat endpoint — talks to Claude with tool access to the user's
+// calendar, Gmail, and chat history, and persists the conversation.
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
@@ -273,7 +275,7 @@ export async function POST(request: NextRequest) {
     // Check subscription before processing
     const subscriptionCheck = await checkSubscriptionAPI(request);
     if (!subscriptionCheck.authorized) {
-      console.log('❌ [CHAT API] Subscription check failed');
+      console.log('[CHAT API] Subscription check failed');
       return subscriptionCheck.error || NextResponse.json(
         { error: 'Not authorized' },
         { status: 403 }
@@ -311,7 +313,7 @@ export async function POST(request: NextRequest) {
         const { data: { user } } = await supabaseServer.auth.getUser();
         userId = user?.id;
         if (userId) {
-          console.log('✅ Got userId from Supabase session');
+          console.log('Got userId from Supabase session');
         }
       } catch (error) {
         console.log('Could not get userId from session');
@@ -1215,15 +1217,15 @@ Quoting rule: never use emojis in your own writing, except when directly quoting
       if (toolUse && toolUse.name === 'delete_calendar_event' && validAccessToken) {
         const { event_title } = toolUse.input;
 
-        console.log('🗑️ Delete tool called with title:', event_title);
+        console.log('Delete tool called with title:', event_title);
 
         try {
-          console.log('🔍 Calling findAndDeleteEvent...');
+          console.log('Calling findAndDeleteEvent...');
           const result = await findAndDeleteEvent(validAccessToken, event_title);
-          console.log('✅ findAndDeleteEvent result:', result);
+          console.log('findAndDeleteEvent result:', result);
 
           if (result.success) {
-            console.log('✅ Event deleted successfully');
+            console.log('Event deleted successfully');
             if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'delete_calendar_event' });
             return saveAssistantReply({
               content: 'Removed:',
@@ -1252,14 +1254,14 @@ Quoting rule: never use emojis in your own writing, except when directly quoting
               ],
             });
           } else {
-            console.log('❌ Event not found:', result.message);
+            console.log('Event not found:', result.message);
             return saveAssistantReply({
               content: result.message,
               role: 'assistant',
             });
           }
         } catch (error) {
-          console.error('❌ Error deleting event:', error);
+          console.error('Error deleting event:', error);
           const errorMsg = error instanceof Error ? error.message : String(error);
           console.error('Error details:', errorMsg);
           return saveAssistantReply({
@@ -1522,13 +1524,13 @@ Quoting rule: never use emojis in your own writing, except when directly quoting
       if (toolUse && toolUse.name === 'read_email_full' && validAccessToken) {
         const { email_id } = toolUse.input;
 
-        console.log('📖 Reading full email content:', email_id);
+        console.log('Reading full email content:', email_id);
 
         try {
           const email = await getFullEmailContent(validAccessToken, email_id);
 
           if (!email || !email.body) {
-            console.log('⚠️ Email or body is empty:', email);
+            console.log('Email or body is empty:', email);
             return saveAssistantReply({
               content: userLanguage === 'pt'
                 ? 'Desculpa, o email não tem conteúdo ou não consegui ler.'
@@ -1582,12 +1584,12 @@ Quoting rule: never use emojis in your own writing, except when directly quoting
       if (toolUse && toolUse.name === 'search_emails' && validAccessToken) {
         const { query } = toolUse.input;
 
-        console.log('🔍 Searching emails with query:', query);
+        console.log('Searching emails with query:', query);
 
         try {
           const emails = await searchEmails(validAccessToken, query, 5);
 
-          console.log(`✅ Found ${emails.length} emails`);
+          console.log(`Found ${emails.length} emails`);
 
           if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'search_emails' });
 
@@ -1717,7 +1719,7 @@ Tone: semi-formal. Never use emojis, even if the original email contains them.`,
       if (toolUse && toolUse.name === 'draft_email') {
         const { to, subject, body } = toolUse.input;
 
-        console.log('📧 Drafting email for:', to);
+        console.log('Drafting email for:', to);
 
         if (userId) await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'draft_email' });
 
@@ -1739,7 +1741,7 @@ Tone: semi-formal. Never use emojis, even if the original email contains them.`,
       if (toolUse && toolUse.name === 'delete_email' && validAccessToken) {
         const { query } = toolUse.input;
 
-        console.log('🗑️ Deleting email with query:', query);
+        console.log('Deleting email with query:', query);
 
         try {
           const emails = await searchEmails(validAccessToken, query, 1);

@@ -1,5 +1,6 @@
 "use client";
 
+// Pricing page — shows plans and kicks off Stripe checkout for logged-in users.
 import { Pricing } from "@/components/landing/pricing";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -69,6 +70,8 @@ const pricingPlans = [
   },
 ];
 
+// Pricing page for logged-in (or logging-in) users — shows plans and current
+// subscription status, with checkout links per plan.
 export default function PricingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [pricingInfo, setPricingInfo] = useState<PricingInfo>({

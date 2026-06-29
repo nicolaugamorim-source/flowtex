@@ -43,7 +43,7 @@ export const CalendarSelection = ({ onComplete }: CalendarSelectionProps) => {
           const primaryCalendar = sortedCalendars.find((cal: Calendar) => cal.primary);
           if (primaryCalendar) {
             setSelectedIds([primaryCalendar.id]);
-            console.log("📅 [CALENDAR SELECTION] Primary calendar pre-selected:", primaryCalendar.summary);
+            console.log("[CALENDAR SELECTION] Primary calendar pre-selected:", primaryCalendar.summary);
           }
         } else {
           setError(data.error || "Failed to load calendars");
@@ -88,7 +88,7 @@ export const CalendarSelection = ({ onComplete }: CalendarSelectionProps) => {
         throw new Error(data.error || "Failed to save calendars");
       }
 
-      console.log("✅ Calendars saved successfully");
+      console.log("Calendars saved successfully");
       onComplete?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save calendars";

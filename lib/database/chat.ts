@@ -41,11 +41,11 @@ export async function saveChatMessage(
     if (error) throw error;
 
     const messageId = insertedData?.[0]?.id;
-    console.log('✅ Chat message saved:', messageId);
+    console.log('Chat message saved:', messageId);
 
     return { success: true, messageId };
   } catch (error) {
-    console.error('❌ Error saving chat message:', error);
+    console.error('Error saving chat message:', error);
     return { success: false, error };
   }
 }
@@ -74,7 +74,7 @@ export async function getChatHistory(
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching chat history:', error);
+    console.error('Error fetching chat history:', error);
     return [];
   }
 }
@@ -98,7 +98,7 @@ export async function getFullChatHistory(userId: string): Promise<any[]> {
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching full chat history:', error);
+    console.error('Error fetching full chat history:', error);
     return [];
   }
 }
@@ -129,7 +129,7 @@ export async function getRecentChatMessages(
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching recent chat messages:', error);
+    console.error('Error fetching recent chat messages:', error);
     return [];
   }
 }
@@ -158,7 +158,7 @@ export async function getChatMessagesWithActions(
 
     return data || [];
   } catch (error) {
-    console.error('❌ Error fetching chat messages with actions:', error);
+    console.error('Error fetching chat messages with actions:', error);
     return [];
   }
 }
@@ -179,10 +179,10 @@ export async function clearChatHistory(userId: string): Promise<{ success: boole
 
     if (error) throw error;
 
-    console.log('✅ Chat history cleared for user:', userId);
+    console.log('Chat history cleared for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error clearing chat history:', error);
+    console.error('Error clearing chat history:', error);
     return { success: false, error };
   }
 }
@@ -232,7 +232,7 @@ export async function getTokenUsageStats(
 
     return stats;
   } catch (error) {
-    console.error('❌ Error calculating token usage:', error);
+    console.error('Error calculating token usage:', error);
     return { input_tokens: 0, output_tokens: 0, message_count: 0 };
   }
 }

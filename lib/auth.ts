@@ -104,7 +104,7 @@ export async function signInWithGoogle(requestIntegrations: boolean = false): Pr
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
     const redirectUrl = `${siteUrl}/api/auth/callback`;
 
-    console.log("🔐 SignInWithGoogle called");
+    console.log("SignInWithGoogle called");
     console.log("  - scopes:", scopes);
     console.log("  - redirectTo:", redirectUrl);
 
@@ -120,11 +120,11 @@ export async function signInWithGoogle(requestIntegrations: boolean = false): Pr
       },
     });
 
-    console.log("🔐 Supabase OAuth response:");
+    console.log("Supabase OAuth response:");
     console.log("  - Error:", error);
 
     if (error) {
-      console.error("❌ OAuth Error Details:", {
+      console.error("OAuth Error Details:", {
         message: error.message,
         status: error.status,
         code: error.code,
@@ -132,10 +132,10 @@ export async function signInWithGoogle(requestIntegrations: boolean = false): Pr
       throw error;
     }
 
-    console.log("✅ OAuth request sent successfully");
+    console.log("OAuth request sent successfully");
     return { error: null };
   } catch (error) {
-    console.error("❌ SignInWithGoogle error:", error);
+    console.error("SignInWithGoogle error:", error);
     return { error };
   }
 }
@@ -159,7 +159,7 @@ export async function upsertProfileFromGoogle() {
 
     const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
 
-    console.log("📝 Upserting profile:", { id: user.id, email: user.email, fullName });
+    console.log("Upserting profile:", { id: user.id, email: user.email, fullName });
 
     // Upsert profile (profiles table is created by OAuth callback)
     const { error } = await supabase
@@ -175,10 +175,10 @@ export async function upsertProfileFromGoogle() {
 
     if (error) throw error;
 
-    console.log("✅ Profile upserted successfully");
+    console.log("Profile upserted successfully");
     return { success: true, error: null };
   } catch (error) {
-    console.error("❌ Error upserting profile:", error);
+    console.error("Error upserting profile:", error);
     return { success: false, error };
   }
 }

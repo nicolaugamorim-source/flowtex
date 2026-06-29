@@ -519,7 +519,7 @@ export const AppDashboard = () => {
                     const displayThisWeek = allThisWeek.slice(0, 4);
                     const moreThisWeek = allThisWeek.length - 4;
 
-                    console.log("📊 This week events:");
+                    console.log("This week events:");
                     console.log("  - Total from API:", thisWeekEvents.length);
                     console.log("  - Upcoming (future only):", allThisWeek.length);
                     console.log("  - Display (first 4):", displayThisWeek.length);
@@ -574,7 +574,7 @@ export const AppDashboard = () => {
                     const displayNextWeek = allNextWeek.slice(0, 4);
                     const moreNextWeek = allNextWeek.length - 4;
 
-                    console.log("📊 Next week events:");
+                    console.log("Next week events:");
                     console.log("  - Total from API:", nextWeekEvents.length);
                     console.log("  - Upcoming (future only):", allNextWeek.length);
                     console.log("  - Display (first 4):", displayNextWeek.length);

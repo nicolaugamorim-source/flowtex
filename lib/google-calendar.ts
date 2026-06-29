@@ -34,10 +34,10 @@ async function withTokenRefresh<T>(
     return await fn(accessToken);
   } catch (error: any) {
     if (isTokenExpiredError(error) && userId) {
-      console.log('🔄 Token expired, attempting refresh...');
+      console.log('Token expired, attempting refresh...');
       const newToken = await refreshGoogleAccessToken(userId);
       if (newToken) {
-        console.log('✅ Token refreshed, retrying request...');
+        console.log('Token refreshed, retrying request...');
         return await fn(newToken);
       }
     }
@@ -282,7 +282,7 @@ export async function rescheduleEvent(
         });
 
         const events = response.data.items || [];
-        console.log(`📅 Found ${events.length} events in calendar ${cal.id} (${cal.summary})`);
+        console.log(`Found ${events.length} events in calendar ${cal.id} (${cal.summary})`);
 
         const eventToDelete = events.find(
           (event: any) => {
@@ -294,7 +294,7 @@ export async function rescheduleEvent(
         );
 
         if (eventToDelete && eventToDelete.id) {
-          console.log(`✅ Found event to delete: ${eventToDelete.summary} (ID: ${eventToDelete.id})`);
+          console.log(`Found event to delete: ${eventToDelete.summary} (ID: ${eventToDelete.id})`);
           deletedEvent = eventToDelete;
 
           try {
@@ -303,14 +303,14 @@ export async function rescheduleEvent(
               calendarId: cal.id!,
               eventId: eventToDelete.id,
             });
-            console.log(`✅ Event deleted successfully from calendar ${cal.id}`);
+            console.log(`Event deleted successfully from calendar ${cal.id}`);
           } catch (deleteError) {
-            console.error(`❌ Error deleting event:`, deleteError);
+            console.error(`Error deleting event:`, deleteError);
             throw deleteError;
           }
           break;
         } else {
-          console.log(`❌ No matching event found in calendar ${cal.id}`);
+          console.log(`No matching event found in calendar ${cal.id}`);
         }
       } catch (error) {
         console.error(`Error searching calendar ${cal.id}:`, error);

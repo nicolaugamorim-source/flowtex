@@ -101,7 +101,7 @@ function CookieConsent({
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
       localStorage.setItem(CONSENT_KEY, "true");
-      console.log("✅ Cookie preferences saved:", prefs);
+      console.log("Cookie preferences saved:", prefs);
     } catch (error) {
       console.error("Error saving cookie preferences:", error);
     }

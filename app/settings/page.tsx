@@ -1,5 +1,6 @@
 "use client";
 
+// Account settings page — theme, profile info, and subscription management.
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -16,6 +17,7 @@ const LANGUAGES = [
   { code: "es", name: "Español", flag: "🇪🇸" },
 ];
 
+// User-facing settings page (language, theme, account info).
 export default function SettingsPage() {
   const router = useRouter();
   const [language, setLanguage] = useState("en");
@@ -78,7 +80,7 @@ export default function SettingsPage() {
       if (error) throw error;
 
       setLanguage(newLanguage);
-      console.log("✅ Language saved:", newLanguage);
+      console.log("Language saved:", newLanguage);
     } catch (error) {
       console.error("Error saving language:", error);
     } finally {

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getGravatarUrl } from "@/lib/gravatar";
 
+// Updates a single client record (e.g. notes, contact info).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

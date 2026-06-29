@@ -51,7 +51,7 @@ export async function createOrUpdateProfile(
         .eq('id', userId);
 
       if (error) throw error;
-      console.log('✅ Profile updated for user:', userId);
+      console.log('Profile updated for user:', userId);
     } else {
       // Create new profile with 14-day trial
       const trialEndDate = new Date();
@@ -69,12 +69,12 @@ export async function createOrUpdateProfile(
         });
 
       if (error) throw error;
-      console.log('✅ Profile created for user with 14-day trial:', userId);
+      console.log('Profile created for user with 14-day trial:', userId);
     }
 
     return { success: true };
   } catch (error) {
-    console.error('❌ Error creating/updating profile:', error);
+    console.error('Error creating/updating profile:', error);
     return { success: false, error };
   }
 }
@@ -98,7 +98,7 @@ export async function getProfile(userId: string): Promise<any> {
 
     return data;
   } catch (error) {
-    console.error('❌ Error fetching profile:', error);
+    console.error('Error fetching profile:', error);
     return null;
   }
 }
@@ -125,10 +125,10 @@ export async function updateProfile(
 
     if (error) throw error;
 
-    console.log('✅ Profile updated for user:', userId);
+    console.log('Profile updated for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error updating profile:', error);
+    console.error('Error updating profile:', error);
     return { success: false, error };
   }
 }
@@ -163,10 +163,10 @@ export async function completeOnboarding(
 
     if (error) throw error;
 
-    console.log('✅ Onboarding completed for user:', userId);
+    console.log('Onboarding completed for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error completing onboarding:', error);
+    console.error('Error completing onboarding:', error);
     return { success: false, error };
   }
 }
@@ -192,10 +192,10 @@ export async function markOnboardingComplete(
 
     if (error) throw error;
 
-    console.log('✅ Onboarding marked as complete for user:', userId);
+    console.log('Onboarding marked as complete for user:', userId);
     return { success: true };
   } catch (error) {
-    console.error('❌ Error marking onboarding complete:', error);
+    console.error('Error marking onboarding complete:', error);
     return { success: false, error };
   }
 }

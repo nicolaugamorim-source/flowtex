@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Lightweight check for whether the current request has a valid Supabase session.
 export async function GET(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: { session } });
   } catch (error) {
-    console.error('❌ [AUTH CHECK] Error:', error);
+    console.error('[AUTH CHECK] Error:', error);
     return NextResponse.json(
       { data: null, error: 'Auth check failed' },
       { status: 500 }

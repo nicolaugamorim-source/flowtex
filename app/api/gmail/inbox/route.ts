@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 import { decodeMimeHeader } from "@/lib/google-gmail";
 
+// Returns a page of the authenticated user's Gmail inbox.
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -126,7 +127,7 @@ export async function GET() {
       totalUnread,
     });
   } catch (error) {
-    console.error("❌ [GMAIL INBOX] Error:", error);
+    console.error("[GMAIL INBOX] Error:", error);
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 });
   }
 }

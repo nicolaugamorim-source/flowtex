@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/posthog-server";
 
+// Updates or deletes a single kanban task (e.g. moving it between columns).
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

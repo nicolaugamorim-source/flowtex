@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+// Developer-only helper page for injecting a fake Google token into
+// localStorage, so local testing doesn't require a real OAuth round-trip.
 export default function DevLogin() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);

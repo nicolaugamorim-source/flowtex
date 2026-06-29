@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 
+// Returns the authenticated user's full Gmail inbox (no pagination).
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -102,7 +103,7 @@ export async function GET() {
 
     return NextResponse.json({ messages });
   } catch (error) {
-    console.error("❌ [GMAIL INBOX ALL] Error:", error);
+    console.error("[GMAIL INBOX ALL] Error:", error);
     return NextResponse.json({ error: "Failed to fetch inbox" }, { status: 500 });
   }
 }

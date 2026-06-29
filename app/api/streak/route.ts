@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// Computes and updates the user's daily activity streak, returning a
+// milestone message when the new streak count hits a notable threshold.
 const MILESTONE_MESSAGES: Record<string, string[]> = {
   "1": [
     "First day. The hardest one.",
@@ -151,7 +153,7 @@ export async function POST(request: NextRequest) {
     let longestStreak = profile?.longest_streak ?? 0;
     let newLastActiveDate = lastActiveDate;
 
-    console.log(`📊 [STREAK] Processing for user ${user.id}`);
+    console.log(`[STREAK] Processing for user ${user.id}`);
     console.log(`  - Today: ${today}`);
     console.log(`  - Yesterday: ${yesterday}`);
     console.log(`  - Last active: ${lastActiveDate}`);
@@ -190,7 +192,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    console.log(`✅ [STREAK] Updated - Streak: ${streakCount}, Best: ${longestStreak}`);
+    console.log(`[STREAK] Updated - Streak: ${streakCount}, Best: ${longestStreak}`);
 
     return NextResponse.json({
       streak_count: streakCount,

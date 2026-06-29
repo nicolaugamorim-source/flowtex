@@ -12,7 +12,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !anonKey) {
-      console.error("❌ [API PROTECTION] Missing Supabase credentials");
+      console.error("[API PROTECTION] Missing Supabase credentials");
       return {
         authorized: false,
         error: NextResponse.json(
@@ -41,7 +41,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.log("❌ [API PROTECTION] Not authenticated");
+      console.log("[API PROTECTION] Not authenticated");
       return {
         authorized: false,
         error: NextResponse.json(
@@ -51,7 +51,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
       };
     }
 
-    console.log("✅ [API PROTECTION] User authenticated:", user.email);
+    console.log("[API PROTECTION] User authenticated:", user.email);
 
     try {
       // Check subscription status
@@ -63,7 +63,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
 
       if (profileError) {
         console.warn(
-          "⚠️ [API PROTECTION] Profile fetch error:",
+          "[API PROTECTION] Profile fetch error:",
           profileError.message
         );
         // Allow through on DB error to avoid blocking users
@@ -71,7 +71,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
       }
 
       if (!profile) {
-        console.log("❌ [API PROTECTION] No profile found");
+        console.log("[API PROTECTION] No profile found");
         return {
           authorized: false,
           error: NextResponse.json(
@@ -87,7 +87,7 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
         : null;
       const now = new Date();
 
-      console.log("📊 [API PROTECTION] Subscription status:", subscriptionStatus);
+      console.log("[API PROTECTION] Subscription status:", subscriptionStatus);
 
       // Check if subscription is valid
       const isActiveSubscription =
@@ -97,11 +97,11 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
         subscriptionStatus === "trialing" && trialEndsAt && trialEndsAt > now;
 
       if (isActiveSubscription || isValidTrial) {
-        console.log("✅ [API PROTECTION] Valid subscription, allowing access");
+        console.log("[API PROTECTION] Valid subscription, allowing access");
         return { authorized: true, userId: user.id };
       }
 
-      console.log("❌ [API PROTECTION] No valid subscription");
+      console.log("[API PROTECTION] No valid subscription");
       return {
         authorized: false,
         error: NextResponse.json(
@@ -110,12 +110,12 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
         ),
       };
     } catch (dbError) {
-      console.error("❌ [API PROTECTION] Database error:", dbError);
+      console.error("[API PROTECTION] Database error:", dbError);
       // Allow through on DB errors
       return { authorized: true, userId: user.id };
     }
   } catch (error) {
-    console.error("❌ [API PROTECTION] Unexpected error:", error);
+    console.error("[API PROTECTION] Unexpected error:", error);
     return {
       authorized: false,
       error: NextResponse.json(

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 async function getNotionToken(userId: string): Promise<string | null> {
   if (!userId) {
-    console.error('❌ No userId provided to getNotionToken');
+    console.error('No userId provided to getNotionToken');
     return null;
   }
 
@@ -14,7 +14,7 @@ async function getNotionToken(userId: string): Promise<string | null> {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('❌ Missing Supabase credentials');
+      console.error('Missing Supabase credentials');
       return null;
     }
 
@@ -28,22 +28,22 @@ async function getNotionToken(userId: string): Promise<string | null> {
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Error querying integrations:', error);
+      console.error('Error querying integrations:', error);
       return null;
     }
 
     if (!data) {
-      console.error('❌ No Notion integration found for userId:', userId);
-      console.log('⚠️ User needs to connect Notion.');
+      console.error('No Notion integration found for userId:', userId);
+      console.log('User needs to connect Notion.');
       return null;
     }
 
     if (!data.is_active || !data.access_token) {
-      console.error('❌ User has no active Notion token saved. is_active:', data.is_active);
+      console.error('User has no active Notion token saved. is_active:', data.is_active);
       return null;
     }
 
-    console.log('✅ Found Notion token for user');
+    console.log('Found Notion token for user');
     return data.access_token;
   } catch (error) {
     console.error('Error getting Notion token:', error);
@@ -462,7 +462,7 @@ export async function navigateNotionPath(
 
     // Ensure we always return a meaningful title
     const finalTitle = currentTitle?.trim() ? currentTitle : 'Untitled';
-    console.log('✅ Returning from navigateNotionPath:', { id: currentId, title: finalTitle });
+    console.log('Returning from navigateNotionPath:', { id: currentId, title: finalTitle });
     return { id: currentId, title: finalTitle };
   } catch (error) {
     console.error('Error navigating Notion path:', error);

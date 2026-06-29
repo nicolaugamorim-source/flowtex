@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 
+// Fetches and buckets the user's selected-calendar events into "this week" /
+// "next week" for the dashboard's at-a-glance view.
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -26,23 +28,23 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized"}, { status: 401 });
     }
 
-    console.log("🔄 [CALENDAR EVENTS] Fetching events for user:", user.id);
+    console.log("[CALENDAR EVENTS] Fetching events for user:", user.id);
 
     // Get valid Google access token (refreshes if needed)
     const accessToken = await getValidGoogleToken(supabase, user.id);
 
     if (!accessToken) {
-      console.log("⚠️ [CALENDAR EVENTS] Google not connected or token refresh failed");
+      console.log("[CALENDAR EVENTS] Google not connected or token refresh failed");
       return NextResponse.json(
         { error: "Google not connected", thisWeek: [], nextWeek: [] },
         { status: 400 }
       );
     }
 
-    console.log("✅ [CALENDAR EVENTS] Got valid access token");
+    console.log("[CALENDAR EVENTS] Got valid access token");
 
     // Get selected calendars from integrations table
     const { data: integration, error: integrationError } = await supabase
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (integrationError) {
-      console.log("⚠️ [CALENDAR EVENTS] Failed to fetch integration");
+      console.log("[CALENDAR EVENTS] Failed to fetch integration");
       return NextResponse.json(
         { error: "Google not connected", thisWeek: [], nextWeek: [] },
         { status: 400 }
@@ -64,14 +66,14 @@ export async function GET(request: NextRequest) {
     // Get selected calendar IDs
     const selectedCalendarIds = integration.selected_calendar_ids ?? [];
     if (selectedCalendarIds.length === 0) {
-      console.log("⚠️ [CALENDAR EVENTS] No calendars selected");
+      console.log("[CALENDAR EVENTS] No calendars selected");
       return NextResponse.json(
         { error: "No calendars selected", thisWeek: [], nextWeek: [] },
         { status: 400 }
       );
     }
 
-    console.log("📅 [CALENDAR EVENTS] Selected calendars:", selectedCalendarIds);
+    console.log("[CALENDAR EVENTS] Selected calendars:", selectedCalendarIds);
 
     // Calculate this week and next week boundaries
     const now = new Date();
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
     nextSunday.setDate(monday.getDate() + 13);
     nextSunday.setHours(23, 59, 59, 999);
 
-    console.log("📅 [CALENDAR EVENTS] Week boundaries:", {
+    console.log("[CALENDAR EVENTS] Week boundaries:", {
       monday: monday.toISOString(),
       nextSunday: nextSunday.toISOString(),
     });
@@ -98,7 +100,7 @@ export async function GET(request: NextRequest) {
       maxResults: "20",
     });
 
-    console.log("🌐 [CALENDAR EVENTS] Fetching from Google Calendar API for all selected calendars");
+    console.log("[CALENDAR EVENTS] Fetching from Google Calendar API for all selected calendars");
 
     let allEvents: any[] = [];
 
@@ -114,16 +116,16 @@ export async function GET(request: NextRequest) {
         );
 
         if (!response.ok) {
-          console.warn(`⚠️ [CALENDAR EVENTS] Failed to fetch calendar ${calendarId}:`, response.status);
+          console.warn(`[CALENDAR EVENTS] Failed to fetch calendar ${calendarId}:`, response.status);
           continue;
         }
 
         const data = await response.json();
         const events = data.items ?? [];
-        console.log(`📊 [CALENDAR EVENTS] Fetched ${events.length} events from calendar ${calendarId}`);
+        console.log(`[CALENDAR EVENTS] Fetched ${events.length} events from calendar ${calendarId}`);
         allEvents = allEvents.concat(events);
       } catch (err) {
-        console.warn(`⚠️ [CALENDAR EVENTS] Error fetching calendar ${calendarId}:`, err);
+        console.warn(`[CALENDAR EVENTS] Error fetching calendar ${calendarId}:`, err);
         continue;
       }
     }
@@ -135,7 +137,7 @@ export async function GET(request: NextRequest) {
       return aStart - bStart;
     });
 
-    console.log("📊 [CALENDAR EVENTS] Total events fetched:", events.length);
+    console.log("[CALENDAR EVENTS] Total events fetched:", events.length);
 
     // Split into this week and next week
     const nextMonday = new Date(monday);
@@ -151,12 +153,12 @@ export async function GET(request: NextRequest) {
       return start >= nextMonday && start <= nextSunday;
     });
 
-    console.log("✅ [CALENDAR EVENTS] This week:", thisWeek.length, "events");
-    console.log("✅ [CALENDAR EVENTS] Next week:", nextWeek.length, "events");
+    console.log("[CALENDAR EVENTS] This week:", thisWeek.length, "events");
+    console.log("[CALENDAR EVENTS] Next week:", nextWeek.length, "events");
 
     return NextResponse.json({ thisWeek, nextWeek });
   } catch (error) {
-    console.error("❌ [CALENDAR EVENTS] Error:", error);
+    console.error("[CALENDAR EVENTS] Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch events", thisWeek: [], nextWeek: [] },
       { status: 500 }

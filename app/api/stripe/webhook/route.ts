@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 
+// Handles Stripe webhook events (checkout completed, subscription updated/cancelled, etc.)
+// and syncs the resulting subscription state onto the user's profile.
 function getSupabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -99,7 +101,7 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (error) {
-    console.error("❌ [STRIPE WEBHOOK] Signature verification failed:", error);
+    console.error("[STRIPE WEBHOOK] Signature verification failed:", error);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -136,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("❌ [STRIPE WEBHOOK] Handler error:", error);
+    console.error("[STRIPE WEBHOOK] Handler error:", error);
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 }

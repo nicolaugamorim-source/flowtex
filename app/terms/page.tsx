@@ -1,6 +1,7 @@
 import { Footer } from "@/components/ui/footer";
 import { Share2, Code, Link } from "lucide-react";
 
+// Public terms of service page.
 export default function TermsPage() {
   return (
     <>

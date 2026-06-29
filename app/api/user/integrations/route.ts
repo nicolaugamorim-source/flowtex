@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Returns the authenticated user's connected integrations (Google, Notion, etc.).
 export async function GET() {
   try {
     const cookieStore = await cookies();

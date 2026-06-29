@@ -8,7 +8,7 @@ export async function getValidGoogleToken(supabase: any, userId: string): Promis
     .single();
 
   if (!integration) {
-    console.warn("⚠️ [GOOGLE AUTH] No Google integration found");
+    console.warn("[GOOGLE AUTH] No Google integration found");
     return null;
   }
 
@@ -24,11 +24,11 @@ export async function getValidGoogleToken(supabase: any, userId: string): Promis
 
   // Refresh the token
   if (!integration.refresh_token) {
-    console.warn("⚠️ [GOOGLE AUTH] No refresh token available");
+    console.warn("[GOOGLE AUTH] No refresh token available");
     return null;
   }
 
-  console.log("🔄 [GOOGLE AUTH] Refreshing access token...");
+  console.log("[GOOGLE AUTH] Refreshing access token...");
 
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -42,7 +42,7 @@ export async function getValidGoogleToken(supabase: any, userId: string): Promis
   });
 
   if (!response.ok) {
-    console.error("❌ [GOOGLE AUTH] Token refresh failed:", response.status);
+    console.error("[GOOGLE AUTH] Token refresh failed:", response.status);
     const errorData = await response.text();
     console.error("Error details:", errorData);
     return null;
@@ -50,7 +50,7 @@ export async function getValidGoogleToken(supabase: any, userId: string): Promis
 
   const tokens = await response.json();
 
-  console.log("✅ [GOOGLE AUTH] Token refreshed successfully");
+  console.log("[GOOGLE AUTH] Token refreshed successfully");
 
   // Save new token to database
   const { error: updateError } = await supabase
@@ -63,9 +63,9 @@ export async function getValidGoogleToken(supabase: any, userId: string): Promis
     .eq("provider", "google");
 
   if (updateError) {
-    console.warn("⚠️ [GOOGLE AUTH] Failed to save refreshed token:", updateError);
+    console.warn("[GOOGLE AUTH] Failed to save refreshed token:", updateError);
   } else {
-    console.log("💾 [GOOGLE AUTH] New token saved to database");
+    console.log("[GOOGLE AUTH] New token saved to database");
   }
 
   return tokens.access_token;

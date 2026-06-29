@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/posthog-server";
 
+// Lists/creates kanban tasks for the authenticated user.
 export async function GET() {
   try {
     const cookieStore = await cookies();

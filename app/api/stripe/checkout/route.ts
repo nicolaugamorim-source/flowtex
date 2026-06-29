@@ -5,6 +5,9 @@ import { createServerClient } from "@supabase/ssr";
 import { getStripe, PLAN_PRICE_IDS, TRIAL_PERIOD_DAYS } from "@/lib/stripe";
 import { getRequestIp, hashIp } from "@/lib/hash-ip";
 
+// Creates a Stripe Checkout session for the selected plan and redirects the
+// user to it. Handles trial eligibility (one trial per user, IP-limited) and
+// reuses an existing Stripe customer if one is already on the profile.
 export async function GET(request: NextRequest) {
   try {
     const plan = request.nextUrl.searchParams.get("plan");
@@ -48,8 +51,6 @@ export async function GET(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    console.log('[TRIAL] profile:', JSON.stringify(profile))
-
     const stripe = getStripe();
 
     // Reuse the Stripe customer if we already created one for this user.
@@ -71,12 +72,8 @@ export async function GET(request: NextRequest) {
     // the purchase itself, to avoid punishing shared/office networks.
     let trialEligible = !profile?.trial_used_at;
 
-    console.log('[TRIAL] eligible after profile check:', trialEligible)
-
     if (trialEligible) {
       const ip = getRequestIp(request);
-
-      console.log('[TRIAL] ip:', ip)
 
       if (ip) {
         const ipHash = hashIp(ip);
@@ -90,8 +87,6 @@ export async function GET(request: NextRequest) {
           .limit(1)
           .maybeSingle();
 
-        console.log('[TRIAL] recentSignup:', JSON.stringify(recentSignup))
-
         if (recentSignup) {
           trialEligible = false;
         } else {
@@ -99,8 +94,6 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-
-    console.log('[TRIAL] final eligible:', trialEligible)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -130,7 +123,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(session.url);
   } catch (error) {
-    console.error("❌ [STRIPE CHECKOUT] Error:", error);
+    console.error("[STRIPE CHECKOUT] Error:", error);
     return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
   }
 }
