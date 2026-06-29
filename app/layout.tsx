@@ -29,11 +29,11 @@ const metadataBase = process.env.NEXT_PUBLIC_APP_URL
 
 export const metadata: Metadata = {
   metadataBase,
-  title: "Flowtex - Your AI Second Brain for Founders",
-  description: "Connect all your tools and give your AI the full context of your business. Flowtex is your AI second brain.",
+  title: "Flowtex — The AI that runs your business while you build it.",
+  description: "Flowtex connects your tools, learns your business context, and acts on it. No re-explaining. No switching apps. Just results.",
   openGraph: {
-    title: "Flowtex - Your AI Second Brain for Founders",
-    description: "Connect all your tools and give your AI the full context of your business. Flowtex is your AI second brain.",
+    title: "Flowtex — The AI that runs your business while you build it.",
+    description: "Flowtex connects your tools, learns your business context, and acts on it. No re-explaining. No switching apps. Just results.",
     images: [
       {
         url: "/logo.svg",

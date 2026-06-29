@@ -714,23 +714,8 @@ const HeroFlowtex: React.FC = () => {
                 className="text-3xl sm:text-4xl lg:text-6xl text-[var(--color-text-primary)] leading-tight max-w-5xl mb-4"
                 style={{ fontWeight: 700 }}
             >
-                Your team loses context in
-                <span className="block h-[1.2em] sm:h-[1.2em] lg:h-[1.2em] overflow-hidden align-bottom mt-2">
-                    <RotatingText
-                        texts={['every app switch.', 'every Notion update.', 'every AI session.', 'every decision on a call.', 'every new team member.']}
-                        mainClassName="text-[var(--color-accent)] mx-1"
-                        staggerFrom={"last"}
-                        initial={{ y: "-100%", opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: "110%", opacity: 0 }}
-                        staggerDuration={0.01}
-                        transition={{ type: "spring", damping: 18, stiffness: 250 }}
-                        rotationInterval={5500}
-                        splitBy="characters"
-                        auto={true}
-                        loop={true}
-                    />
-                </span>
+                You spend half your day explaining context.
+                <span className="block text-[var(--color-accent)] mt-2">Flowtex already knows it.</span>
             </motion.h1>
 
             <motion.p
@@ -740,7 +725,7 @@ const HeroFlowtex: React.FC = () => {
                 className="text-base sm:text-lg lg:text-xl text-[var(--color-text-secondary)] max-w-2xl mb-8"
                 style={{ fontWeight: 400 }}
             >
-                Flowtex is the workspace that remembers everything your team can't afford to forget.
+                The AI workspace that knows your business, your clients, and your pipeline, and acts on it.
             </motion.p>
 
             <motion.div

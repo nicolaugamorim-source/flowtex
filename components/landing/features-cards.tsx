@@ -14,7 +14,7 @@ const features = [
   {
     label: "AI WITH CONTEXT",
     headline: "Your AI already knows the full story.",
-    body: "Switch between Claude, ChatGPT, or Gemini and Flowtex feeds them the context they need — client name, project status, last decisions. No re-explaining, ever.",
+    body: "Your AI already knows the client name, the project status, and the last decisions made. No re-explaining, ever.",
     command: "Write a follow-up email to John about the proposal we discussed last Tuesday",
   },
   {

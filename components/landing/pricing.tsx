@@ -151,7 +151,7 @@ export function Pricing({
                   ) : (
                     <>
                       <span className="text-5xl font-bold text-[var(--color-text-primary)]">
-                        ${plan.price.split(".")[0]}
+                        €{plan.price.split(".")[0]}
                       </span>
                       <span className="text-2xl font-medium text-[var(--color-text-muted)]">
                         .{plan.price.split(".")[1]} / month
