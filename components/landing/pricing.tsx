@@ -108,7 +108,12 @@ export function Pricing({
         </div>
 
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6 mx-auto",
+            plans.length === 2 ? "md:grid-cols-2 max-w-3xl" : "md:grid-cols-3"
+          )}
+        >
           {plans.map((plan, index) => (
             <motion.div
               key={index}

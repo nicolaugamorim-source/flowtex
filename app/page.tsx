@@ -73,7 +73,7 @@ export default function Home() {
         </div>
         <div id="pricing">
           <Pricing
-            plans={pricingPlans.filter((plan) => plan.name === "Solo")}
+            plans={pricingPlans.filter((plan) => plan.name === "Solo" || plan.name === "Team")}
             title="Pricing plans for every stage"
             description="Choose the plan that fits your needs.\nAll plans include everything you need to get started with Flowtex."
           />
@@ -83,7 +83,7 @@ export default function Home() {
           description="Stop losing context. Start building<br />with a workspace that already knows your project."
           action={{
             text: "Get Early Access",
-            href: "#pricing",
+            href: "/login",
             variant: "default"
           }}
         />
