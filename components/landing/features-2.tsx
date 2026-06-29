@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Zap, Database, MessageSquare, Search, ArrowRight } from 'lucide-react'
-import { SiGmail, SiGooglecalendar, SiNotion, SiGoogledrive } from 'react-icons/si'
+import { SiGmail, SiGooglecalendar, SiNotion } from 'react-icons/si'
 import { MessageCircle, CheckCircle2 } from 'lucide-react'
 import { ReactNode } from 'react'
 import { motion } from 'framer-motion'
@@ -12,7 +12,7 @@ const steps = [
   {
     icon: Zap,
     headline: "Connect your apps",
-    body: "Gmail, Calendar, Notion, and Drive. One click each.",
+    body: "Gmail, Calendar, and Notion. One click each.",
   },
   {
     icon: Database,
@@ -68,11 +68,8 @@ export function Features() {
                                       <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
                                         <SiGooglecalendar className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
-                                      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all -translate-y-3">
-                                        <SiNotion className="w-5 h-5 text-[var(--color-text-primary)]" />
-                                      </div>
                                       <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
-                                        <SiGoogledrive className="w-5 h-5 text-[var(--color-text-primary)]" />
+                                        <SiNotion className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
                                     </div>
                                   )}
