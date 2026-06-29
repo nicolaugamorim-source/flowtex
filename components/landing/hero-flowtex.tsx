@@ -783,7 +783,7 @@ const HeroFlowtex: React.FC = () => {
                 {/* Framed like a static screenshot, not a live widget — the top bar reads
                     as a browser window, and pointer-events-none kills any of the mockup's
                     own hover/interactive affordances so it can't be mistaken for real UI. */}
-                <div className="max-w-4xl mr-0 rounded-2xl border border-[var(--color-border-default)] shadow-2xl overflow-hidden">
+                <div className="w-full max-w-4xl mr-0 rounded-2xl border border-[var(--color-border-default)] shadow-2xl overflow-hidden">
                     <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border-default)]">
                         <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-error)]" />
                         <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
