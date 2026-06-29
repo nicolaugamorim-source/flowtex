@@ -1,7 +1,15 @@
 "use client";
 
 import React from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, MoreVertical } from "lucide-react";
+
+/**
+ * This mirrors the real dashboard's markup (components/app/app-dashboard.tsx,
+ * gmail-inbox.tsx, priority-tasks.tsx, daily-streak.tsx) almost verbatim —
+ * same classes, same proportions — rendered at full size and scaled down via
+ * CSS transform, so it reads as a faithful miniature screenshot rather than
+ * a redesigned mockup with its own ad-hoc spacing.
+ */
 
 const MOCK_EVENTS_THIS_WEEK = [
   { time: "09:00 AM", title: "Team Standup" },
@@ -24,19 +32,18 @@ const MOCK_TASKS = [
   { title: "Finalize Q3 client proposal", priority: "high", column: "In Progress" },
   { title: "Review API integration PR", priority: "high", column: "Review" },
   { title: "Update onboarding docs", priority: "medium", column: "To Do" },
-  { title: "Prep client kickoff deck", priority: "medium", column: "To Do" },
 ];
 
 const priorityColor: Record<string, string> = {
-  high: "var(--color-error)",
-  medium: "var(--color-warning)",
-  low: "var(--color-info)",
+  high: "var(--color-priority-high-border)",
+  medium: "var(--color-priority-medium-border)",
+  low: "var(--color-priority-low-border)",
 };
 
 const columnColor: Record<string, string> = {
-  "To Do": "var(--color-text-muted)",
-  "In Progress": "var(--color-info)",
-  Review: "var(--color-warning)",
+  "To Do": "var(--color-column-backlog)",
+  "In Progress": "var(--color-column-progress)",
+  Review: "var(--color-column-review)",
 };
 
 const ACTIVITY_SEED = [
@@ -67,128 +74,173 @@ const activityColor = (level: number) => {
   }
 };
 
+const DESIGN_WIDTH = 1400;
+const DESIGN_HEIGHT = 760;
+const SCALE = 0.5;
+
 export const AppDashboardMockup = () => {
   return (
-    <div className="p-3 h-[380px] overflow-hidden bg-[var(--color-bg-base)] flex flex-col gap-3 text-[10px]">
-      {/* Top Section - Greeting + Calendar */}
-      <div className="grid grid-cols-2 gap-3 items-center">
-        <div className="flex flex-col items-center justify-center text-center">
-          <p className="text-[var(--color-text-primary)] text-4xl font-bold leading-tight">
-            Good morning
-          </p>
-          <p className="text-[var(--color-text-muted)] text-xs italic font-light max-w-[220px] mt-2">
-            "Make something people want." — Paul Graham
-          </p>
+    <div
+      className="overflow-hidden bg-[var(--color-bg-base)]"
+      style={{ width: DESIGN_WIDTH * SCALE, height: DESIGN_HEIGHT * SCALE }}
+    >
+      <div
+        className="bg-[var(--color-bg-base)] p-8 flex flex-col gap-8"
+        style={{
+          width: DESIGN_WIDTH,
+          height: DESIGN_HEIGHT,
+          transform: `scale(${SCALE})`,
+          transformOrigin: "top left",
+        }}
+      >
+        {/* Top Section - 2 Columns */}
+        <div className="grid grid-cols-2 gap-8 h-1/2 items-center">
+          <div className="flex flex-col items-center justify-center h-full gap-4">
+            <p className="text-[var(--color-text-primary)] text-6xl font-bold leading-tight text-center">
+              Good morning
+            </p>
+            <p className="text-[var(--color-text-muted)] text-base italic font-light max-w-lg text-center">
+              "Make something people want." — Paul Graham
+            </p>
+          </div>
+
+          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col">
+            <div className="flex flex-row gap-6 h-full">
+              <div className="flex-1 flex flex-col gap-3">
+                <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">This week</h3>
+                <div className="flex flex-col gap-3">
+                  {MOCK_EVENTS_THIS_WEEK.map((event) => (
+                    <div
+                      key={event.title}
+                      className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3"
+                    >
+                      <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{event.time}</p>
+                      <p className="font-semibold text-[var(--color-text-primary)] truncate flex-1">{event.title}</p>
+                      <MoreVertical size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-px bg-[var(--color-border-default)]" />
+
+              <div className="flex-1 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">Next week</h3>
+                  <RefreshCw size={14} style={{ color: "var(--color-text-disabled)" }} />
+                </div>
+                <div className="flex flex-col gap-3">
+                  {MOCK_EVENTS_NEXT_WEEK.map((event) => (
+                    <div
+                      key={event.title}
+                      className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3"
+                    >
+                      <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{event.time}</p>
+                      <p className="font-semibold text-[var(--color-text-primary)] truncate flex-1">{event.title}</p>
+                      <MoreVertical size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2">
-          <div className="flex flex-row gap-2">
-            <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-              <h3 className="text-[var(--color-text-primary)] text-[10px] font-semibold">This week</h3>
-              {MOCK_EVENTS_THIS_WEEK.map((event) => (
+        {/* Bottom Section - 3 Cards */}
+        <div className="grid grid-cols-3 gap-8 h-1/2">
+          {/* New messages (Gmail) */}
+          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">New messages</h3>
+              <RefreshCw size={20} className="text-[var(--color-text-muted)]" />
+            </div>
+            <div className="flex flex-col gap-3 overflow-hidden">
+              {MOCK_EMAILS.map((email) => (
                 <div
-                  key={event.title}
-                  className="bg-[var(--color-bg-elevated)] px-2 py-1.5 rounded-sm border border-[var(--color-border-default)] flex items-center justify-between gap-2"
+                  key={email.subject}
+                  className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3"
                 >
-                  <p className="text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{event.time}</p>
-                  <p className="font-semibold text-[var(--color-text-primary)] truncate text-right">{event.title}</p>
+                  <div className="flex-1 flex flex-col gap-1 min-w-0">
+                    <p className={`truncate ${email.unread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+                      {email.sender}
+                    </p>
+                    <p className={`text-xs truncate ${email.unread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+                      {email.subject}
+                    </p>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{email.date}</p>
                 </div>
               ))}
             </div>
+          </div>
 
-            <div className="w-px bg-[var(--color-border-default)]" />
-
-            <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[var(--color-text-primary)] text-[10px] font-semibold">Next week</h3>
-                <RefreshCw size={9} className="text-[var(--color-text-disabled)]" />
-              </div>
-              {MOCK_EVENTS_NEXT_WEEK.map((event) => (
+          {/* Priority tasks */}
+          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col">
+            <h3 className="text-[var(--color-text-primary)] text-xl font-semibold mb-4">Priority tasks</h3>
+            <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+              {MOCK_TASKS.map((task) => (
                 <div
-                  key={event.title}
-                  className="bg-[var(--color-bg-elevated)] px-2 py-1.5 rounded-sm border border-[var(--color-border-default)] flex items-center justify-between gap-2"
+                  key={task.title}
+                  className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3 border-l-4"
+                  style={{ borderLeftColor: priorityColor[task.priority] }}
                 >
-                  <p className="text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{event.time}</p>
-                  <p className="font-semibold text-[var(--color-text-primary)] truncate text-right">{event.title}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section - 3 Cards, mirrors the real dashboard's Gmail / Tasks / Streak */}
-      <div className="grid grid-cols-3 gap-3 flex-1 min-h-0">
-        {/* New messages */}
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col gap-1.5 min-h-0">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[var(--color-text-primary)] font-semibold">New messages</h3>
-            <RefreshCw size={9} className="text-[var(--color-text-muted)]" />
-          </div>
-          <div className="flex flex-col gap-1.5 overflow-hidden">
-            {MOCK_EMAILS.map((email) => (
-              <div
-                key={email.subject}
-                className="bg-[var(--color-bg-elevated)] p-1.5 rounded-sm border border-[var(--color-border-default)] flex items-center justify-between gap-1.5"
-              >
-                <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                  <p className={`truncate ${email.unread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
-                    {email.sender}
-                  </p>
-                  <p className={`truncate ${email.unread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
-                    {email.subject}
-                  </p>
-                </div>
-                <p className="text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{email.date}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Priority tasks */}
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col gap-1.5 min-h-0">
-          <h3 className="text-[var(--color-text-primary)] font-semibold">Priority tasks</h3>
-          <div className="flex flex-col gap-1.5 overflow-hidden">
-            {MOCK_TASKS.map((task) => (
-              <div
-                key={task.title}
-                className="bg-[var(--color-bg-elevated)] p-1.5 rounded-sm border border-[var(--color-border-default)] border-l-2 flex items-center justify-between gap-1.5"
-                style={{ borderLeftColor: priorityColor[task.priority] }}
-              >
-                <p className="font-medium text-[var(--color-text-primary)] truncate flex-1 min-w-0">{task.title}</p>
-                <span
-                  className="font-medium px-1 py-0.5 rounded-full flex-shrink-0 text-white text-[8px]"
-                  style={{ backgroundColor: columnColor[task.column] }}
-                >
-                  {task.column}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Daily streak */}
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col gap-2 min-h-0">
-          <div className="flex items-center gap-2 justify-center">
-            <p className="text-3xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
-            <div className="flex flex-col gap-0 leading-tight">
-              <p className="text-[9px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
-              <p className="text-[9px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
-            </div>
-          </div>
-          <p className="text-[var(--color-text-disabled)] text-center">Today's activity: 5 actions</p>
-          <div className="flex items-center justify-center gap-[2px] flex-1">
-            {ACTIVITY_GRAPH.map((week, weekIdx) => (
-              <div key={weekIdx} className="flex flex-1 flex-col gap-[2px]">
-                {week.map((level, dayIdx) => (
+                  <p className="font-medium text-[var(--color-text-primary)] truncate flex-1 min-w-0">{task.title}</p>
                   <div
-                    key={`${weekIdx}-${dayIdx}`}
-                    className="w-full aspect-square rounded-[1.5px] border border-[var(--color-border-default)]"
-                    style={{ backgroundColor: activityColor(level) }}
-                  />
-                ))}
+                    className="text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 text-white"
+                    style={{ backgroundColor: columnColor[task.column] }}
+                  >
+                    {task.column}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Daily streak */}
+          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col gap-5">
+            <div className="flex items-center justify-center gap-6 w-full">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <p className="text-8xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-lg font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
+                  <p className="text-lg font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
+                </div>
               </div>
-            ))}
+            </div>
+            <p className="text-sm text-[var(--color-text-disabled)]">Today's activity: 5 actions</p>
+            <div className="flex flex-col gap-4 items-center flex-1 min-h-0">
+              <div className="flex gap-1 justify-center flex-1 min-h-0">
+                <div className="flex flex-col gap-1 mr-2">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                    <p key={day} className="text-xs text-[var(--color-text-disabled)] flex-1 flex items-center">
+                      {day}
+                    </p>
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  {ACTIVITY_GRAPH.map((week, weekIdx) => (
+                    <div key={weekIdx} className="flex flex-col gap-1">
+                      {week.map((level, dayIdx) => (
+                        <div
+                          key={`${weekIdx}-${dayIdx}`}
+                          className="w-3.5 h-3.5 rounded-sm border border-[var(--color-border-default)]"
+                          style={{ backgroundColor: activityColor(level) }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 text-xs text-[var(--color-text-disabled)]">
+                <span>Less</span>
+                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-bg-base)" }} />
+                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-light)" }} />
+                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent)" }} />
+                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-hover)" }} />
+                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-pressed)" }} />
+                <span>More</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
