@@ -191,7 +191,7 @@ export const AppDashboardMockup = () => {
                   {week.map((level, dayIdx) => (
                     <div
                       key={`${weekIdx}-${dayIdx}`}
-                      className="w-2 h-2 rounded-[1px]"
+                      className="w-[7px] h-[7px] rounded-[1px]"
                       style={{ backgroundColor: activityColor(level) }}
                     />
                   ))}
