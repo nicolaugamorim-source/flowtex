@@ -76,7 +76,7 @@ const activityColor = (level: number) => {
 
 const DESIGN_WIDTH = 1400;
 const DESIGN_HEIGHT = 760;
-const SCALE = 0.5;
+const SCALE = 0.62;
 
 export const AppDashboardMockup = () => {
   return (
@@ -208,36 +208,27 @@ export const AppDashboardMockup = () => {
               </div>
             </div>
             <p className="text-sm text-[var(--color-text-disabled)]">Today's activity: 5 actions</p>
-            <div className="flex flex-col gap-4 items-center flex-1 min-h-0">
-              <div className="flex gap-1 justify-center flex-1 min-h-0">
-                <div className="flex flex-col gap-1 mr-2">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                    <p key={day} className="text-xs text-[var(--color-text-disabled)] flex-1 flex items-center">
-                      {day}
-                    </p>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  {ACTIVITY_GRAPH.map((week, weekIdx) => (
-                    <div key={weekIdx} className="flex flex-col gap-1">
-                      {week.map((level, dayIdx) => (
-                        <div
-                          key={`${weekIdx}-${dayIdx}`}
-                          className="w-3.5 h-3.5 rounded-sm border border-[var(--color-border-default)]"
-                          style={{ backgroundColor: activityColor(level) }}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
+            <div className="flex flex-col gap-3 items-center flex-1 min-h-0 min-w-0 overflow-hidden">
+              <div className="flex gap-[3px] justify-center flex-1 min-h-0 min-w-0">
+                {ACTIVITY_GRAPH.map((week, weekIdx) => (
+                  <div key={weekIdx} className="flex flex-col gap-[3px]">
+                    {week.map((level, dayIdx) => (
+                      <div
+                        key={`${weekIdx}-${dayIdx}`}
+                        className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]"
+                        style={{ backgroundColor: activityColor(level) }}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-end gap-2 text-xs text-[var(--color-text-disabled)]">
+              <div className="flex items-center justify-end gap-1.5 text-xs text-[var(--color-text-disabled)]">
                 <span>Less</span>
-                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-bg-base)" }} />
-                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-light)" }} />
-                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent)" }} />
-                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-hover)" }} />
-                <div className="w-2.5 h-2.5 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-pressed)" }} />
+                <div className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-bg-base)" }} />
+                <div className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-light)" }} />
+                <div className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent)" }} />
+                <div className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-hover)" }} />
+                <div className="w-2 h-2 rounded-sm border border-[var(--color-border-default)]" style={{ backgroundColor: "var(--color-accent-pressed)" }} />
                 <span>More</span>
               </div>
             </div>
