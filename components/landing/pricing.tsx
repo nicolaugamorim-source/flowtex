@@ -40,25 +40,25 @@ const getIconForFeature = (text: string) => {
   if (lowerText.includes("shared context across all team")) return { icon: Share2, color: "var(--color-info)" };
   if (lowerText.includes("1 user")) return { icon: User, color: "var(--color-error)" };
   if (lowerText.includes("users")) return { icon: Users, color: "var(--color-error)" };
-  if (lowerText.includes("gmail") || lowerText.includes("email")) return { icon: Mail, color: "#FBBF24" };
+  if (lowerText.includes("gmail") || lowerText.includes("email")) return { icon: Mail, color: "var(--color-warning)" };
   if (lowerText.includes("calendar")) return { icon: Calendar, color: "var(--color-info)" };
-  if (lowerText.includes("notion")) return { icon: Database, color: "#A855F7" };
-  if (lowerText.includes("drive")) return { icon: HardDrive, color: "#8B5CF6" };
-  if (lowerText.includes("ai context") || lowerText.includes("shared ai")) return { icon: Brain, color: "#06B6D4" };
-  if (lowerText.includes("chat") && !lowerText.includes("ai")) return { icon: MessageSquare, color: "#06B6D4" };
-  if (lowerText.includes("dashboard") || lowerText.includes("visibility")) return { icon: Eye, color: "#EC4899" };
+  if (lowerText.includes("notion")) return { icon: Database, color: "var(--color-category-idea-text)" };
+  if (lowerText.includes("drive")) return { icon: HardDrive, color: "var(--color-info)" };
+  if (lowerText.includes("ai context") || lowerText.includes("shared ai")) return { icon: Brain, color: "var(--color-accent)" };
+  if (lowerText.includes("chat") && !lowerText.includes("ai")) return { icon: MessageSquare, color: "var(--color-info)" };
+  if (lowerText.includes("dashboard") || lowerText.includes("visibility")) return { icon: Eye, color: "var(--color-info)" };
   if (lowerText.includes("ready") || lowerText.includes("minutes")) return { icon: Zap, color: "var(--color-warning)" };
-  if (lowerText.includes("permissions") || lowerText.includes("roles") || lowerText.includes("security")) return { icon: Shield, color: "#B45309" };
-  if (lowerText.includes("support")) return { icon: Headphones, color: "#6366F1" };
-  if (lowerText.includes("unlimited")) return { icon: Infinity, color: "#7C3AED" };
-  if (lowerText.includes("integration")) return { icon: Plug, color: "#F97316" };
-  if (lowerText.includes("onboarding")) return { icon: BookOpen, color: "#06B6D4" };
-  if (lowerText.includes("everything")) return { icon: Check, color: "#10B981" };
-  if (lowerText.includes("scales")) return { icon: TrendingUp, color: "#D946EF" };
-  if (lowerText.includes("custom")) return { icon: Plug, color: "#D946EF" };
-  if (lowerText.includes("assign")) return { icon: Check, color: "#10B981" };
+  if (lowerText.includes("permissions") || lowerText.includes("roles") || lowerText.includes("security")) return { icon: Shield, color: "var(--color-warning)" };
+  if (lowerText.includes("support")) return { icon: Headphones, color: "var(--color-info)" };
+  if (lowerText.includes("unlimited")) return { icon: Infinity, color: "var(--color-accent)" };
+  if (lowerText.includes("integration")) return { icon: Plug, color: "var(--color-warning)" };
+  if (lowerText.includes("onboarding")) return { icon: BookOpen, color: "var(--color-info)" };
+  if (lowerText.includes("everything")) return { icon: Check, color: "var(--color-success)" };
+  if (lowerText.includes("scales")) return { icon: TrendingUp, color: "var(--color-accent)" };
+  if (lowerText.includes("custom")) return { icon: Plug, color: "var(--color-accent)" };
+  if (lowerText.includes("assign")) return { icon: Check, color: "var(--color-success)" };
 
-  return { icon: Check, color: "#10B981" };
+  return { icon: Check, color: "var(--color-success)" };
 };
 
 export function Pricing({

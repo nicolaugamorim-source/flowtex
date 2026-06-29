@@ -44,7 +44,7 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
           className={cn(
             "relative group flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap",
             "text-base font-semibold text-[var(--color-text-primary)]",
-            "hover:bg-white/10 transition-colors",
+            "hover:bg-[color-mix(in_srgb,var(--color-text-primary)_8%,transparent)] transition-colors",
             className
           )}
         >
@@ -83,7 +83,7 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
         className={cn(
           "relative group px-4 py-2 rounded-lg whitespace-nowrap",
           "text-sm font-medium text-[var(--color-text-primary)]",
-          "hover:bg-white/20 transition-colors",
+          "hover:bg-[color-mix(in_srgb,var(--color-text-primary)_12%,transparent)] transition-colors",
           className
         )}
       >
@@ -101,8 +101,8 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
         <motion.div
           className={cn(
             "flex items-center gap-3 px-16 py-2 rounded-full",
-            "backdrop-blur-lg border border-white/30",
-            "bg-white/40 shadow-lg",
+            "backdrop-blur-lg border border-[color-mix(in_srgb,var(--color-border-default)_60%,transparent)]",
+            "bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] shadow-lg",
             "hover:shadow-xl transition-shadow duration-300",
             "max-w-5xl"
           )}

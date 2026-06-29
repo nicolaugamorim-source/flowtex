@@ -251,7 +251,7 @@ const ShinyText: React.FC<{ text: string; className?: string }> = ({ text, class
         <span style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(90deg, transparent, rgba(0,212,164,0.2), transparent)',
+            background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent)',
             animation: 'shine 2s infinite linear',
             opacity: 0.5,
             pointerEvents: 'none'
@@ -501,7 +501,9 @@ const HeroFlowtex: React.FC = () => {
                newDots.push({
                    x,
                    y,
-                   baseColor: `rgba(0, 125, 98, ${BASE_OPACITY_MAX})`,
+                   // Canvas fillStyle can't read CSS custom properties directly, so this
+                   // is the literal RGB of --color-accent (#00D4A4), identical in both themes.
+                   baseColor: `rgba(0, 212, 164, ${BASE_OPACITY_MAX})`,
                    targetOpacity: baseOpacity,
                    currentOpacity: baseOpacity,
                    opacitySpeed: (Math.random() * 0.005) + 0.002,
@@ -636,21 +638,6 @@ const HeroFlowtex: React.FC = () => {
        return () => { document.body.style.overflow = 'unset'; };
    }, [isMobileMenuOpen]);
 
-   const headerVariants: Variants = {
-       top: {
-           backgroundColor: "rgba(248, 250, 252, 0.95)",
-           borderBottomColor: "rgba(200, 216, 230, 0.5)",
-           position: 'fixed',
-           boxShadow: 'none',
-       },
-       scrolled: {
-           backgroundColor: "rgba(248, 250, 252, 0.98)",
-           borderBottomColor: "rgba(200, 216, 230, 0.7)",
-           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-           position: 'fixed'
-       }
-   };
-
    const mobileMenuVariants: Variants = {
        hidden: { opacity: 0, y: -20 },
        visible: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
@@ -660,10 +647,6 @@ const HeroFlowtex: React.FC = () => {
     const contentDelay = 0.3;
     const itemDelayIncrement = 0.1;
 
-    const bannerVariants: Variants = {
-        hidden: { opacity: 0, y: -10 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: contentDelay } }
-    };
    const headlineVariants: Variants = {
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { duration: 0.5, delay: contentDelay + itemDelayIncrement } }
@@ -725,15 +708,6 @@ const HeroFlowtex: React.FC = () => {
 
             <div className="flex-1 flex flex-col mt-8 min-w-0">
 
-            <motion.div
-                variants={bannerVariants}
-                initial="hidden"
-                animate="visible"
-                className="inline-flex items-center px-4 py-2 rounded-full border border-[var(--color-accent)] bg-[#F0FDFB] mb-6 w-fit"
-            >
-                <span className="text-sm font-semibold text-[var(--color-accent)] uppercase tracking-wide">Be First - Early Access</span>
-            </motion.div>
-
 <motion.h1
                 variants={headlineVariants}
                 initial="hidden"
@@ -790,7 +764,7 @@ const HeroFlowtex: React.FC = () => {
                 <motion.a
                     href="#how-it-works"
                     onClick={() => posthog?.capture('cta_clicked', { button_label: 'Learn More', position: 'hero' })}
-                    className="text-[var(--color-text-secondary)] px-6 py-3 rounded-md text-base font-medium border border-[var(--color-border-default)] hover:bg-[#F0F4F8] transition-colors duration-200"
+                    className="text-[var(--color-text-secondary)] px-6 py-3 rounded-md text-base font-medium border border-[var(--color-border-default)] hover:bg-[var(--color-bg-secondary)] transition-colors duration-200"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
@@ -806,8 +780,18 @@ const HeroFlowtex: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="flex-1 hidden lg:flex items-center justify-center self-center min-w-0"
             >
-                <div className="w-full max-w-4xl mr-0 hover:shadow-lg transition-all duration-300">
-                    <AppDashboardMockup />
+                {/* Framed like a static screenshot, not a live widget — the top bar reads
+                    as a browser window, and pointer-events-none kills any of the mockup's
+                    own hover/interactive affordances so it can't be mistaken for real UI. */}
+                <div className="w-full max-w-4xl mr-0 rounded-2xl border border-[var(--color-border-default)] shadow-2xl overflow-hidden">
+                    <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border-default)]">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-error)]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)]" />
+                    </div>
+                    <div className="pointer-events-none select-none">
+                        <AppDashboardMockup />
+                    </div>
                 </div>
             </motion.div>
 

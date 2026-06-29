@@ -62,29 +62,29 @@ export function Features() {
                                 <div className="h-48 bg-[var(--color-bg-elevated)] flex flex-col items-center justify-center gap-4 p-4">
                                   {i === 0 && (
                                     <div className="flex items-center justify-center gap-8">
-                                      <div className="w-10 h-10 rounded-lg bg-white border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all -translate-y-3">
+                                      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all -translate-y-3">
                                         <SiGmail className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
-                                      <div className="w-10 h-10 rounded-lg bg-white border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
+                                      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
                                         <SiGooglecalendar className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
-                                      <div className="w-10 h-10 rounded-lg bg-white border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all -translate-y-3">
+                                      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all -translate-y-3">
                                         <SiNotion className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
-                                      <div className="w-10 h-10 rounded-lg bg-white border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
+                                      <div className="w-10 h-10 rounded-lg bg-[var(--color-bg-card)] border-2 border-[var(--color-accent)] flex items-center justify-center hover:bg-[var(--color-bg-base)] transition-all translate-y-3">
                                         <SiGoogledrive className="w-5 h-5 text-[var(--color-text-primary)]" />
                                       </div>
                                     </div>
                                   )}
                                   {i === 1 && (
                                     <div className="flex flex-col items-center justify-center gap-4 w-full">
-                                      <div className="w-full max-w-xs bg-white rounded-lg border border-[var(--color-border-default)] p-3 space-y-2">
+                                      <div className="w-full max-w-xs bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-3 space-y-2">
                                         <p className="text-xs text-[var(--color-text-muted)]">Your brief:</p>
                                         <div className="space-y-1.5">
-                                          <div className="h-1.5 bg-[#E0E5EB] rounded w-full"></div>
-                                          <div className="h-1.5 bg-[#E0E5EB] rounded w-4/5"></div>
-                                          <div className="h-1.5 bg-[#E0E5EB] rounded w-3/4"></div>
-                                          <div className="h-1.5 bg-[#E0E5EB] rounded w-2/5"></div>
+                                          <div className="h-1.5 bg-[var(--color-border-subtle)] rounded w-full"></div>
+                                          <div className="h-1.5 bg-[var(--color-border-subtle)] rounded w-4/5"></div>
+                                          <div className="h-1.5 bg-[var(--color-border-subtle)] rounded w-3/4"></div>
+                                          <div className="h-1.5 bg-[var(--color-border-subtle)] rounded w-2/5"></div>
                                         </div>
                                       </div>
                                       <div className="w-full max-w-xs bg-[var(--color-accent)] rounded-lg p-3">
@@ -99,13 +99,13 @@ export function Features() {
                                           type="text"
                                           placeholder="Ask anything..."
                                           disabled
-                                          className="w-full px-4 py-2.5 rounded-lg border-2 border-[var(--color-accent)] bg-white text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] disabled:opacity-75 pr-10"
+                                          className="w-full px-4 py-2.5 rounded-lg border-2 border-[var(--color-accent)] bg-[var(--color-bg-card)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] disabled:opacity-75 pr-10"
                                         />
                                         <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none" />
                                       </div>
                                       <div className="flex flex-col gap-2 w-fit">
-                                        <button disabled className="px-3 py-1.5 rounded-md bg-white border border-[var(--color-border-default)] text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-base)] disabled:opacity-75 whitespace-nowrap">Write me email</button>
-                                        <button disabled className="px-3 py-1.5 rounded-md bg-white border border-[var(--color-border-default)] text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-base)] disabled:opacity-75 whitespace-nowrap">Schedule a meeting</button>
+                                        <button disabled className="px-3 py-1.5 rounded-md bg-[var(--color-bg-card)] border border-[var(--color-border-default)] text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-base)] disabled:opacity-75 whitespace-nowrap">Write me email</button>
+                                        <button disabled className="px-3 py-1.5 rounded-md bg-[var(--color-bg-card)] border border-[var(--color-border-default)] text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-bg-base)] disabled:opacity-75 whitespace-nowrap">Schedule a meeting</button>
                                       </div>
                                     </>
                                   )}

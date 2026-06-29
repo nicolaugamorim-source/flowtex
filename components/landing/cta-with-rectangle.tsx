@@ -53,7 +53,7 @@ export function CTASection({
           </h2>
           {/* Animated Line */}
           <AnimatedLine
-            color="rgb(0, 212, 164)"
+            color="var(--color-accent)"
             duration={1.5}
             className="animate-fade-in-up delay-300 -my-3 ml-48"
           />

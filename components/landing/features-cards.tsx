@@ -45,7 +45,7 @@ export function FeaturesCards() {
                   {/* Inner card */}
                   {i === 0 ? (
                     <div className={`absolute top-1/2 -translate-y-1/2 w-1/2 h-[90%] rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] flex flex-col items-center justify-center p-4 gap-4 right-6`}>
-                      <div className="w-[70%] bg-white rounded-lg border border-[var(--color-border-default)] p-3">
+                      <div className="w-[70%] bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <svg className="w-4 h-4 text-[var(--color-accent)]" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
@@ -64,7 +64,7 @@ export function FeaturesCards() {
                         </div>
                         <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">Task created - Website Redesign</p>
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                          <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: "var(--color-info)" }}>
                             31
                           </div>
                           <p className="text-sm font-semibold text-[var(--color-text-primary)]">Google Calendar</p>
@@ -82,11 +82,11 @@ export function FeaturesCards() {
                       i === 1 ? 'left-6' : 'right-6'
                     }`}>
                       {/* Response Bubble */}
-                      <div className="w-[75%] bg-white rounded-lg border border-[var(--color-border-default)] p-3">
+                      <div className="w-[75%] bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-3">
                         {i === 1 ? (
                           <>
                             <div className="flex items-center gap-2 mb-3">
-                              <div className="w-5 h-5 rounded bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                              <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: "var(--color-error)" }}>
                                 G
                               </div>
                               <p className="text-sm font-semibold text-[var(--color-text-primary)]">Follow up email</p>
@@ -112,14 +112,14 @@ export function FeaturesCards() {
                                   <div className="relative w-12 h-12">
                                     <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 100 100">
                                       <circle cx="50" cy="50" r="30" fill="none" stroke="var(--color-accent)" strokeWidth="12" strokeDasharray="113.1 188.5" strokeLinecap="round" />
-                                      <circle cx="50" cy="50" r="30" fill="none" stroke="#FBBF24" strokeWidth="12" strokeDasharray="75.4 188.5" strokeDashoffset="-113.1" strokeLinecap="round" />
+                                      <circle cx="50" cy="50" r="30" fill="none" stroke="var(--color-warning)" strokeWidth="12" strokeDasharray="75.4 188.5" strokeDashoffset="-113.1" strokeLinecap="round" />
                                     </svg>
                                   </div>
                                   <div className="text-sm">
                                     <p className="text-[var(--color-text-primary)] font-semibold">5 running</p>
                                     <div className="flex flex-col gap-1 mt-1">
                                       <span className="text-xs flex items-center gap-1.5"><span className="inline-block w-2 h-2 rounded-full bg-[var(--color-accent)]"></span><span className="text-[var(--color-accent)] font-semibold">3 on track</span></span>
-                                      <span className="text-xs flex items-center gap-1.5"><span className="inline-block w-2 h-2 rounded-full bg-[#FBBF24]"></span><span className="text-[#FBBF24] font-semibold">2 at risk</span></span>
+                                      <span className="text-xs flex items-center gap-1.5"><span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: "var(--color-warning)" }}></span><span style={{ color: "var(--color-warning)" }} className="font-semibold">2 at risk</span></span>
                                     </div>
                                   </div>
                                 </div>

@@ -57,7 +57,7 @@ export const AppDashboardMockup = () => {
   const quote = useQuoteOfDay();
 
   return (
-    <div className="p-3 h-[380px] overflow-y-auto bg-[var(--color-bg-base)] flex flex-col gap-4 rounded-2xl border border-[var(--color-border-default)] shadow-2xl">
+    <div className="p-3 h-[380px] overflow-y-auto bg-[var(--color-bg-base)] flex flex-col gap-4">
       {/* Top Section - 2 Columns */}
       <div className="grid grid-cols-2 gap-4 h-auto items-center">
         {/* Good Morning Text */}
