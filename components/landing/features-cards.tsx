@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
+import { Users, Calendar, Mail, BarChart3 } from "lucide-react"
 
 const features = [
   {
@@ -47,9 +48,7 @@ export function FeaturesCards() {
                     <div className={`absolute top-1/2 -translate-y-1/2 w-1/2 h-[90%] rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] flex flex-col items-center justify-center p-4 gap-4 right-6`}>
                       <div className="w-[70%] bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-3">
                         <div className="flex items-center gap-2 mb-2">
-                          <svg className="w-4 h-4 text-[var(--color-accent)]" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                          </svg>
+                          <Users className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
                           <p className="text-sm font-semibold text-[var(--color-text-primary)]">Client Added</p>
                         </div>
                         <div className="flex justify-between items-center text-sm gap-2 mb-4">
@@ -63,14 +62,13 @@ export function FeaturesCards() {
                           </div>
                         </div>
                         <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">Task created - Website Redesign</p>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: "var(--color-info)" }}>
-                            31
+                        <div className="bg-[var(--color-bg-elevated)] rounded-md border border-[var(--color-border-default)] p-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: "var(--color-info)" }} />
+                            <p className="text-xs font-semibold text-[var(--color-text-primary)] truncate">Kickoff Call</p>
                           </div>
-                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Google Calendar</p>
+                          <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">02:00 PM</p>
                         </div>
-                        <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Kickoff Call</p>
-                        <p className="text-sm text-[var(--color-text-primary)]">Friday 02:00 PM</p>
                       </div>
 
                       <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] rounded-lg px-3 py-3 text-sm max-w-[85%] text-center font-semibold">
@@ -86,9 +84,7 @@ export function FeaturesCards() {
                         {i === 1 ? (
                           <>
                             <div className="flex items-center gap-2 mb-3">
-                              <div className="w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: "var(--color-error)" }}>
-                                G
-                              </div>
+                              <Mail className="w-4 h-4" style={{ color: "var(--color-error)" }} />
                               <p className="text-sm font-semibold text-[var(--color-text-primary)]">Follow up email</p>
                             </div>
                             <div className="w-full text-left">
@@ -100,9 +96,7 @@ export function FeaturesCards() {
                         ) : (
                           <>
                             <div className="flex items-center gap-2 mb-3">
-                              <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
+                              <BarChart3 className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
                               <p className="text-sm font-semibold text-[var(--color-text-primary)]">Report Generated</p>
                             </div>
                             <div className="w-full text-left space-y-2.5">
