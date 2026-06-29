@@ -39,7 +39,7 @@ const columnColor: Record<string, string> = {
   Review: "var(--color-warning)",
 };
 
-const ACTIVITY_GRAPH = Array.from({ length: 13 }, (_, week) =>
+const ACTIVITY_GRAPH = Array.from({ length: 27 }, (_, week) =>
   Array.from({ length: 7 }, (_, day) => {
     const seed = (week * 7 + day) % 11;
     if (seed < 4) return 0;
