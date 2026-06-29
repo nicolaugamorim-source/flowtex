@@ -24,6 +24,7 @@ const MOCK_TASKS = [
   { title: "Finalize Q3 client proposal", priority: "high", column: "In Progress" },
   { title: "Review API integration PR", priority: "high", column: "Review" },
   { title: "Update onboarding docs", priority: "medium", column: "To Do" },
+  { title: "Prep client kickoff deck", priority: "medium", column: "To Do" },
 ];
 
 const priorityColor: Record<string, string> = {
@@ -38,7 +39,7 @@ const columnColor: Record<string, string> = {
   Review: "var(--color-warning)",
 };
 
-const ACTIVITY_GRAPH = Array.from({ length: 17 }, (_, week) =>
+const ACTIVITY_GRAPH = Array.from({ length: 13 }, (_, week) =>
   Array.from({ length: 7 }, (_, day) => {
     const seed = (week * 7 + day) % 11;
     if (seed < 4) return 0;
@@ -67,8 +68,8 @@ export const AppDashboardMockup = () => {
       {/* Top Section - Greeting + Calendar */}
       <div className="grid grid-cols-2 gap-3 items-center">
         <div className="flex flex-col items-center justify-center text-center">
-          <p className="text-[var(--color-text-primary)] text-lg font-bold leading-tight">
-            Good morning,<br />Nicolau
+          <p className="text-[var(--color-text-primary)] text-2xl font-bold leading-tight">
+            Good morning
           </p>
           <p className="text-[var(--color-text-muted)] text-[9px] italic font-light max-w-[180px] mt-1">
             "Make something people want." — Paul Graham
@@ -162,22 +163,22 @@ export const AppDashboardMockup = () => {
         </div>
 
         {/* Daily streak */}
-        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col gap-1.5 min-h-0">
-          <div className="flex items-center justify-center gap-2">
-            <p className="text-2xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
-            <div className="flex flex-col gap-0 leading-none">
-              <p className="text-[8px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
-              <p className="text-[8px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
+        <div className="bg-[var(--color-bg-card)] rounded-lg border border-[var(--color-border-default)] p-2 flex flex-col items-center justify-center gap-2 min-h-0">
+          <div className="flex items-center gap-2">
+            <p className="text-4xl font-bold text-[var(--color-text-primary)] leading-none">12</p>
+            <div className="flex flex-col gap-0 leading-tight">
+              <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
+              <p className="text-[10px] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
             </div>
           </div>
           <p className="text-[var(--color-text-disabled)] text-center">Today's activity: 5 actions</p>
-          <div className="flex gap-[2px] justify-center overflow-hidden">
+          <div className="flex gap-[3px] justify-center overflow-hidden">
             {ACTIVITY_GRAPH.map((week, weekIdx) => (
-              <div key={weekIdx} className="flex flex-col gap-[2px]">
+              <div key={weekIdx} className="flex flex-col gap-[3px]">
                 {week.map((level, dayIdx) => (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    style={{ width: "5px", height: "5px", borderRadius: "1px", backgroundColor: activityColor(level) }}
+                    style={{ width: "7px", height: "7px", borderRadius: "1.5px", backgroundColor: activityColor(level) }}
                   />
                 ))}
               </div>
