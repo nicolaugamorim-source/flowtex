@@ -39,14 +39,17 @@ const columnColor: Record<string, string> = {
   Review: "var(--color-warning)",
 };
 
+const ACTIVITY_SEED = [
+  0, 1, 0, 2, 0, 0, 1, 0, 0, 3, 1, 0, 0, 2, 0, 1, 0, 0, 4, 1, 0, 2, 0, 0, 1, 0, 0,
+  1, 0, 3, 0, 1, 0, 0, 2, 0, 0, 1, 0, 4, 0, 1, 0, 0, 2, 1, 0, 0, 3, 0, 1, 0, 0, 2, 0,
+  0, 2, 0, 1, 0, 0, 3, 1, 0, 0, 1, 0, 0, 4, 0, 2, 0, 1, 0, 0, 3, 0, 1, 0, 0, 2, 0, 1,
+  0, 0, 1, 0, 2, 0, 0, 3, 1, 0, 0, 1, 0, 4, 0, 2, 0, 0, 1, 0, 0, 2, 1, 0, 0, 3, 0, 0,
+  1, 0, 0, 2, 0, 1, 0, 0, 3, 0, 1, 0, 0, 2, 0, 0, 1, 0, 4, 0, 1, 0, 0, 2, 0, 1, 0, 0,
+  3, 0, 1, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 3, 1, 0, 0, 2, 0, 0, 1, 0, 0, 2, 0, 1, 0,
+];
+
 const ACTIVITY_GRAPH = Array.from({ length: 27 }, (_, week) =>
-  Array.from({ length: 7 }, (_, day) => {
-    const seed = (week * 7 + day) % 11;
-    if (seed < 4) return 0;
-    if (seed < 7) return 1;
-    if (seed < 9) return 2;
-    return 3;
-  })
+  Array.from({ length: 7 }, (_, day) => ACTIVITY_SEED[(week * 7 + day) % ACTIVITY_SEED.length])
 );
 
 const activityColor = (level: number) => {
@@ -57,8 +60,10 @@ const activityColor = (level: number) => {
       return "var(--color-accent-light)";
     case 2:
       return "var(--color-accent)";
-    default:
+    case 3:
       return "var(--color-accent-hover)";
+    default:
+      return "var(--color-accent-pressed)";
   }
 };
 
@@ -172,16 +177,13 @@ export const AppDashboardMockup = () => {
             </div>
           </div>
           <p className="text-[var(--color-text-disabled)] text-center">Today's activity: 5 actions</p>
-          <div
-            className="grid gap-[2px] flex-1"
-            style={{ gridTemplateColumns: `repeat(${ACTIVITY_GRAPH.length}, 1fr)` }}
-          >
+          <div className="flex items-center justify-center gap-[2px] flex-1">
             {ACTIVITY_GRAPH.map((week, weekIdx) => (
-              <div key={weekIdx} className="grid gap-[2px]" style={{ gridTemplateRows: "repeat(7, 1fr)" }}>
+              <div key={weekIdx} className="flex flex-1 flex-col gap-[2px]">
                 {week.map((level, dayIdx) => (
                   <div
                     key={`${weekIdx}-${dayIdx}`}
-                    className="rounded-[1.5px]"
+                    className="w-full aspect-square rounded-[1.5px] border border-[var(--color-border-default)]"
                     style={{ backgroundColor: activityColor(level) }}
                   />
                 ))}
