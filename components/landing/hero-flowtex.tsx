@@ -725,7 +725,7 @@ const HeroFlowtex: React.FC = () => {
                 className="text-base sm:text-lg lg:text-xl text-[var(--color-text-secondary)] max-w-2xl mb-8"
                 style={{ fontWeight: 400 }}
             >
-                The AI workspace that knows your business, your clients, and your pipeline, and acts on it.
+                The AI workspace that knows your business, your clients, and your pipeline — and acts on it.
             </motion.p>
 
             <motion.div
