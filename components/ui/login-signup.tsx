@@ -1,6 +1,6 @@
 "use client";
 
-import { signUp, signIn } from "@/lib/auth";
+import { signUp } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { ErrorMessage } from "./error-message";
 import { Button } from "@/components/ui/button";
@@ -260,47 +260,6 @@ export function SignupForm() {
 }
 
 export function LoginForm() {
-  const [isVisible, setIsVisible] = useState<boolean>(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const toggleVisibility = () => setIsVisible((prevState) => !prevState);
-
-  const validateInputs = () => {
-    if (!email.trim()) {
-      setError("Preenche o email");
-      return false;
-    }
-    if (!password) {
-      setError("Preenche a password");
-      return false;
-    }
-    return true;
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!validateInputs()) return;
-
-    setLoading(true);
-
-    const { error: signInError } = await signIn(email, password);
-
-    if (signInError) {
-      console.error("Sign in error:", signInError);
-      setError((signInError as any).message || "Email ou password incorretos");
-    } else {
-      router.push("/");
-    }
-
-    setLoading(false);
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-white w-screen">
       <div className="mx-auto w-full space-y-2 text-center flex flex-col items-center">
@@ -311,90 +270,6 @@ export function LoginForm() {
 
         <div className="space-y-4 w-full max-w-xs">
           <GoogleAuthButton />
-
-          <div className="relative flex items-center">
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <span className="px-4 text-sm text-gray-600 bg-white">or sign in with email</span>
-            <div className="flex-1 h-px bg-gray-300"></div>
-          </div>
-
-          <form onSubmit={handleSignIn} className="space-y-4 w-full max-w-xs">
-            {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
-            <div>
-              <Label htmlFor="login-email" className="text-gray-900 block text-left">Email</Label>
-              <div className="relative mt-2.5">
-                <Input
-                  id="login-email"
-                  className="peer ps-9 bg-white border-gray-200"
-                  placeholder="you@example.com"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <div className="text-gray-500 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="m2 6 10 7 10-7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="login-password" className="text-gray-900 block text-left">Password</Label>
-                <a href="#" className="text-sm text-primary hover:underline">
-                  Forgot Password?
-                </a>
-              </div>
-              <div className="relative mt-2.5">
-                <Input
-                  id="login-password"
-                  className="ps-9 pe-9 bg-white border-gray-200"
-                  placeholder="Enter your password"
-                  type={isVisible ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <div className="text-gray-500 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M19 11H5c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7c0-1.1-.9-2-2-2zm0 9H5v-7h14v7z" />
-                    <path d="M12 14c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                  </svg>
-                </div>
-                <button
-                  className="text-gray-500 hover:text-gray-900 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-colors outline-none disabled:opacity-50"
-                  type="button"
-                  onClick={toggleVisibility}
-                  aria-label={isVisible ? "Hide password" : "Show password"}
-                >
-                  {isVisible ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-1 justify-center">
-              <Checkbox id="remember-me" />
-              <Label htmlFor="remember-me" className="text-gray-900 text-center">Remember for 30 days</Label>
-            </div>
-
-            <Button type="submit" className="w-full text-center" disabled={loading}>
-              {loading ? "Fazendo login..." : "Sign in"}
-            </Button>
-          </form>
-
-          <div className="text-center text-sm text-gray-600">
-            No account?{" "}
-            <a href="/signup" className="text-primary font-medium hover:underline">
-              Create an account
-            </a>
-          </div>
         </div>
       </div>
     </div>

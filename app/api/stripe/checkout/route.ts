@@ -104,6 +104,15 @@ export async function GET(request: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+    const successUrl = trialEligible
+      ? (() => {
+          const trialEndsDate = new Date(Date.now() + TRIAL_PERIOD_DAYS * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10); // date-only (YYYY-MM-DD), matches trial_ends_at's date with no time component
+          return `${appUrl}/success?trial=true&trial_ends=${trialEndsDate}`;
+        })()
+      : `${appUrl}/success?trial=false`;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
@@ -111,7 +120,7 @@ export async function GET(request: NextRequest) {
       subscription_data: trialEligible
         ? { trial_period_days: TRIAL_PERIOD_DAYS, metadata: { user_id: user.id } }
         : { metadata: { user_id: user.id } },
-      success_url: `${appUrl}/app?checkout=success`,
+      success_url: successUrl,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
     });
 
