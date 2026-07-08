@@ -90,14 +90,72 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--color-bg-base)]">
-        <motion.div
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="text-[var(--color-accent)] font-semibold"
-        >
-          Loading settings...
-        </motion.div>
+      <div className="flex h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)]">
+        <SidebarWrapper />
+
+        <main className="flex-1 overflow-auto">
+          <section className="relative min-h-screen w-full px-[var(--space-4)] py-[var(--space-10)]">
+            <div className="mx-auto w-full max-w-4xl space-y-[var(--space-8)] animate-pulse">
+              {/* Header skeleton — mirrors title + subtitle */}
+              <div className="flex flex-col gap-[var(--space-2)]">
+                <div className="h-6 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-32" />
+                <div className="h-4 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-64" />
+              </div>
+
+              {/* Separator */}
+              <div className="h-px bg-[var(--color-border-subtle)]" />
+
+              {/* Profile section skeleton */}
+              <div className="grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <div className="h-5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-28" />
+                  <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-48" />
+                </div>
+                <div className="md:col-span-6">
+                  <div className="flex items-center gap-[var(--space-6)] bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] p-[var(--space-6)] border border-[var(--color-border-subtle)]">
+                    <div className="h-16 w-16 rounded-full bg-[var(--color-bg-elevated)] border-2 border-[var(--color-accent-subtle)] flex-shrink-0" />
+                    <div className="space-y-[var(--space-2)]">
+                      <div className="h-3.5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-32" />
+                      <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-40" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-[var(--color-border-subtle)]" />
+
+              {/* Appearance section skeleton */}
+              <div className="grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <div className="h-5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-28" />
+                  <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-52" />
+                </div>
+                <div className="md:col-span-6">
+                  <div className="flex items-center justify-between p-[var(--space-4)] rounded-[var(--radius-lg)] bg-[var(--color-bg-card)] border border-[var(--color-border-default)]">
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-20" />
+                    <div className="h-6 w-11 rounded-full bg-[var(--color-bg-elevated)]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-[var(--color-border-subtle)]" />
+
+              {/* Billing section skeleton */}
+              <div className="grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <div className="h-5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-16" />
+                  <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-56" />
+                </div>
+                <div className="md:col-span-6">
+                  <div className="flex items-center justify-between p-[var(--space-4)] rounded-[var(--radius-lg)] bg-[var(--color-bg-card)] border border-[var(--color-border-default)]">
+                    <div className="h-4 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-24" />
+                    <div className="h-8 bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] w-32" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
     );
   }
@@ -110,11 +168,11 @@ export default function SettingsPage() {
     .slice(0, 2);
 
   return (
-    <div className="flex h-screen bg-[var(--color-bg-base)]">
+    <div className="flex h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)]">
       <SidebarWrapper />
 
       <main className="flex-1 overflow-auto">
-        <section className="relative min-h-screen w-full px-4 py-10">
+        <section className="relative min-h-screen w-full px-[var(--space-4)] py-[var(--space-10)]">
           {/* Gradient Background */}
           <div
             aria-hidden
@@ -134,15 +192,15 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="mx-auto w-full max-w-4xl space-y-8">
+          <div className="mx-auto w-full max-w-4xl space-y-[var(--space-8)]">
             {/* Header */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col"
             >
-              <h2 className="text-3xl font-bold text-[var(--color-text-primary)]">Settings</h2>
-              <p className="text-[var(--color-text-muted)] text-base">
+              <h2 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">Settings</h2>
+              <p className="text-[var(--color-text-muted)] text-[length:var(--text-base)]">
                 Manage your account and preferences.
               </p>
             </motion.div>
@@ -160,32 +218,32 @@ export default function SettingsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="py-4 space-y-8"
+              className="py-[var(--space-4)] space-y-[var(--space-8)]"
             >
               {/* Profile Section */}
-              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
-                <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] duration-500 md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <h3 className="text-[length:var(--text-lg)] leading-none font-semibold text-[var(--color-text-primary)]">
                     Your Profile
                   </h3>
-                  <p className="text-[var(--color-text-muted)] text-sm">
+                  <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
                     View your account information and profile.
                   </p>
                 </div>
 
                 <div className="md:col-span-6">
-                  <div className="flex items-center gap-6 bg-[var(--color-bg-card)] rounded-lg p-6 border border-[var(--color-border-subtle)]">
+                  <div className="flex items-center gap-[var(--space-6)] bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] p-[var(--space-6)] border border-[var(--color-border-subtle)]">
                     <Avatar className="h-16 w-16 border-2 border-[var(--color-accent-subtle)]">
                       <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
-                      <AvatarFallback className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white text-lg font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-accent-hover)] text-white text-[length:var(--text-lg)] font-bold">
                         {avatarInitials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    <div className="space-y-[var(--space-1)]">
+                      <p className="text-[length:var(--text-sm)] font-semibold text-[var(--color-text-primary)]">
                         {userName}
                       </p>
-                      <p className="text-xs text-[var(--color-text-muted)]">{userEmail}</p>
+                      <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)]">{userEmail}</p>
                     </div>
                   </div>
                 </div>
@@ -194,18 +252,18 @@ export default function SettingsPage() {
               <div className="h-px bg-[var(--color-border-subtle)]" />
 
               {/* Appearance Section */}
-              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
-                <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] duration-500 md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <h3 className="text-[length:var(--text-lg)] leading-none font-semibold text-[var(--color-text-primary)]">
                     Appearance
                   </h3>
-                  <p className="text-[var(--color-text-muted)] text-sm">
+                  <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
                     Switch between light and dark mode
                   </p>
                 </div>
 
                 <div className="md:col-span-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'var(--color-bg-card)', border: '0.5px solid var(--color-border-default)' }}>
+                  <div className="flex items-center justify-between p-[var(--space-4)] rounded-[var(--radius-lg)]" style={{ backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border-default)' }}>
                     <p style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>Dark Mode</p>
                     <ThemeToggle />
                   </div>
@@ -215,27 +273,65 @@ export default function SettingsPage() {
               <div className="h-px bg-[var(--color-border-subtle)]" />
 
               {/* Billing Section */}
-              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-8 duration-500 md:grid-cols-10">
-                <div className="w-full space-y-1.5 md:col-span-4">
-                  <h3 className="text-lg leading-none font-semibold text-[var(--color-text-primary)]">
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] duration-500 md:grid-cols-10">
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <h3 className="text-[length:var(--text-lg)] leading-none font-semibold text-[var(--color-text-primary)]">
                     Billing
                   </h3>
-                  <p className="text-[var(--color-text-muted)] text-sm">
+                  <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
                     Manage your subscription, payment method, and invoices
                   </p>
                 </div>
 
                 <div className="md:col-span-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl" style={{ backgroundColor: 'var(--color-bg-card)', border: '0.5px solid var(--color-border-default)' }}>
+                  <div className="flex items-center justify-between p-[var(--space-4)] rounded-[var(--radius-lg)]" style={{ backgroundColor: 'var(--color-bg-card)', border: '1px solid var(--color-border-default)' }}>
                     <p style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>Subscription</p>
                     <a
                       href="/api/stripe/portal"
-                      className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                      className="text-[length:var(--text-sm)] font-medium px-[var(--space-4)] py-[var(--space-2)] rounded-[var(--radius-md)] transition-colors"
                       style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-primary)' }}
                     >
                       Manage billing
                     </a>
                   </div>
+                </div>
+              </div>
+
+              {/* DEV — Onboarding guide test */}
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] duration-500 md:grid-cols-10" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <h3 className="text-[length:var(--text-lg)] leading-none font-semibold text-[var(--color-text-primary)]">
+                    Onboarding guide
+                  </h3>
+                  <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
+                    Preview the first-time experience
+                  </p>
+                </div>
+                <div className="md:col-span-6 flex items-center gap-[var(--space-3)]">
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem("flowtex-show-welcome", "1");
+                      window.location.href = "/app";
+                    }}
+                    className="text-[length:var(--text-sm)] font-medium px-[var(--space-4)] py-[var(--space-2)] rounded-[var(--radius-md)] transition-colors"
+                    style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-strong)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+                  >
+                    Start
+                  </button>
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem("flowtex-show-welcome", "kanban-archived-button");
+                      window.location.href = "/app/kanban";
+                    }}
+                    className="text-[length:var(--text-sm)] font-medium px-[var(--space-4)] py-[var(--space-2)] rounded-[var(--radius-md)] transition-colors"
+                    style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-strong)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+                  >
+                    Start 2
+                  </button>
                 </div>
               </div>
 

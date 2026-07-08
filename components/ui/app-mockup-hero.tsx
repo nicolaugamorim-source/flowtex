@@ -14,13 +14,13 @@ export const AppMockupHero = () => {
           {/* Screen */}
           <div className="bg-[var(--color-bg-base)] rounded-2xl overflow-hidden shadow-inner">
             {/* Browser/App Bar */}
-            <div className="bg-white border-b border-[var(--color-bg-card)] px-6 py-3 flex items-center gap-3">
+            <div className="border-b border-[var(--color-border-subtle)] px-6 py-3 flex items-center gap-3" style={{ backgroundColor: "var(--color-surface)" }}>
               <div className="flex gap-2">
                 <div className="w-3 h-3 rounded-full bg-[#FF5F57]"></div>
                 <div className="w-3 h-3 rounded-full bg-[#FEBC2E]"></div>
                 <div className="w-3 h-3 rounded-full bg-[#28C940]"></div>
               </div>
-              <div className="flex-1 bg-[#F0F4F8] rounded-lg px-4 py-2 text-xs text-[var(--color-text-disabled)] font-medium">
+              <div className="flex-1 rounded-lg px-4 py-2 text-xs font-medium" style={{ backgroundColor: "var(--color-surface-2)", color: "var(--color-text-muted)" }}>
                 app.flowtex.io/workspace
               </div>
               <button className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">

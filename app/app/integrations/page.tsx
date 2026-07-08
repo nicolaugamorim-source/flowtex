@@ -1,13 +1,16 @@
 "use client";
 
 // Lets the user connect/disconnect third-party integrations (Google, Notion, etc).
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IntegrationShowcase, Integration } from "@/components/ui/integration-showcase";
 import { IntegrationCard } from "@/components/ui/integration-card";
 import { supabase } from "@/lib/supabase";
 import { getIntegration } from "@/lib/database";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast-provider";
+import { INTEGRATION_ERROR_MESSAGES, getOAuthErrorMessage } from "@/lib/oauth-error-messages";
+import { LogOut } from "lucide-react";
 
 const integrationsData: Integration[] = [
   {
@@ -26,6 +29,9 @@ const integrationsData: Integration[] = [
 // with more planned). Shows connection status and handles the OAuth redirect flow.
 export default function IntegrationsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const toast = useToast();
+  const errorShown = useRef(false);
   const [notionConnected, setNotionConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -41,6 +47,22 @@ export default function IntegrationsPage() {
       checkIntegrationsStatus();
     }
   }, [searchParams]);
+
+  // Surface the `?error=` code the Notion callback redirects with on failure
+  // (previously silently ignored — the page just looked unchanged).
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (!error || errorShown.current) return;
+    errorShown.current = true;
+
+    toast.show({
+      ...getOAuthErrorMessage(error, INTEGRATION_ERROR_MESSAGES),
+      tone: "error",
+      icon: LogOut,
+    });
+
+    router.replace('/app/integrations');
+  }, [searchParams, router, toast]);
 
   async function checkIntegrationsStatus() {
     try {
@@ -103,8 +125,8 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="w-full bg-[var(--color-bg-card)] min-h-screen flex flex-col">
-      <div className="w-full max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full bg-[var(--color-bg-card)] min-h-screen flex flex-col overflow-x-hidden">
+      <div className="w-full max-w-5xl mx-auto" style={{ paddingLeft: "var(--space-4)", paddingRight: "var(--space-4)", paddingTop: "var(--space-8)", paddingBottom: "var(--space-8)" }}>
         <IntegrationShowcase
           title="Integrate with your ~favorite tools~"
           integrations={integrationsData}
@@ -121,7 +143,7 @@ export default function IntegrationsPage() {
                     isLoading={connecting}
                     onConnect={handleNotionConnect}
                   >
-                    <div className="text-sm text-[var(--color-text-muted)]">
+                    <div className="text-[var(--color-text-muted)]" style={{ fontSize: "var(--text-sm)" }}>
                       {notionConnected ? 'Your Notion workspace is connected' : 'Click Connect to link your Notion workspace'}
                     </div>
                   </IntegrationCard>

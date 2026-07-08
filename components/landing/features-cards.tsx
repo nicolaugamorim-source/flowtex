@@ -71,7 +71,7 @@ export function FeaturesCards() {
                         </div>
                       </div>
 
-                      <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] rounded-lg px-3 py-3 text-sm max-w-[85%] text-center font-semibold">
+                      <div className="rounded-lg px-3 py-3 text-sm max-w-[85%] text-center font-semibold" style={{ backgroundColor: "var(--color-accent)", color: "var(--color-bg)" }}>
                         "{feature.command}"
                       </div>
                     </div>
@@ -133,7 +133,7 @@ export function FeaturesCards() {
                       </div>
 
                       {/* User Chat Bubble */}
-                      <div className="bg-[var(--color-accent)] text-[var(--color-text-primary)] rounded-lg px-3 py-3 text-sm max-w-[85%] text-center font-semibold">
+                      <div className="rounded-lg px-3 py-3 text-sm max-w-[85%] text-center font-semibold" style={{ backgroundColor: "var(--color-accent)", color: "var(--color-bg)" }}>
                         "{feature.command}"
                       </div>
                     </div>

@@ -5,6 +5,11 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Plus, GripVertical, Trash2, Archive, Search, X, SlidersHorizontal } from "lucide-react";
 import { trackActivity } from "@/lib/activity-tracker";
+import { KANBAN_GUIDE_EVENT, DEMO_TASKS } from "@/lib/kanban-guide";
+import type { KanbanGuideDetail } from "@/lib/kanban-guide";
+import { useToast } from "@/components/ui/toast-provider";
+import { classifyError } from "@/lib/error-messages";
+import { ConfirmDeleteModal } from "@/components/ui/confirm-delete-modal";
 
 interface Task {
   id: string;
@@ -30,10 +35,10 @@ interface NewTaskForm {
 }
 
 const COLUMNS = [
-  { id: "todo", label: "Backlog", colorVar: "--color-column-backlog" },
-  { id: "in_progress", label: "In Progress", colorVar: "--color-column-progress" },
-  { id: "review", label: "Review", colorVar: "--color-column-review" },
-  { id: "done", label: "Done", colorVar: "--color-column-done" },
+  { id: "todo", label: "Backlog", colorVar: "--color-column-backlog", textVar: "--color-column-backlog-text" },
+  { id: "in_progress", label: "In Progress", colorVar: "--color-column-progress", textVar: "--color-column-progress-text" },
+  { id: "review", label: "Review", colorVar: "--color-column-review", textVar: "--color-column-review-text" },
+  { id: "done", label: "Done", colorVar: "--color-column-done", textVar: "--color-column-done-text" },
 ];
 
 const CATEGORIES = [
@@ -63,7 +68,7 @@ const getCategoryColor = (category: string) => {
 
 const TaskCard = ({
   task,
-  onDelete,
+  onRequestDelete,
   onArchive,
   isDragging,
   deleteConfirmId,
@@ -72,7 +77,7 @@ const TaskCard = ({
   onTagUpdate,
 }: {
   task: Task;
-  onDelete: (id: string) => void;
+  onRequestDelete: (task: Task) => void;
   onArchive: (id: string) => void;
   isDragging: boolean;
   deleteConfirmId: string | null;
@@ -149,7 +154,7 @@ const TaskCard = ({
   return (
     <div>
       <div
-        className={`bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[10px] p-[14px] transition-all duration-200 ${
+        className={`bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] transition-all duration-200 ${
           isDragging
             ? "shadow-[0_8px_24px_rgba(0,0,0,0.12)] scale-[1.02] rotate-1"
             : "hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:-translate-y-1"
@@ -157,7 +162,7 @@ const TaskCard = ({
         style={{ borderLeftColor: `var(${priorityBorderVar})` }}
         onClick={() => setDeleteConfirmId(null)}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-[var(--space-3)]">
           <div className="flex-1 min-w-0">
             {isEditing ? (
               <input
@@ -173,7 +178,7 @@ const TaskCard = ({
                     setIsEditing(false);
                   }
                 }}
-                className="w-full text-[15px] font-bold text-[var(--color-text-primary)] break-words bg-transparent border rounded px-2 py-1 focus:outline-none"
+                className="w-full text-[15px] font-bold text-[var(--color-text-primary)] break-words bg-transparent border rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-1)] focus:outline-none"
                 style={{ borderColor: `var(${priorityBorderVar})` }}
               />
             ) : (
@@ -184,14 +189,14 @@ const TaskCard = ({
                 {task.title}
               </p>
             )}
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div className="flex items-center gap-[var(--space-2)] mt-[var(--space-2)] flex-wrap">
               <div className="relative">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpenTagMenu(openTagMenu === "category" ? null : "category");
                   }}
-                  className="text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                  className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: `var(${categoryColor.bgVar})`, color: `var(${categoryColor.textVar})` }}
                 >
                   {categoryColor.label}
@@ -200,7 +205,7 @@ const TaskCard = ({
                   <div
                     ref={tagMenuRef}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-full left-0 mt-1 z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-lg shadow-lg p-1.5 flex flex-col gap-1 min-w-[100px]"
+                    className="absolute top-full left-0 mt-[var(--space-1)] z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] shadow-lg p-[var(--space-1)] flex flex-col gap-[var(--space-1)] min-w-[100px]"
                   >
                     {CATEGORIES.map((cat) => (
                       <button
@@ -209,7 +214,7 @@ const TaskCard = ({
                           onTagUpdate(task.id, "category", cat.id);
                           setOpenTagMenu(null);
                         }}
-                        className="text-xs font-medium px-2 py-1 rounded-full text-left hover:opacity-80 transition-opacity"
+                        className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full text-left hover:opacity-80 transition-opacity"
                         style={{ backgroundColor: `var(${cat.bgVar})`, color: `var(${cat.textVar})` }}
                       >
                         {cat.label}
@@ -225,7 +230,7 @@ const TaskCard = ({
                     e.stopPropagation();
                     setOpenTagMenu(openTagMenu === "priority" ? null : "priority");
                   }}
-                  className="text-xs font-medium px-2 py-0.5 rounded-full hover:opacity-80 transition-opacity"
+                  className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full hover:opacity-80 transition-opacity"
                   style={{
                     backgroundColor: `var(${priorityBorderVar})20`,
                     color: `var(${priorityConfig[task.priority].textVar})`,
@@ -237,7 +242,7 @@ const TaskCard = ({
                   <div
                     ref={tagMenuRef}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-full left-0 mt-1 z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-lg shadow-lg p-1.5 flex flex-col gap-1 min-w-[100px]"
+                    className="absolute top-full left-0 mt-[var(--space-1)] z-20 bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] shadow-lg p-[var(--space-1)] flex flex-col gap-[var(--space-1)] min-w-[100px]"
                   >
                     {(Object.keys(priorityConfig) as Array<keyof typeof priorityConfig>).map((p) => (
                       <button
@@ -246,7 +251,7 @@ const TaskCard = ({
                           onTagUpdate(task.id, "priority", p);
                           setOpenTagMenu(null);
                         }}
-                        className="text-xs font-medium px-2 py-1 rounded-full text-left hover:opacity-80 transition-opacity"
+                        className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full text-left hover:opacity-80 transition-opacity"
                         style={{
                           backgroundColor: `var(${priorityConfig[p].borderVar})20`,
                           color: `var(${priorityConfig[p].textVar})`,
@@ -260,32 +265,33 @@ const TaskCard = ({
               </div>
             </div>
             {task.description && (
-              <p className="text-[11px] text-[var(--color-text-disabled)] mt-2 line-clamp-2">
+              <p className="text-[11px] text-[var(--color-text-disabled)] mt-[var(--space-2)] line-clamp-2">
                 {task.description}
               </p>
             )}
             {task.due_date && (
-              <p className="text-xs text-[var(--color-text-disabled)] mt-2">{formatDueDate(task.due_date)}</p>
+              <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] mt-[var(--space-2)]">{formatDueDate(task.due_date)}</p>
             )}
           </div>
           <button
             data-trash-button="true"
             onClick={(e) => {
               e.stopPropagation();
-              if (deleteConfirmId === task.id) {
-                if (isDoneColumn) {
+              if (isDoneColumn) {
+                // Archiving is reversible, so the lightweight arm/confirm click is fine here.
+                if (deleteConfirmId === task.id) {
                   onArchive(task.id);
+                  setDeleteConfirmId(null);
                 } else {
-                  onDelete(task.id);
+                  setDeleteConfirmId(task.id);
                 }
-                setDeleteConfirmId(null);
               } else {
-                setDeleteConfirmId(task.id);
+                onRequestDelete(task);
               }
             }}
             onMouseEnter={() => setTrashHovered(true)}
             onMouseLeave={() => setTrashHovered(false)}
-            className="px-3 py-1.5 rounded-full transition-colors text-xs font-medium"
+            className="px-[var(--space-3)] py-[var(--space-1)] rounded-full transition-colors text-[length:var(--text-xs)] font-medium"
             style={{
               color: deleteConfirmId === task.id ? "var(--color-error)" : (trashHovered ? "var(--color-error)" : "var(--color-text-disabled)"),
               backgroundColor: deleteConfirmId === task.id ? "var(--color-delete-confirm-bg)" : (trashHovered ? "var(--color-delete-hover-bg)" : "transparent"),
@@ -293,9 +299,9 @@ const TaskCard = ({
               border: deleteConfirmId === task.id ? "1px solid var(--color-error)" : "none",
             }}
           >
-            {deleteConfirmId === task.id
-              ? (isDoneColumn ? "Archive?" : "Delete?")
-              : (isDoneColumn ? <Archive size={18} /> : <Trash2 size={18} />)}
+            {isDoneColumn
+              ? (deleteConfirmId === task.id ? "Archive?" : <Archive size={18} />)
+              : <Trash2 size={18} />}
           </button>
         </div>
       </div>
@@ -340,10 +346,10 @@ const AddTaskCard = ({
 
   return (
     <div
-      className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[10px] p-[14px] border-l-4 transition-colors"
+      className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] border-l-4 transition-colors"
       style={{ borderLeftColor: `var(${priorityBorderVar})` }}
     >
-      <div className="mb-3">
+      <div className="mb-[var(--space-3)]">
         <input
           ref={inputRef}
           type="text"
@@ -355,11 +361,11 @@ const AddTaskCard = ({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-[var(--space-2)]">
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          className="flex-1 px-2 py-1.5 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
+          className="flex-1 px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
         >
           <option value="low">Low Priority</option>
           <option value="medium">Medium Priority</option>
@@ -369,7 +375,7 @@ const AddTaskCard = ({
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="flex-1 px-2 py-1.5 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
+          className="flex-1 px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
         >
           <option value="task">Task</option>
           <option value="client">Client</option>
@@ -378,7 +384,7 @@ const AddTaskCard = ({
         </select>
       </div>
 
-      <div className="flex gap-2 mt-3">
+      <div className="flex gap-[var(--space-2)] mt-[var(--space-3)]">
         <button
           onClick={() => {
             if (title.trim()) {
@@ -388,13 +394,13 @@ const AddTaskCard = ({
               setCategory("task");
             }
           }}
-          className="flex-1 px-2 py-1.5 text-xs font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors"
+          className="flex-1 px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--text-xs)] font-medium bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] transition-colors"
         >
           Add
         </button>
         <button
           onClick={onCancel}
-          className="flex-1 px-2 py-1.5 text-xs font-medium bg-[var(--color-bg-secondary)] text-[var(--color-text-disabled)] rounded-lg hover:bg-[var(--color-bg-card)] transition-colors"
+          className="flex-1 px-[var(--space-2)] py-[var(--space-1)] text-[length:var(--text-xs)] font-medium bg-[var(--color-bg-secondary)] text-[var(--color-text-disabled)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-card)] transition-colors"
         >
           Cancel
         </button>
@@ -406,10 +412,10 @@ const AddTaskCard = ({
 const EmptyColumn = ({ onAddTask }: { onAddTask: () => void }) => (
   <button
     onClick={onAddTask}
-    className="flex flex-col items-center justify-center gap-2 py-8 px-4 rounded-[10px] border-2 border-dashed border-[var(--color-border-default)] hover:border-[var(--color-accent)] transition-colors group"
+    className="flex flex-col items-center justify-center gap-[var(--space-2)] py-[var(--space-8)] px-[var(--space-4)] rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--color-border-default)] hover:border-[var(--color-accent)] transition-colors group"
   >
     <Plus size={20} className="text-[var(--color-border-default)] group-hover:text-[var(--color-accent)]" />
-    <p className="text-xs text-[var(--color-text-disabled)] group-hover:text-[var(--color-text-primary)] font-medium">No tasks</p>
+    <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] group-hover:text-[var(--color-text-primary)] font-medium">No tasks</p>
   </button>
 );
 
@@ -447,26 +453,26 @@ const FilterPopover = ({
   };
 
   const priorityColors = {
-    low: { bg: "#C4D6E3", text: "#5A7A8F" },
-    medium: { bg: "#FFBF4D", text: "#8A6200" },
-    high: { bg: "#F47560", text: "#A83220" },
+    low: { bg: `var(${priorityConfig.low.borderVar})20`, text: `var(${priorityConfig.low.textVar})` },
+    medium: { bg: `var(${priorityConfig.medium.borderVar})20`, text: `var(${priorityConfig.medium.textVar})` },
+    high: { bg: `var(${priorityConfig.high.borderVar})20`, text: `var(${priorityConfig.high.textVar})` },
   };
 
   return (
-    <div className="bg-[var(--color-bg-card)] border border-[0.5px] border-[var(--color-border-default)] rounded-[12px] p-4 w-60 shadow-lg">
+    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] w-60 shadow-lg">
       {/* Category Section */}
       <div>
-        <p className="text-xs font-600 text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
+        <p className="text-[length:var(--text-xs)] font-600 text-[var(--color-text-muted)] uppercase tracking-wider mb-[var(--space-2)]">
           Category
         </p>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-[var(--space-2)] mb-[var(--space-4)]">
           {CATEGORIES.map((category) => {
             const isSelected = selectedCategories.includes(category.id);
             return (
               <button
                 key={category.id}
                 onClick={() => toggleCategory(category.id)}
-                className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                className="text-[length:var(--text-xs)] font-medium px-[var(--space-3)] py-[var(--space-1)] rounded-full transition-colors"
                 style={{
                   backgroundColor: isSelected ? `var(${category.bgVar})` : "var(--color-bg-secondary)",
                   color: isSelected ? `var(${category.textVar})` : "var(--color-text-muted)",
@@ -480,14 +486,14 @@ const FilterPopover = ({
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-[var(--color-border-subtle)] mb-4"></div>
+      <div className="h-px bg-[var(--color-border-subtle)] mb-[var(--space-4)]"></div>
 
       {/* Priority Section */}
       <div>
-        <p className="text-xs font-600 text-[var(--color-text-muted)] uppercase tracking-wider mb-2">
+        <p className="text-[length:var(--text-xs)] font-600 text-[var(--color-text-muted)] uppercase tracking-wider mb-[var(--space-2)]">
           Priority
         </p>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-[var(--space-2)] mb-[var(--space-4)]">
           {["Low", "Medium", "High"].map((priority) => {
             const value = priority.toLowerCase() as "low" | "medium" | "high";
             const isSelected = selectedPriorities.includes(value);
@@ -496,7 +502,7 @@ const FilterPopover = ({
               <button
                 key={value}
                 onClick={() => togglePriority(value)}
-                className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                className="text-[length:var(--text-xs)] font-medium px-[var(--space-3)] py-[var(--space-1)] rounded-full transition-colors"
                 style={{
                   backgroundColor: isSelected ? colors.bg : "var(--color-bg-secondary)",
                   color: isSelected ? colors.text : "var(--color-text-muted)",
@@ -513,7 +519,7 @@ const FilterPopover = ({
       {hasActiveFilters && (
         <button
           onClick={onClearFilters}
-          className="text-xs text-[var(--color-accent)] font-medium hover:opacity-80 transition-opacity"
+          className="text-[length:var(--text-xs)] text-[var(--color-accent)] font-medium hover:opacity-80 transition-opacity"
         >
           Clear filters
         </button>
@@ -525,9 +531,11 @@ const FilterPopover = ({
 // Task management board (kanban-style columns). Tasks can also be created
 // from the AI chat, which dispatches a 'flowtex:kanban-updated' event this page listens for.
 export default function KanbanPage() {
+  const toast = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [taskPendingDelete, setTaskPendingDelete] = useState<Task | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [addingTaskInColumn, setAddingTaskInColumn] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -536,6 +544,23 @@ export default function KanbanPage() {
   const [showFilterPopover, setShowFilterPopover] = useState(false);
   const filterPopoverRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<"kanban" | "archived">("kanban");
+  // Purely client-side illustration tasks used by the onboarding guide; never sent to the API.
+  const [demoTasks, setDemoTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<KanbanGuideDetail>).detail;
+      if (!detail) return;
+      if (detail.type === "inject-demo-tasks") setDemoTasks(DEMO_TASKS as unknown as Task[]);
+      if (detail.type === "clear-demo-tasks") setDemoTasks([]);
+    };
+    window.addEventListener(KANBAN_GUIDE_EVENT, handler);
+    return () => window.removeEventListener(KANBAN_GUIDE_EVENT, handler);
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(KANBAN_GUIDE_EVENT, { detail: { type: "view-changed", view } }));
+  }, [view]);
 
   const [newTaskForm, setNewTaskForm] = useState<NewTaskForm>({
     title: "",
@@ -619,6 +644,39 @@ export default function KanbanPage() {
     if (source.droppableId === destination.droppableId && source.index === destination.index)
       return;
 
+    // Onboarding demo cards are purely local — reorder/move them without touching the API.
+    // Mirrors the real branch below: rendering sorts by priority first, then position, so
+    // `destination.index` is an index into that priority-sorted list, not a raw position.
+    if (draggableId.startsWith("demo-")) {
+      setDemoTasks((prev) => {
+        const dragged = prev.find((t) => t.id === draggableId);
+        if (!dragged) return prev;
+        const columnTasks = prev
+          .filter((t) => t.column_id === destination.droppableId)
+          .sort((a, b) => {
+            const aOrder = priorityConfig[a.priority].order;
+            const bOrder = priorityConfig[b.priority].order;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            return a.position - b.position;
+          })
+          .filter((t) => t.id !== draggableId);
+        columnTasks.splice(destination.index, 0, dragged);
+        const reindexed = columnTasks.map((t, i) => ({ ...t, column_id: destination.droppableId, position: i }));
+        // Deferred: @hello-pangea/dnd calls onDragEnd inside its own flushSync, so
+        // dispatching (and letting WelcomeOverlay setState) synchronously here trips
+        // React's "update while rendering a different component" warning.
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent(KANBAN_GUIDE_EVENT, {
+            detail: { type: "demo-drag", columnId: destination.droppableId, order: reindexed.map((t) => t.id) },
+          }));
+        }, 0);
+        return prev
+          .filter((t) => t.column_id !== destination.droppableId && t.id !== draggableId)
+          .concat(reindexed);
+      });
+      return;
+    }
+
     const draggedTask = tasks.find((t) => t.id === draggableId);
     if (!draggedTask) return;
 
@@ -665,7 +723,7 @@ export default function KanbanPage() {
     setTasks(updatedTasks);
 
     try {
-      await fetch(`/api/kanban/${draggableId}`, {
+      const res = await fetch(`/api/kanban/${draggableId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -673,8 +731,13 @@ export default function KanbanPage() {
           position: newColumnTasks.indexOf(draggedTask),
         }),
       });
+      if (!res.ok) throw Object.assign(new Error("Failed to move task"), { status: res.status });
     } catch (err) {
       console.error("Failed to update task:", err);
+      toast.show({
+        ...classifyError(err, "Task", "moved"),
+        onRetry: () => handleDragEnd(result),
+      });
       fetchTasks();
     }
   };
@@ -708,6 +771,7 @@ export default function KanbanPage() {
           column_id: columnId,
         }),
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to create task"), { status: response.status });
       const data = await response.json();
       if (data.task) {
         // Replace temp task with real task from server
@@ -715,11 +779,16 @@ export default function KanbanPage() {
         trackActivity('task_created', 1).catch((err) =>
           console.error('Failed to track task created activity:', err)
         );
+        window.dispatchEvent(new CustomEvent(KANBAN_GUIDE_EVENT, { detail: { type: "task-created" } }));
       }
     } catch (err) {
       console.error("Failed to create task:", err);
       // Remove temp task on error
       setTasks(prevTasks => prevTasks.filter(t => t.id !== tempTask.id));
+      toast.show({
+        ...classifyError(err, "Task", "saved"),
+        onRetry: () => handleAddTask(columnId, title, priority, category),
+      });
     }
   };
 
@@ -739,6 +808,7 @@ export default function KanbanPage() {
           due_date: newTaskForm.due_date || null,
         }),
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to create task"), { status: response.status });
       const data = await response.json();
       if (data.task) {
         setTasks([...tasks, data.task]);
@@ -757,10 +827,18 @@ export default function KanbanPage() {
       }
     } catch (err) {
       console.error("Failed to create task:", err);
+      toast.show({
+        ...classifyError(err, "Task", "saved"),
+        onRetry: () => handleCreateTaskFromModal(),
+      });
     }
   };
 
   const handleTitleUpdate = (taskId: string, newTitle: string) => {
+    if (taskId.startsWith("demo-")) {
+      setDemoTasks(prev => prev.map(t => (t.id === taskId ? { ...t, title: newTitle } : t)));
+      return;
+    }
     setTasks(prevTasks =>
       prevTasks.map(t =>
         t.id === taskId ? { ...t, title: newTitle } : t
@@ -769,43 +847,61 @@ export default function KanbanPage() {
   };
 
   const handleTagUpdate = async (taskId: string, field: "category" | "priority", value: string) => {
+    if (taskId.startsWith("demo-")) {
+      setDemoTasks(prev => prev.map(t => (t.id === taskId ? { ...t, [field]: value } : t)));
+      return;
+    }
     const previousTasks = tasks;
     setTasks(prevTasks =>
       prevTasks.map(t => (t.id === taskId ? { ...t, [field]: value } : t))
     );
 
     try {
-      await fetch(`/api/kanban/${taskId}`, {
+      const res = await fetch(`/api/kanban/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [field]: value }),
       });
+      if (!res.ok) throw Object.assign(new Error(`Failed to update task ${field}`), { status: res.status });
     } catch (err) {
       console.error(`Failed to update task ${field}:`, err);
       setTasks(previousTasks);
+      toast.show({
+        ...classifyError(err, "Task", "updated"),
+        onRetry: () => handleTagUpdate(taskId, field, value),
+      });
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    // Store the task in case we need to rollback
-    const deletedTask = tasks.find(t => t.id === taskId);
+  // Awaited by the delete confirmation modal, which already shows its own
+  // loading/success state — so this only mutates local state once the server
+  // has actually confirmed the delete, instead of the old optimistic-then-rollback dance.
+  const handleDeleteTask = async (taskId: string): Promise<boolean> => {
+    if (taskId.startsWith("demo-")) {
+      setDemoTasks(prev => prev.filter(t => t.id !== taskId));
+      return true;
+    }
 
-    // Remove from UI immediately
-    setTasks(tasks.filter((t) => t.id !== taskId));
-
-    // Delete from server in background
     try {
-      await fetch(`/api/kanban/${taskId}`, { method: "DELETE" });
+      const res = await fetch(`/api/kanban/${taskId}`, { method: "DELETE" });
+      if (!res.ok) throw Object.assign(new Error("Failed to delete task"), { status: res.status });
+      setTasks(prev => prev.filter((t) => t.id !== taskId));
+      return true;
     } catch (err) {
       console.error("Failed to delete task:", err);
-      // Restore task on error
-      if (deletedTask) {
-        setTasks([...tasks, deletedTask]);
-      }
+      toast.show({
+        ...classifyError(err, "Task", "deleted"),
+        onRetry: () => handleDeleteTask(taskId),
+      });
+      return false;
     }
   };
 
   const handleArchiveTask = async (taskId: string) => {
+    if (taskId.startsWith("demo-")) {
+      setDemoTasks(prev => prev.filter(t => t.id !== taskId));
+      return;
+    }
     const archivedAt = new Date().toISOString();
     const taskToArchive = tasks.find((t) => t.id === taskId);
 
@@ -837,18 +933,18 @@ export default function KanbanPage() {
     (searchQuery ? 1 : 0) + (selectedCategories.length > 0 ? 1 : 0) + (selectedPriorities.length > 0 ? 1 : 0);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)]">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-[var(--color-bg-card)] border-b border-[var(--color-border-default)]">
-        <div className="px-8 py-6 space-y-4">
-          <div className="flex items-start justify-between gap-8">
+        <div className="px-[var(--space-8)] py-[var(--space-6)] space-y-[var(--space-4)]">
+          <div className="flex items-start justify-between gap-[var(--space-8)]">
             <div>
-              <h1 className="text-[28px] font-bold text-[var(--color-text-primary)]">Kanban</h1>
+              <h1 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">Kanban</h1>
             </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-[var(--space-3)]">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-2.5 text-[var(--color-text-disabled)]" size={16} />
               <input
@@ -856,7 +952,7 @@ export default function KanbanPage() {
                 placeholder="Search tasks..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)]"
+                className="w-full pl-[var(--space-8)] pr-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)]"
               />
               {searchQuery && (
                 <button
@@ -872,7 +968,7 @@ export default function KanbanPage() {
             <div className="relative" ref={filterPopoverRef}>
               <button
                 onClick={() => setShowFilterPopover(!showFilterPopover)}
-                className="relative px-3 py-2 text-xs border border-[0.5px] border-[var(--color-border-default)] rounded-lg bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+                className="relative px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
               >
                 <SlidersHorizontal size={16} />
                 {activeFiltersCount > 0 && (
@@ -881,7 +977,7 @@ export default function KanbanPage() {
               </button>
 
               {showFilterPopover && (
-                <div className="absolute top-full right-0 mt-2 z-50">
+                <div className="absolute top-full right-0 mt-[var(--space-2)] z-50">
                   <FilterPopover
                     selectedCategories={selectedCategories}
                     selectedPriorities={selectedPriorities}
@@ -899,8 +995,9 @@ export default function KanbanPage() {
 
             {/* Archived/Kanban Toggle */}
             <button
+              data-onboarding="kanban-archived-toggle"
               onClick={() => setView(view === "kanban" ? "archived" : "kanban")}
-              className="px-3 py-2 text-xs font-medium border border-[0.5px] border-[var(--color-border-default)] rounded-lg bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+              className="px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-xs)] font-medium border border-[var(--color-border-default)] rounded-[var(--radius-md)] bg-transparent text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
             >
               {view === "kanban" ? "Archived" : "Kanban"}
             </button>
@@ -908,7 +1005,7 @@ export default function KanbanPage() {
 
           {/* Results count */}
           {activeFiltersCount > 0 && (
-            <div className="text-xs text-[var(--color-text-disabled)]">
+            <div className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)]">
               Showing {filteredTasks.length} {filteredTasks.length === 1 ? "task" : "tasks"}
             </div>
           )}
@@ -916,12 +1013,12 @@ export default function KanbanPage() {
       </div>
 
       {view === "archived" ? (
-        <div className="px-8 py-6">
-          <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Archived</h2>
+        <div data-onboarding="kanban-archived-page" className="px-[var(--space-8)] py-[var(--space-6)]">
+          <h2 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)] mb-[var(--space-6)]">Archived</h2>
           {archivedTasks.length === 0 ? (
             <p className="text-[var(--color-text-disabled)]">No archived tasks</p>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[var(--space-4)]">
               {archivedTasks.map((task) => {
                 const categoryColor = getCategoryColor(task.category || "task");
                 const priorityBorderVar = priorityConfig[task.priority].borderVar;
@@ -929,21 +1026,21 @@ export default function KanbanPage() {
                 return (
                   <div
                     key={task.id}
-                    className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[10px] p-[14px] border-l-4"
+                    className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] border-l-4"
                     style={{ borderLeftColor: `var(${priorityBorderVar})` }}
                   >
                     <p className="text-[15px] font-bold text-[var(--color-text-primary)] break-words">
                       {task.title}
                     </p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <div className="flex items-center gap-[var(--space-2)] mt-[var(--space-2)] flex-wrap">
                       <span
-                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full"
                         style={{ backgroundColor: `var(${categoryColor.bgVar})`, color: `var(${categoryColor.textVar})` }}
                       >
                         {categoryColor.label}
                       </span>
                       <span
-                        className="text-xs font-medium px-2 py-0.5 rounded-full"
+                        className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full"
                         style={{
                           backgroundColor: `var(${priorityBorderVar})20`,
                           color: `var(${priorityConfig[task.priority].textVar})`,
@@ -953,12 +1050,12 @@ export default function KanbanPage() {
                       </span>
                     </div>
                     {task.description && (
-                      <p className="text-[11px] text-[var(--color-text-disabled)] mt-2 line-clamp-2">
+                      <p className="text-[11px] text-[var(--color-text-disabled)] mt-[var(--space-2)] line-clamp-2">
                         {task.description}
                       </p>
                     )}
                     {archivedDate && (
-                      <p className="text-xs text-[var(--color-text-disabled)] mt-3">
+                      <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] mt-[var(--space-3)]">
                         Archived: {archivedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
                         {archivedDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
                       </p>
@@ -970,15 +1067,49 @@ export default function KanbanPage() {
           )}
         </div>
       ) : isLoading ? (
-        <div className="flex items-center justify-center h-96">
-          <p className="text-[var(--color-text-disabled)]">Loading...</p>
+        <div className="overflow-x-auto">
+          <div className="px-[var(--space-8)] py-[var(--space-6)] flex gap-[var(--space-4)] w-full animate-pulse">
+            {COLUMNS.map((column) => (
+              <div key={column.id} className="flex-1 min-w-0 flex flex-col">
+                {/* Column Header skeleton — mirrors title + count pill */}
+                <div className="flex items-center justify-between mb-[var(--space-4)] border-l-4 pl-[var(--space-4)] h-10" style={{ borderLeftColor: `var(${column.colorVar})` }}>
+                  <div className="flex items-center gap-[var(--space-2)]">
+                    <div className="h-5 w-20 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)]" />
+                    <div className="h-5 w-6 rounded-full bg-[var(--color-bg-elevated)]" />
+                  </div>
+                </div>
+
+                {/* Column Body skeleton — same card container, N ghost task cards */}
+                <div
+                  className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-3)] flex-1 flex flex-col overflow-y-auto"
+                  style={{ minHeight: "calc(100vh - 280px)" }}
+                >
+                  <div className="space-y-[var(--space-2)] flex-1">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] border-l-4"
+                        style={{ borderLeftColor: `var(${column.colorVar})` }}
+                      >
+                        <div className="h-4 bg-[var(--color-bg-card)] rounded-[var(--radius-sm)] w-4/5 mb-[var(--space-2)]" />
+                        <div className="flex items-center gap-[var(--space-2)] mt-[var(--space-2)]">
+                          <div className="h-5 w-14 rounded-full bg-[var(--color-bg-card)]" />
+                          <div className="h-5 w-14 rounded-full bg-[var(--color-bg-card)]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="px-8 py-6 flex gap-4 w-full">
+            <div className="px-[var(--space-8)] py-[var(--space-6)] flex gap-[var(--space-4)] w-full">
               {COLUMNS.map((column) => {
-                const columnTasks = filteredTasks
+                const columnTasks = [...filteredTasks, ...demoTasks]
                   .filter((t) => t.column_id === column.id)
                   .sort((a, b) => {
                     // First sort by priority
@@ -996,16 +1127,30 @@ export default function KanbanPage() {
                 ];
 
                 return (
-                  <div key={column.id} className="flex-1 min-w-0 flex flex-col">
+                  <div
+                    key={column.id}
+                    data-onboarding={`kanban-column-${column.id}`}
+                    data-onboarding-group={
+                      column.id === "review" || column.id === "done"
+                        ? "kanban-review-done kanban-drag-zone"
+                        : column.id === "in_progress"
+                        ? "kanban-drag-zone"
+                        : undefined
+                    }
+                    className="flex-1 min-w-0 flex flex-col"
+                  >
                     {/* Column Header */}
-                    <div className="flex items-center justify-between mb-8 border-l-4 pl-4 h-10" style={{ borderLeftColor: `var(${column.colorVar})` }}>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-[var(--color-text-primary)]">
+                    <div data-onboarding-group="kanban-column-header" className="flex items-center justify-between mb-[var(--space-4)] border-l-4 pl-[var(--space-4)] h-10" style={{ borderLeftColor: `var(${column.colorVar})` }}>
+                      <div className="flex items-center gap-[var(--space-2)]">
+                        <h2
+                          className="text-[length:var(--text-lg)] font-bold"
+                          style={{ color: column.id === "todo" ? "var(--color-text-primary)" : `var(${column.textVar})` }}
+                        >
                           {column.label}
                         </h2>
                         <span
-                          className="text-xs font-medium px-2 py-1 rounded-full text-white"
-                          style={{ backgroundColor: `var(${column.colorVar})` }}
+                          className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full"
+                          style={{ backgroundColor: `var(${column.colorVar})`, color: `var(${column.textVar})` }}
                         >
                           {columnTasks.length}
                         </span>
@@ -1018,10 +1163,10 @@ export default function KanbanPage() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[12px] p-3 flex-1 flex flex-col overflow-y-auto"
+                          className="bg-[var(--color-bg-card)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-3)] flex-1 flex flex-col overflow-y-auto"
                           style={{ minHeight: "calc(100vh - 280px)" }}
                         >
-                          <div className="space-y-2 flex-1">
+                          <div className="space-y-[var(--space-2)] flex-1">
                             {/* Tasks */}
                             {tasksWithAddButton.map((task, index) => (
                               <Draggable
@@ -1047,8 +1192,9 @@ export default function KanbanPage() {
                                         />
                                       ) : (
                                         <div
+                                          data-onboarding={column.id === "todo" ? "kanban-add-task" : undefined}
                                           onClick={() => setAddingTaskInColumn(column.id)}
-                                          className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[10px] p-[14px] transition-all duration-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:-translate-y-1 flex flex-col items-center justify-center gap-2 text-[var(--color-text-primary)] cursor-pointer"
+                                          className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)] rounded-[var(--radius-lg)] p-[var(--space-4)] transition-all duration-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:-translate-y-1 flex flex-col items-center justify-center gap-[var(--space-2)] text-[var(--color-text-primary)] cursor-pointer"
                                         >
                                           <Plus size={20} />
                                           <span className="text-[13px] font-medium">Add Task</span>
@@ -1057,7 +1203,7 @@ export default function KanbanPage() {
                                     ) : (
                                       <TaskCard
                                         task={task}
-                                        onDelete={handleDeleteTask}
+                                        onRequestDelete={setTaskPendingDelete}
                                         onArchive={handleArchiveTask}
                                         isDragging={snapshot.isDragging}
                                         deleteConfirmId={deleteConfirmId}
@@ -1086,10 +1232,10 @@ export default function KanbanPage() {
 
       {/* New Task Modal */}
       {showNewTaskModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--color-bg-card)] rounded-lg p-6 max-w-lg w-full shadow-lg border border-[var(--color-border-default)]">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">New Task</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-[var(--space-4)]">
+          <div className="bg-[var(--color-bg-card)] rounded-[var(--radius-xl)] p-[var(--space-6)] max-w-[clamp(400px,40vw,520px)] w-full shadow-lg border border-[var(--color-border-default)]">
+            <div className="flex items-center justify-between mb-[var(--space-6)]">
+              <h2 className="text-[length:var(--text-lg)] font-semibold text-[var(--color-text-primary)]">New Task</h2>
               <button
                 onClick={() => setShowNewTaskModal(false)}
                 className="text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)]"
@@ -1098,7 +1244,7 @@ export default function KanbanPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-[var(--space-4)]">
               {/* Title */}
               <div>
                 <input
@@ -1108,14 +1254,14 @@ export default function KanbanPage() {
                   onChange={(e) =>
                     setNewTaskForm({ ...newTaskForm, title: e.target.value })
                   }
-                  className="w-full px-3 py-2 text-sm border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)]"
+                  className="w-full px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-sm)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)]"
                   autoFocus
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="text-xs font-medium text-[var(--color-text-primary)] block mb-2">
+                <label className="text-[length:var(--text-xs)] font-medium text-[var(--color-text-primary)] block mb-[var(--space-2)]">
                   Description (optional)
                 </label>
                 <textarea
@@ -1124,14 +1270,14 @@ export default function KanbanPage() {
                   onChange={(e) =>
                     setNewTaskForm({ ...newTaskForm, description: e.target.value })
                   }
-                  className="w-full px-3 py-2 text-sm border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] resize-none h-20"
+                  className="w-full px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-sm)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] resize-none h-20"
                 />
               </div>
 
               {/* Column, Priority, Category Row */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-[var(--space-3)]">
                 <div>
-                  <label className="text-xs font-medium text-[var(--color-text-primary)] block mb-2">
+                  <label className="text-[length:var(--text-xs)] font-medium text-[var(--color-text-primary)] block mb-[var(--space-2)]">
                     Column
                   </label>
                   <select
@@ -1139,7 +1285,7 @@ export default function KanbanPage() {
                     onChange={(e) =>
                       setNewTaskForm({ ...newTaskForm, column_id: e.target.value })
                     }
-                    className="w-full px-2 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)]"
+                    className="w-full px-[var(--space-2)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)]"
                   >
                     {COLUMNS.map((col) => (
                       <option key={col.id} value={col.id}>
@@ -1150,7 +1296,7 @@ export default function KanbanPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-[var(--color-text-primary)] block mb-2">
+                  <label className="text-[length:var(--text-xs)] font-medium text-[var(--color-text-primary)] block mb-[var(--space-2)]">
                     Priority
                   </label>
                   <select
@@ -1161,7 +1307,7 @@ export default function KanbanPage() {
                         priority: e.target.value as "low" | "medium" | "high",
                       })
                     }
-                    className="w-full px-2 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)]"
+                    className="w-full px-[var(--space-2)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)]"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -1170,7 +1316,7 @@ export default function KanbanPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-[var(--color-text-primary)] block mb-2">
+                  <label className="text-[length:var(--text-xs)] font-medium text-[var(--color-text-primary)] block mb-[var(--space-2)]">
                     Category
                   </label>
                   <select
@@ -1185,7 +1331,7 @@ export default function KanbanPage() {
                           | "bug",
                       })
                     }
-                    className="w-full px-2 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)]"
+                    className="w-full px-[var(--space-2)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)]"
                   >
                     <option value="task">Task</option>
                     <option value="client">Client</option>
@@ -1197,7 +1343,7 @@ export default function KanbanPage() {
 
               {/* Due Date */}
               <div>
-                <label className="text-xs font-medium text-[var(--color-text-primary)] block mb-2">
+                <label className="text-[length:var(--text-xs)] font-medium text-[var(--color-text-primary)] block mb-[var(--space-2)]">
                   Due Date (optional)
                 </label>
                 <input
@@ -1206,22 +1352,22 @@ export default function KanbanPage() {
                   onChange={(e) =>
                     setNewTaskForm({ ...newTaskForm, due_date: e.target.value })
                   }
-                  className="w-full px-3 py-2 text-sm border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)]"
+                  className="w-full px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-sm)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)]"
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end mt-6">
+            <div className="flex gap-[var(--space-3)] justify-end mt-[var(--space-6)]">
               <button
                 onClick={() => setShowNewTaskModal(false)}
-                className="px-4 py-2 text-xs font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] rounded-lg hover:bg-[var(--color-bg-card)] transition-colors"
+                className="px-[var(--space-4)] py-[var(--space-2)] text-[length:var(--text-xs)] font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] rounded-[var(--radius-md)] hover:bg-[var(--color-bg-card)] transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateTaskFromModal}
                 disabled={!newTaskForm.title.trim()}
-                className="px-4 py-2 text-xs font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-[var(--space-4)] py-[var(--space-2)] text-[length:var(--text-xs)] font-medium bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Create Task
               </button>
@@ -1229,6 +1375,15 @@ export default function KanbanPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!taskPendingDelete}
+        onClose={() => setTaskPendingDelete(null)}
+        onConfirm={() => handleDeleteTask(taskPendingDelete!.id)}
+        title="Delete task?"
+        description={`"${taskPendingDelete?.title ?? ""}" will be permanently deleted. This can't be undone.`}
+        successMessage="Task deleted"
+      />
     </div>
   );
 }

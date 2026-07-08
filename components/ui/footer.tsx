@@ -34,7 +34,7 @@ export function Footer({
   showCookieButton = true,
 }: FooterProps) {
   return (
-    <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-[var(--color-bg-base)]">
+    <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24" style={{ backgroundColor: "var(--color-surface)", borderTop: "1px solid var(--color-border-subtle)" }}>
       <div className="px-4 lg:px-8">
         <div className="md:flex md:items-start md:justify-between">
           <div className="flex items-center gap-x-4 flex-wrap">
@@ -67,7 +67,7 @@ export function Footer({
             ))}
           </ul>
         </div>
-        <div className="border-t border-[var(--color-border-default)] mt-6 pt-6 md:mt-4 md:pt-8 lg:grid lg:grid-cols-10">
+        <div className="mt-6 pt-6 md:mt-4 md:pt-8 lg:grid lg:grid-cols-10" style={{ borderTop: "1px solid var(--color-border-subtle)" }}>
           <div className="lg:mt-0 lg:col-[4/11]">
             <ul className="list-none flex flex-wrap -my-1 -mx-3 lg:justify-end">
               {mainLinks.map((link, i) => (

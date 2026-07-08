@@ -7,6 +7,7 @@ import { useChatBot, Message } from "@/lib/use-chat-bot";
 import { useGoogle } from "@/lib/google-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { IntegrationBubble } from "@/components/ui/integration-bubble";
+import { isOnboardingActive } from "@/lib/onboarding-state";
 import ReactMarkdown from "react-markdown";
 
 export function AICommandModal() {
@@ -41,7 +42,8 @@ export function AICommandModal() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.altKey) {
+      if (e.key === '\\') {
+        if (isOnboardingActive()) return;
         e.preventDefault();
         if (isOpen) {
           handleClose();

@@ -74,32 +74,36 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
           key={plan.id}
           className={`relative rounded-lg border-2 p-8 transition-all ${
             isPopular
-              ? "border-indigo-600 bg-indigo-50/50 scale-105 shadow-lg"
-              : "border-gray-200 bg-white"
+              ? "scale-105 shadow-lg"
+              : ""
           }`}
+          style={{
+            borderColor: isPopular ? "var(--color-accent)" : "var(--color-border)",
+            backgroundColor: isPopular ? "var(--color-accent-bg)" : "var(--color-surface)",
+          }}
         >
           {isPopular && (
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-semibold text-white" style={{ backgroundColor: "var(--color-accent)" }}>
               Most Popular
             </div>
           )}
 
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          <h3 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>
             {plan.name}
           </h3>
-          <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
+          <p className="text-sm mb-6" style={{ color: "var(--color-text-secondary)" }}>{plan.description}</p>
 
           <div className="mb-6">
             {isContactOnly ? (
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-bold" style={{ color: "var(--color-text-primary)" }}>
                 Custom pricing
               </div>
             ) : (
               <>
-                <span className="text-4xl font-bold text-gray-900">
+                <span className="text-4xl font-bold" style={{ color: "var(--color-text-primary)" }}>
                   ${plan.price}
                 </span>
-                <span className="text-gray-600">/month</span>
+                <span style={{ color: "var(--color-text-secondary)" }}>/month</span>
               </>
             )}
           </div>
@@ -107,22 +111,20 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
           {isContactOnly ? (
             <Link
               href="/contact"
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 block text-center ${
-                isPopular
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-              }`}
+              className="w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 block text-center"
+              style={isPopular
+                ? { backgroundColor: "var(--color-accent)", color: "white" }
+                : { backgroundColor: "var(--color-surface-2)", color: "var(--color-text-primary)" }}
             >
               Contact Sales
             </Link>
           ) : (
             <button
               onClick={() => handleSubscribe(plan.id)}
-              className={`w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8 ${
-                isPopular
-                  ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                  : "bg-gray-100 text-gray-900 hover:bg-gray-200"
-              }`}
+              className="w-full py-3 px-4 rounded-lg font-semibold transition-all mb-8"
+              style={isPopular
+                ? { backgroundColor: "var(--color-accent)", color: "white" }
+                : { backgroundColor: "var(--color-surface-2)", color: "var(--color-text-primary)" }}
             >
               {!isLoggedIn
                 ? "Sign up to get started"
@@ -134,9 +136,10 @@ export function PricingCards({ isLoggedIn = false }: PricingCardsProps) {
             {plan.features.map((feature) => (
               <li
                 key={feature}
-                className="flex items-start gap-3 text-sm text-gray-700"
+                className="flex items-start gap-3 text-sm"
+                style={{ color: "var(--color-text-secondary)" }}
               >
-                <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <Check className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--color-success)" }} />
                 {feature}
               </li>
             ))}

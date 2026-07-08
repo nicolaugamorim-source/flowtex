@@ -4,7 +4,7 @@ import { Footer } from "@/components/ui/footer";
 export default function PrivacyPage() {
   return (
     <>
-      <header className="bg-white border-b border-[var(--color-border-default)] sticky top-0 z-50">
+      <header className="bg-[var(--color-surface)] border-b border-[var(--color-border-default)] sticky top-0 z-50">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
             <img src="/logo.svg" alt="Flowtex" width={32} height={32} />
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <main className="min-h-screen bg-[var(--color-bg-base)]">
         <div className="py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl border border-[var(--color-border-default)] p-8 md:p-12">
+        <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border-default)] p-8 md:p-12">
           <h1 className="text-4xl md:text-5xl font-bold text-[var(--color-text-primary)] mb-2">Privacy Policy</h1>
           <p className="text-[var(--color-text-muted)] mb-8">Last updated: June 2026</p>
 

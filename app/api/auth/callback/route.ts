@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { sendProductEmail } from "@/lib/emails/send";
+import { welcomeEmail } from "@/lib/emails/templates";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -131,6 +133,11 @@ export async function GET(request: NextRequest) {
     await captureServerEvent(user.id, isNewUser ? "user_signed_up" : "user_logged_in", {
       email: user.email,
     });
+
+    if (isNewUser && user.email) {
+      const name = user.user_metadata?.full_name || user.email.split("@")[0];
+      await sendProductEmail(user.email, welcomeEmail(name));
+    }
 
     // Create ai_context if doesn't exist
     console.log("[AUTH CALLBACK] Creating AI context...");

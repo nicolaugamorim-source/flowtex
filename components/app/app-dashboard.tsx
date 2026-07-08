@@ -8,12 +8,14 @@ import {
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAppCache } from "@/lib/app-cache";
+import { useFitCount } from "@/lib/use-fit-count";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarSelection } from "./calendar-selection";
 import { GmailInbox } from "./gmail-inbox";
 import { DailyStreak } from "./daily-streak";
 import { PriorityTasks } from "./priority-tasks";
 import { DashboardSkeleton } from "./dashboard-skeleton";
+import { setCalendarsConfiguredFlag } from "@/lib/dashboard-guide";
 
 const FALLBACK_QUOTES = [
   { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
@@ -185,8 +187,8 @@ const EventCard = ({ event }: { event: CalendarEvent }) => {
   const title = event.summary ?? "Untitled event";
 
   return (
-    <div className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3">
-      <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{startTime}</p>
+    <div className="bg-[var(--color-bg-elevated)] p-[var(--space-3)] rounded-[var(--radius-sm)] border border-[var(--color-border-default)] text-[length:var(--text-sm)] h-16 flex items-center justify-between gap-[var(--space-3)]">
+      <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{startTime}</p>
       <p className="font-semibold text-[var(--color-text-primary)] truncate flex-1">{title}</p>
       <MoreVertical size={16} className="text-[var(--color-text-muted)] flex-shrink-0" />
     </div>
@@ -194,11 +196,11 @@ const EventCard = ({ event }: { event: CalendarEvent }) => {
 };
 
 const SkeletonLoader = () => (
-  <div className="space-y-2">
+  <div className="space-y-[var(--space-2)]">
     {[1, 2, 3, 4].map((i) => (
-      <div key={i} className="flex items-center gap-3 mb-2">
-        <Skeleton style={{ width: 48, height: 12, borderRadius: 4 }} />
-        <Skeleton style={{ flex: 1, height: 12, borderRadius: 4 }} />
+      <div key={i} className="flex items-center gap-[var(--space-3)] mb-[var(--space-2)]">
+        <Skeleton style={{ width: 48, height: 12, borderRadius: "var(--radius-sm)" }} />
+        <Skeleton style={{ flex: 1, height: 12, borderRadius: "var(--radius-sm)" }} />
       </div>
     ))}
   </div>
@@ -222,9 +224,9 @@ const getUpcomingEvents = (events: CalendarEvent[]): CalendarEvent[] => {
 const NoEventsPlaceholder = ({ googleConnected, height = "h-full" }: { googleConnected: boolean; height?: string }) => {
   if (!googleConnected) {
     return (
-      <div className={`flex flex-col items-center justify-center text-center p-4 ${height}`}>
-        <p className="text-[var(--color-text-muted)] text-sm mb-3">Google Calendar not connected</p>
-        <Link href="/app/integrations" className="text-[var(--color-accent)] text-xs font-medium hover:underline">
+      <div className={`flex flex-col items-center justify-center text-center p-[var(--space-4)] ${height}`}>
+        <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)] mb-[var(--space-3)]">Google Calendar not connected</p>
+        <Link href="/app/integrations" className="text-[var(--color-accent)] text-[length:var(--text-xs)] font-medium hover:underline">
           Connect Calendar
         </Link>
       </div>
@@ -233,7 +235,7 @@ const NoEventsPlaceholder = ({ googleConnected, height = "h-full" }: { googleCon
 
   return (
     <div className={`flex flex-col items-center justify-center text-center ${height}`}>
-      <p className="text-[var(--color-text-muted)] text-sm">No upcoming events this week</p>
+      <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">No upcoming events this week</p>
     </div>
   );
 };
@@ -259,11 +261,18 @@ export const AppDashboard = () => {
   const [gmailMessages, setGmailMessages] = useState<GmailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isReloading, setIsReloading] = useState(false);
+  const { ref: thisWeekRef, count: thisWeekFitCount } = useFitCount<HTMLDivElement>(4, [isLoading, isReloading]);
+  const { ref: nextWeekRef, count: nextWeekFitCount } = useFitCount<HTMLDivElement>(4, [isLoading, isReloading]);
   const [minLoadDone, setMinLoadDone] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(true);
   const [calendarsConfigured, setCalendarsConfigured] = useState<boolean | null>(null);
   const [greeting, setGreeting] = useState<string>("");
   const [userName, setUserName] = useState<string>("there");
+
+  // Let the onboarding guide know as soon as we know, instead of it having to poll the DOM.
+  useEffect(() => {
+    setCalendarsConfiguredFlag(calendarsConfigured);
+  }, [calendarsConfigured]);
 
   // Minimum 300ms loading state to prevent flash
   useEffect(() => {
@@ -478,12 +487,15 @@ export const AppDashboard = () => {
   }
 
   return (
-    <div className="p-8 flex-1 overflow-y-auto bg-[var(--color-bg-base)] flex flex-col gap-8">
-      {/* Top Section - 2 Columns */}
-      <div className="grid grid-cols-2 gap-8 h-1/2 items-center">
+    <>
+    <div className="p-[var(--space-8)] w-full h-screen overflow-hidden bg-[var(--color-bg-base)] grid grid-rows-2 gap-[var(--space-8)]">
+      {/* Top Section - 2 Columns. Grid rows (not flex + h-1/2) so the two sections always
+          get exactly half the available height each, however tall the viewport is —
+          no percentage-of-an-ancestor's-auto-height math that can silently break. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--space-8)] min-h-0">
         {/* Dynamic Greeting - 1/2 width */}
-        <div className="flex flex-col items-center justify-center h-full gap-4">
-          <p className="text-[var(--color-text-primary)] text-6xl font-bold leading-tight text-center">
+        <div className="flex flex-col items-center justify-center h-full min-h-0 overflow-hidden gap-[var(--space-4)]">
+          <p className="text-[var(--color-text-primary)] text-[clamp(32px,min(6vw,9vh),96px)] font-bold leading-tight text-center">
             {greeting.endsWith(",") ? (
               <>
                 {greeting} <br />
@@ -494,7 +506,7 @@ export const AppDashboard = () => {
             )}
           </p>
           {quote && (
-            <p className="text-[var(--color-text-muted)] text-base italic font-light max-w-lg text-center">
+            <p className="text-[var(--color-text-muted)] text-[length:var(--text-base)] italic font-light max-w-lg text-center">
               "{quote.text}" — {quote.author}
             </p>
           )}
@@ -504,36 +516,28 @@ export const AppDashboard = () => {
         {calendarsConfigured === false ? (
           <CalendarSelection onComplete={handleCalendarSelectionComplete} />
         ) : (
-          <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col">
-            <div className="flex flex-row gap-6 h-full">
+          <div data-onboarding="appointments-card" className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full min-h-0 flex flex-col">
+            <div className="flex flex-row gap-[var(--space-6)] h-full min-h-0">
               {/* This Week Column */}
-              <div className="flex-1 flex flex-col gap-3">
-                <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">This week</h3>
-                <div style={{ height: "320px" }} className="flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)]">
+                <h3 className="text-[var(--color-text-primary)] text-[length:var(--text-lg)] font-semibold">This week</h3>
+                <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   {isLoading || isReloading ? (
                     <div className="overflow-y-auto flex-1">
                       <SkeletonLoader />
                     </div>
                   ) : (() => {
                     const allThisWeek = getUpcomingEvents(thisWeekEvents);
-                    const displayThisWeek = allThisWeek.slice(0, 4);
-                    const moreThisWeek = allThisWeek.length - 4;
-
-                    console.log("This week events:");
-                    console.log("  - Total from API:", thisWeekEvents.length);
-                    console.log("  - Upcoming (future only):", allThisWeek.length);
-                    console.log("  - Display (first 4):", displayThisWeek.length);
-                    console.log("  - More count:", moreThisWeek);
+                    const displayThisWeek = allThisWeek.slice(0, thisWeekFitCount);
+                    const moreThisWeek = allThisWeek.length - displayThisWeek.length;
 
                     return displayThisWeek.length > 0 ? (
-                      <div className="flex flex-col overflow-y-auto flex-1">
-                        <div className="flex flex-col gap-3">
-                          {displayThisWeek.map((event) => (
-                            <EventCard key={event.id} event={event} />
-                          ))}
-                        </div>
+                      <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)] overflow-hidden" ref={thisWeekRef}>
+                        {displayThisWeek.map((event) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
                         {moreThisWeek > 0 && (
-                          <p className="text-xs text-center text-[var(--color-text-muted)] mt-3">
+                          <p className="text-[length:var(--text-xs)] text-center text-[var(--color-text-muted)] mt-[var(--space-3)]">
                             +{moreThisWeek} more events this week
                           </p>
                         )}
@@ -549,46 +553,38 @@ export const AppDashboard = () => {
               <div className="w-px bg-[var(--color-border-default)]"></div>
 
               {/* Next Week Column */}
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)]">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">Next week</h3>
+                  <h3 className="text-[var(--color-text-primary)] text-[length:var(--text-lg)] font-semibold">Next week</h3>
                   <button
                     onClick={handleRefresh}
                     disabled={isReloading}
-                    className="p-1 hover:text-[var(--color-text-muted)] transition-colors duration-150 disabled:opacity-50"
+                    className="p-[var(--space-1)] hover:text-[var(--color-text-muted)] transition-colors duration-150 disabled:opacity-50"
                     style={{ color: "var(--color-text-disabled)" }}
                   >
                     <RefreshCw
-                      size={14}
+                      size={16}
                       className={isReloading ? "animate-spin" : ""}
                     />
                   </button>
                 </div>
-                <div style={{ height: "320px" }} className="flex flex-col overflow-hidden">
+                <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   {isLoading || isReloading ? (
                     <div className="overflow-y-auto flex-1">
                       <SkeletonLoader />
                     </div>
                   ) : (() => {
                     const allNextWeek = getUpcomingEvents(nextWeekEvents);
-                    const displayNextWeek = allNextWeek.slice(0, 4);
-                    const moreNextWeek = allNextWeek.length - 4;
-
-                    console.log("Next week events:");
-                    console.log("  - Total from API:", nextWeekEvents.length);
-                    console.log("  - Upcoming (future only):", allNextWeek.length);
-                    console.log("  - Display (first 4):", displayNextWeek.length);
-                    console.log("  - More count:", moreNextWeek);
+                    const displayNextWeek = allNextWeek.slice(0, nextWeekFitCount);
+                    const moreNextWeek = allNextWeek.length - displayNextWeek.length;
 
                     return displayNextWeek.length > 0 ? (
-                      <div className="flex flex-col overflow-y-auto flex-1">
-                        <div className="flex flex-col gap-3">
-                          {displayNextWeek.map((event) => (
-                            <EventCard key={event.id} event={event} />
-                          ))}
-                        </div>
+                      <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)] overflow-hidden" ref={nextWeekRef}>
+                        {displayNextWeek.map((event) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
                         {moreNextWeek > 0 && (
-                          <p className="text-xs text-center text-[var(--color-text-muted)] mt-3 pt-3 border-t border-[var(--color-bg-elevated)]">
+                          <p className="text-[length:var(--text-xs)] text-center text-[var(--color-text-muted)] mt-[var(--space-3)] pt-[var(--space-3)] border-t border-[var(--color-bg-elevated)]">
                             +{moreNextWeek} more events next week
                           </p>
                         )}
@@ -605,7 +601,7 @@ export const AppDashboard = () => {
       </div>
 
       {/* Bottom Section - 3 Cards */}
-      <div className="grid grid-cols-3 gap-8 h-1/2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--space-8)] min-h-0">
         {/* Card 1: Gmail Inbox */}
         <GmailInbox />
 
@@ -616,5 +612,6 @@ export const AppDashboard = () => {
         <DailyStreak />
       </div>
     </div>
+    </>
   );
 };

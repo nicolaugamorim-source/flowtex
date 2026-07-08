@@ -3,6 +3,8 @@
 import { AppCacheProvider } from "@/lib/app-cache";
 import { SidebarWrapper } from "@/components/app/sidebar-wrapper";
 import { AppGuard } from "@/components/app/app-guard";
+import { WelcomeOverlay } from "@/components/app/welcome-overlay";
+import { MainContentBlur } from "@/components/app/main-content-blur";
 
 export default function AppLayout({
   children,
@@ -12,11 +14,10 @@ export default function AppLayout({
   return (
     <AppCacheProvider>
       <AppGuard>
+        <WelcomeOverlay />
         <div className="flex h-screen bg-[var(--color-bg-base)]">
           <SidebarWrapper />
-          <main className="flex-1 ml-[3.05rem]">
-            {children}
-          </main>
+          <MainContentBlur>{children}</MainContentBlur>
         </div>
       </AppGuard>
     </AppCacheProvider>

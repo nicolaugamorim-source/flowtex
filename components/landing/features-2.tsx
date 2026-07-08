@@ -30,7 +30,7 @@ export function Features() {
     const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true })
 
     return (
-        <section ref={ref} className="py-16 md:py-32 bg-[var(--color-bg-base)]">
+        <section ref={ref} className="py-16 md:py-32" style={{ backgroundColor: "var(--color-surface)" }}>
             <div className="@container mx-auto max-w-7xl px-6">
                 <motion.div
                     className="text-center"
@@ -84,8 +84,8 @@ export function Features() {
                                           <div className="h-1.5 bg-[var(--color-border-subtle)] rounded w-2/5"></div>
                                         </div>
                                       </div>
-                                      <div className="w-full max-w-xs bg-[var(--color-accent)] rounded-lg p-3">
-                                        <p className="text-xs font-semibold text-[var(--color-text-primary)]">✓ Remembers</p>
+                                      <div className="w-full max-w-xs rounded-lg p-3" style={{ backgroundColor: "var(--color-accent)" }}>
+                                        <p className="text-xs font-semibold" style={{ color: "var(--color-bg)" }}>✓ Remembers</p>
                                       </div>
                                     </div>
                                   )}

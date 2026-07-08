@@ -54,7 +54,7 @@ export function CTASection({
         {/* Action Button */}
         <Link
           href={action.href}
-          className="inline-flex items-center justify-center h-12 px-8 rounded-xl font-semibold bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[#00B894] transition-all duration-300 opacity-0 animate-fade-in-up delay-500"
+          className="inline-flex items-center justify-center h-12 px-8 rounded-xl font-semibold bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent-hover)] transition-all duration-300 opacity-0 animate-fade-in-up delay-500"
         >
           {action.text}
         </Link>

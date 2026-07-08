@@ -24,6 +24,7 @@ import {
     type Variants,
 } from 'framer-motion';
 import { usePostHog } from 'posthog-js/react';
+import { useTheme } from 'next-themes';
 import { Dock } from '@/components/ui/dock-two';
 import { supabase } from '@/lib/supabase';
 
@@ -339,6 +340,7 @@ const ExternalLinkIcon: React.FC<SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
+import { Sun, Moon } from 'lucide-react';
 import { siGmail, siGooglecalendar, siNotion, siGoogledrive, siAnthropic } from 'simple-icons';
 import { DashboardMockup } from '@/components/dashboard/dashboard-mockup';
 import { AppDashboardMockup } from '@/components/dashboard/app-dashboard-mockup';
@@ -421,6 +423,37 @@ interface Dot {
     currentRadius: number;
 }
 
+const ThemeSwitch: React.FC = () => {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [hovered, setHovered] = useState(false);
+  const isDark = resolvedTheme === 'dark';
+
+  return (
+    <button
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '6px 8px',
+        borderRadius: '8px',
+        border: `1px solid ${hovered ? 'var(--color-border-strong)' : 'var(--color-border)'}`,
+        backgroundColor: hovered ? 'var(--color-surface)' : 'var(--color-surface-2)',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease',
+      }}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {isDark
+        ? <Moon size={18} color="var(--color-text-secondary)" />
+        : <Sun size={18} color="var(--color-text-secondary)" />
+      }
+    </button>
+  );
+};
+
 const HeroFlowtex: React.FC = () => {
    const posthog = usePostHog();
    const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -429,6 +462,9 @@ const HeroFlowtex: React.FC = () => {
    const [openDropdown, setOpenDropdown] = useState<string | null>(null);
    const [isScrolled, setIsScrolled] = useState<boolean>(false);
    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+   const { theme = 'dark', setTheme } = useTheme();
+   const [mounted, setMounted] = useState(false);
+   useEffect(() => { setMounted(true); }, []);
 
    useEffect(() => {
        supabase.auth.getSession().then(({ data: { session } }) => {
@@ -501,9 +537,9 @@ const HeroFlowtex: React.FC = () => {
                newDots.push({
                    x,
                    y,
-                   // Canvas fillStyle can't read CSS custom properties directly, so this
-                   // is the literal RGB of --color-accent (#00D4A4), identical in both themes.
-                   baseColor: `rgba(0, 212, 164, ${BASE_OPACITY_MAX})`,
+                   // Canvas fillStyle can't read CSS custom properties — hardcode the RGB
+                   // of --color-accent dark (#DFAA45 = 223,170,69) for the dot grid.
+                   baseColor: `rgba(223, 170, 69, ${BASE_OPACITY_MAX})`,
                    targetOpacity: baseOpacity,
                    currentOpacity: baseOpacity,
                    opacitySpeed: (Math.random() * 0.005) + 0.002,
@@ -674,28 +710,37 @@ const HeroFlowtex: React.FC = () => {
 
   return (
     <div id="hero" className="relative bg-[var(--color-bg-base)] text-[var(--color-text-secondary)] min-h-screen flex flex-col overflow-x-hidden">
-        <div className="fixed top-0 w-full flex items-center justify-center py-2 z-50 pointer-events-none" style={{boxSizing: 'border-box'}}>
-            <div className="pointer-events-auto">
-                <Dock items={[
-                    { label: "Flowtex", onClick: () => {}, isLogo: true },
-                    { label: "How it works", onClick: () => {
-                        const section = document.getElementById('how-it-works');
-                        section?.scrollIntoView({ behavior: 'smooth' });
-                    } },
-                    { label: "Pricing", onClick: () => {
-                        const pricingSection = document.getElementById('pricing');
-                        pricingSection?.scrollIntoView({ behavior: 'smooth' });
-                    } },
-                    isLoggedIn
-                        ? { label: "Go to Flowtex", onClick: () => {
-                            posthog?.capture('cta_clicked', { button_label: 'Go to Flowtex', position: 'nav' });
-                            window.location.href = '/app';
-                        }, isButton: true }
-                        : { label: "Get Early Access", onClick: () => {
-                            posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
-                            window.location.href = '/login';
-                        }, isButton: true }
-                ]} />
+        <div className="fixed top-0 w-full z-50 pointer-events-none" style={{boxSizing: 'border-box'}}>
+            <div className="relative flex items-center justify-center py-2">
+                {/* Dock — centred */}
+                <div className="pointer-events-auto">
+                    <Dock items={[
+                        { label: "Flowtex", onClick: () => {}, isLogo: true },
+                        { label: "How it works", onClick: () => {
+                            const section = document.getElementById('how-it-works');
+                            section?.scrollIntoView({ behavior: 'smooth' });
+                        } },
+                        { label: "Pricing", onClick: () => {
+                            const pricingSection = document.getElementById('pricing');
+                            pricingSection?.scrollIntoView({ behavior: 'smooth' });
+                        } },
+                        isLoggedIn
+                            ? { label: "Go to Flowtex", onClick: () => {
+                                posthog?.capture('cta_clicked', { button_label: 'Go to Flowtex', position: 'nav' });
+                                window.location.href = '/app';
+                            }, isButton: true }
+                            : { label: "Get Early Access", onClick: () => {
+                                posthog?.capture('cta_clicked', { button_label: 'Get Early Access', position: 'nav' });
+                                window.location.href = '/login';
+                            }, isButton: true }
+                    ]} />
+                </div>
+                {/* Theme switch — pinned right, independent element */}
+                {mounted && (
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-auto">
+                      <ThemeSwitch />
+                  </div>
+                )}
             </div>
         </div>
 
@@ -737,9 +782,11 @@ const HeroFlowtex: React.FC = () => {
                 <motion.a
                     href={isLoggedIn ? "/app" : "/login"}
                     onClick={() => posthog?.capture('cta_clicked', { button_label: isLoggedIn ? 'Go to Flowtex' : 'Get Early Access', position: 'hero' })}
-                    className="bg-[var(--color-accent)] text-[var(--color-text-primary)] px-8 py-3 rounded-md text-base hover:bg-[var(--color-accent-hover)] transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
-                    style={{ fontWeight: 600 }}
-                    whileHover={{ scale: 1.05, y: -2 }}
+                    className="px-8 py-3 rounded-md text-base transition-colors duration-200 whitespace-nowrap shadow-sm hover:shadow-md"
+                    style={{ backgroundColor: "var(--color-accent)", color: "var(--color-bg)", fontWeight: 600 }}
+                    onHoverStart={e => ((e.target as HTMLElement).style.backgroundColor = "var(--color-accent-dark)")}
+                    onHoverEnd={e => ((e.target as HTMLElement).style.backgroundColor = "var(--color-accent)")}
+                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >

@@ -88,7 +88,7 @@ export function AuthHandler() {
           // wherever they already are inside the app (e.g. /app/kanban) on reload,
           // and never bounce them off the landing page, which should stay visible
           // (with its own "Go to Flowtex" CTA) even when logged in.
-          if (pathname !== "/" && !pathname.startsWith("/app")) {
+          if (pathname !== "/" && !pathname.startsWith("/app") && pathname !== "/guide") {
             console.log("Auth handler complete, redirecting to /app");
             router.replace("/app");
           }

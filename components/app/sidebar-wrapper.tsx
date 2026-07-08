@@ -5,26 +5,26 @@ import { supabase } from "@/lib/supabase";
 import { SessionNavBar } from "@/components/ui/sidebar";
 
 export function SidebarWrapper() {
-  const [teamName, setTeamName] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("teamName") || "Flowtex";
-    }
-    return "Flowtex";
-  });
+  // Server and first client render must agree, so these always start at the
+  // same static default — reading localStorage here (branching on `typeof
+  // window`) is what caused the "N" vs "U" avatar hydration mismatch, since
+  // the server has no localStorage and the client does.
+  const [teamName, setTeamName] = useState("Flowtex");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
-  const [userName, setUserName] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("userName") || "User";
-    }
-    return "User";
-  });
-  const [userEmail, setUserEmail] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("userEmail") || "user@flowtex.com";
-    }
-    return "user@flowtex.com";
-  });
+  const [userName, setUserName] = useState("User");
+  const [userEmail, setUserEmail] = useState("user@flowtex.com");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Cached values are only applied after mount — a normal post-hydration
+  // update, not part of the initial render React has to reconcile.
+  useEffect(() => {
+    const cachedTeamName = localStorage.getItem("teamName");
+    const cachedUserName = localStorage.getItem("userName");
+    const cachedUserEmail = localStorage.getItem("userEmail");
+    if (cachedTeamName) setTeamName(cachedTeamName);
+    if (cachedUserName) setUserName(cachedUserName);
+    if (cachedUserEmail) setUserEmail(cachedUserEmail);
+  }, []);
 
   useEffect(() => {
     async function loadUserData() {

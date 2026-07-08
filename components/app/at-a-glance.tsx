@@ -41,11 +41,11 @@ const MetricBlock = ({
   number: number;
   label: string;
 }) => (
-  <div className="flex items-start gap-4 flex-1">
+  <div className="flex items-start gap-[var(--space-4)] flex-1">
     <div className="text-[var(--color-accent)] flex-shrink-0">{icon}</div>
     <div className="flex-1">
       <p className="text-[32px] font-bold text-[var(--color-text-primary)] leading-none">{number}</p>
-      <p className="text-[12px] text-[var(--color-text-disabled)] mt-1">{label}</p>
+      <p className="text-[12px] text-[var(--color-text-disabled)] mt-[var(--space-1)]">{label}</p>
     </div>
   </div>
 );
@@ -70,10 +70,10 @@ export const AtAGlance = ({
   const notesCount = quickNotes.filter((n) => !n.is_done).length;
 
   return (
-    <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col justify-center">
-      <h3 className="text-[var(--color-text-primary)] text-xl font-semibold mb-8">At a glance</h3>
+    <div className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full flex flex-col justify-center">
+      <h3 className="text-[var(--color-text-primary)] text-[length:var(--text-xl)] font-semibold mb-[var(--space-8)]">At a glance</h3>
 
-      <div className="flex gap-8">
+      <div className="flex gap-[var(--space-8)]">
         <MetricBlock icon={<Mail size={20} />} number={unreadCount} label="Unread emails" />
         <MetricBlock
           icon={<Calendar size={20} />}

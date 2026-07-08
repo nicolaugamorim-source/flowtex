@@ -2,6 +2,8 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 import { getValidAccessToken } from './google-token-manager';
 import { trackActivity } from './activity-tracker';
+import { useToast } from '@/components/ui/toast-provider';
+import { Clock } from 'lucide-react';
 
 export interface BubbleData {
   type: "email" | "email_draft" | "event" | "task" | "notion" | "slack" | "custom";
@@ -44,6 +46,7 @@ export interface Message {
 }
 
 export function useChatBot() {
+  const toast = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -104,6 +107,18 @@ export function useChatBot() {
         }),
         signal: abortControllerRef.current.signal,
       });
+
+      if (response.status === 429) {
+        // Never sent — drop the optimistic bubble so the input looks untouched.
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+        const { retryAfterSeconds } = await response.json().catch(() => ({ retryAfterSeconds: 60 }));
+        toast.show({
+          title: "Slow down",
+          message: `Too many messages at once — this one wasn't sent. Try again in ${retryAfterSeconds}s.`,
+          icon: Clock,
+        });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);

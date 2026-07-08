@@ -5,6 +5,7 @@ import { RefreshCw, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppCache } from "@/lib/app-cache";
+import { useFitCount } from "@/lib/use-fit-count";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface GmailMessage {
@@ -16,14 +17,14 @@ interface GmailMessage {
 }
 
 const SkeletonLoader = () => (
-  <div className="space-y-3">
+  <div className="space-y-[var(--space-3)]">
     {[1, 2, 3, 4].map((i) => (
-      <div key={i} className="flex flex-col gap-1 mb-3">
+      <div key={i} className="flex flex-col gap-[var(--space-1)] mb-[var(--space-3)]">
         <div className="flex justify-between">
-          <Skeleton style={{ width: 120, height: 12, borderRadius: 4 }} />
-          <Skeleton style={{ width: 40, height: 10, borderRadius: 4 }} />
+          <Skeleton style={{ width: 120, height: 12, borderRadius: "var(--radius-sm)" }} />
+          <Skeleton style={{ width: 40, height: 10, borderRadius: "var(--radius-sm)" }} />
         </div>
-        <Skeleton style={{ width: "80%", height: 10, borderRadius: 4 }} />
+        <Skeleton style={{ width: "80%", height: 10, borderRadius: "var(--radius-sm)" }} />
       </div>
     ))}
   </div>
@@ -42,17 +43,17 @@ const MessageCard = ({ message, onEmailOpen }: { message: GmailMessage; onEmailO
   return (
     <div
       onClick={handleClick}
-      className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3 cursor-pointer hover:bg-[var(--color-bg-subtle)] transition-colors"
+      className="bg-[var(--color-bg-elevated)] p-[var(--space-3)] rounded-[var(--radius-sm)] border border-[var(--color-border-default)] text-[length:var(--text-sm)] h-16 flex items-center justify-between gap-[var(--space-3)] cursor-pointer hover:bg-[var(--color-bg-subtle)] transition-colors"
     >
-      <div className="flex-1 flex flex-col gap-1 min-w-0">
+      <div className="flex-1 flex flex-col gap-[var(--space-1)] min-w-0">
         <p className={`truncate ${message.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
           {message.sender}
         </p>
-        <p className={`text-xs truncate ${message.isUnread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+        <p className={`text-[length:var(--text-xs)] truncate ${message.isUnread ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
           {message.subject}
         </p>
       </div>
-      <p className="text-xs text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{message.date}</p>
+      <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)] font-medium whitespace-nowrap flex-shrink-0">{message.date}</p>
     </div>
   );
 };
@@ -65,6 +66,7 @@ export const GmailInbox = () => {
   const [isReloading, setIsReloading] = useState(false);
   const [gmailConnected, setGmailConnected] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { ref: listRef, count: fitCount } = useFitCount<HTMLDivElement>(4, [isLoading]);
 
   useEffect(() => {
     fetchInbox();
@@ -149,54 +151,52 @@ export const GmailInbox = () => {
   };
 
   return (
-    <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col gap-3">
+    <div data-onboarding="inbox-card" className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full min-h-0 flex flex-col gap-[var(--space-3)]">
       <div className="flex items-center justify-between">
-        <h3 className="text-[var(--color-text-primary)] text-xl font-semibold">New messages</h3>
+        <h3 className="text-[var(--color-text-primary)] text-[length:var(--text-lg)] font-semibold">New messages</h3>
         <button
           onClick={handleReload}
           disabled={isReloading}
-          className="p-2 hover:bg-[var(--color-bg-elevated)] rounded-lg transition-colors disabled:opacity-50"
+          className="p-[var(--space-2)] hover:bg-[var(--color-bg-elevated)] rounded-[var(--radius-md)] transition-colors disabled:opacity-50"
         >
           <RefreshCw
-            size={20}
+            size={16}
             className={`text-[var(--color-text-muted)] ${isReloading ? "animate-spin" : ""}`}
           />
         </button>
       </div>
 
-      <div style={{ height: "320px" }} className="flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {isLoading ? (
           <div className="overflow-y-auto flex-1">
             <SkeletonLoader />
           </div>
         ) : !gmailConnected ? (
-          <div className="flex flex-col items-center justify-center text-center h-full p-4">
-            <Mail className="w-8 h-8 text-[var(--color-text-muted)] mb-3" />
-            <p className="text-[var(--color-text-muted)] text-sm mb-3">Gmail not connected</p>
-            <Link href="/app/integrations" className="text-[var(--color-accent)] text-xs font-medium hover:underline">
+          <div className="flex flex-col items-center justify-center text-center h-full p-[var(--space-4)]">
+            <Mail className="w-8 h-8 text-[var(--color-text-muted)] mb-[var(--space-3)]" />
+            <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)] mb-[var(--space-3)]">Gmail not connected</p>
+            <Link href="/app/integrations" className="text-[var(--color-accent)] text-[length:var(--text-xs)] font-medium hover:underline">
               Connect Gmail
             </Link>
           </div>
         ) : (() => {
-          const displayEmails = messages.slice(0, 4);
+          const displayEmails = messages.slice(0, fitCount);
           const moreUnread = Math.max(0, totalUnread - displayEmails.length);
 
           return displayEmails.length > 0 ? (
-            <div className="overflow-y-auto flex-1">
-              <div className="flex flex-col gap-3">
-                {displayEmails.map((message) => (
-                  <MessageCard key={message.id} message={message} onEmailOpen={handleEmailOpen} />
-                ))}
-                {moreUnread > 0 && (
-                  <Link href="/app/inbox" className="text-xs text-center text-[var(--color-text-muted)] mt-0 hover:underline font-medium">
-                    +{moreUnread} more unread {moreUnread === 1 ? "email" : "emails"}
-                  </Link>
-                )}
-              </div>
+            <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)] overflow-hidden" ref={listRef}>
+              {displayEmails.map((message) => (
+                <MessageCard key={message.id} message={message} onEmailOpen={handleEmailOpen} />
+              ))}
+              {moreUnread > 0 && (
+                <Link href="/app/inbox" className="text-[length:var(--text-xs)] text-center text-[var(--color-text-muted)] mt-[var(--space-1)] hover:underline font-medium">
+                  +{moreUnread} more unread {moreUnread === 1 ? "email" : "emails"}
+                </Link>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center text-center h-full">
-              <p className="text-[var(--color-text-disabled)] text-sm">You're all caught up</p>
+              <p className="text-[var(--color-text-disabled)] text-[length:var(--text-sm)]">You're all caught up</p>
             </div>
           );
         })()}

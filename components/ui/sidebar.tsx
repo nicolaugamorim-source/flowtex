@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -29,6 +29,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+
+export const SIDEBAR_ONBOARDING_EVENT = "flowtex:onboarding-sidebar";
+export const SIDEBAR_HOVER_EVENT = "flowtex:sidebar-hover";
+
+type SidebarOnboardingOverride = { forceOpen: boolean; disableHover: boolean } | null;
 
 const sidebarVariants = {
   open: {
@@ -88,8 +93,26 @@ export function SessionNavBar({
   userEmail = "user@flowtex.com",
 }: SessionNavBarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [onboardingOverride, setOnboardingOverride] = useState<SidebarOnboardingOverride>(null);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<SidebarOnboardingOverride>).detail;
+      setOnboardingOverride(detail ?? null);
+    };
+    window.addEventListener(SIDEBAR_ONBOARDING_EVENT, handler);
+    return () => window.removeEventListener(SIDEBAR_ONBOARDING_EVENT, handler);
+  }, []);
+
+  const collapsed = onboardingOverride?.forceOpen ? false : isCollapsed;
+  const hoverDisabled = onboardingOverride?.disableHover ?? false;
+
+  // Let the rest of the page know to blur itself while the sidebar is expanded.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(SIDEBAR_HOVER_EVENT, { detail: !collapsed }));
+  }, [collapsed]);
 
   const handleSignOut = async () => {
     try {
@@ -102,15 +125,16 @@ export function SessionNavBar({
 
   return (
     <motion.div
+      data-onboarding="sidebar-nav"
       className={cn(
         "sidebar fixed left-0 z-40 h-full shrink-0 border-r border-[var(--color-border-default)] fixed"
       )}
-      initial={isCollapsed ? "closed" : "open"}
-      animate={isCollapsed ? "closed" : "open"}
+      initial={collapsed ? "closed" : "open"}
+      animate={collapsed ? "closed" : "open"}
       variants={sidebarVariants}
       transition={transitionProps as any}
-      onMouseEnter={() => setIsCollapsed(false)}
-      onMouseLeave={() => setIsCollapsed(true)}
+      onMouseEnter={() => !hoverDisabled && setIsCollapsed(false)}
+      onMouseLeave={() => !hoverDisabled && setIsCollapsed(true)}
     >
       <motion.div
         className={`relative z-40 flex text-[var(--color-text-muted)] h-full shrink-0 flex-col bg-[var(--color-bg-base)] border-[var(--color-border-default)] transition-all`}
@@ -118,9 +142,9 @@ export function SessionNavBar({
       >
         <motion.ul variants={staggerVariants} className="flex h-full flex-col">
           <div className="flex grow flex-col items-center">
-            <div className="flex h-[54px] w-full shrink-0 border-b border-[var(--color-border-subtle)] p-2">
+            <div className="flex h-[54px] w-full shrink-0 border-b border-[var(--color-border-subtle)] p-[var(--space-2)]">
               <div className="mt-[1.5px] flex w-full">
-                <div className="flex h-8 w-full flex-row items-center justify-start px-2 text-[var(--color-text-primary)]">
+                <div className="flex h-8 w-full flex-row items-center justify-start px-[var(--space-2)] text-[var(--color-text-primary)]">
                   <div className="h-5 w-5 shrink-0 overflow-hidden">
                     <Image
                       src="/logo.svg"
@@ -132,8 +156,8 @@ export function SessionNavBar({
                     />
                   </div>
                   <motion.li variants={variants}>
-                    {!isCollapsed && (
-                      <p className="ml-2 text-lg font-bold text-[var(--color-text-primary)]">
+                    {!collapsed && (
+                      <p className="ml-[var(--space-2)] text-[length:var(--text-lg)] font-bold text-[var(--color-text-primary)]">
                         {teamName}
                       </p>
                     )}
@@ -143,21 +167,21 @@ export function SessionNavBar({
             </div>
 
             <div className="flex h-full w-full flex-col">
-              <div className="flex grow flex-col gap-4">
-                <ScrollArea className="h-16 grow p-2">
-                  <div className={cn("flex w-full flex-col gap-1")}>
+              <div className="flex grow flex-col gap-[var(--space-4)]">
+                <ScrollArea className="h-16 grow p-[var(--space-2)]">
+                  <div className={cn("flex w-full flex-col gap-[var(--space-1)]")}>
                     <Link
                       href="/app"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
+                        "flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname === "/app" &&
                           "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       <motion.li variants={variants}>
-                        {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Dashboard</p>
+                        {!collapsed && (
+                          <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Dashboard</p>
                         )}
                       </motion.li>
                     </Link>
@@ -165,15 +189,15 @@ export function SessionNavBar({
                     <Link
                       href="/app/inbox"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
+                        "flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname?.includes("/inbox") &&
                           "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <Mail className="h-4 w-4" />
                       <motion.li variants={variants}>
-                        {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Inbox</p>
+                        {!collapsed && (
+                          <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Inbox</p>
                         )}
                       </motion.li>
                     </Link>
@@ -181,15 +205,15 @@ export function SessionNavBar({
                     <Link
                       href="/app/kanban"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
+                        "flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname?.includes("/kanban") &&
                           "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <SquareKanban className="h-4 w-4" />
                       <motion.li variants={variants}>
-                        {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Kanban</p>
+                        {!collapsed && (
+                          <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Kanban</p>
                         )}
                       </motion.li>
                     </Link>
@@ -197,25 +221,25 @@ export function SessionNavBar({
                     <Link
                       href="/app/clients"
                       className={cn(
-                        "flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-primary)]",
+                        "flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-primary)]",
                         pathname?.includes("/clients") &&
                           "bg-[var(--color-accent)]/40",
                       )}
                     >
                       <Users className="h-4 w-4" />
                       <motion.li variants={variants}>
-                        {!isCollapsed && (
-                          <p className="ml-2 text-sm font-medium">Clients</p>
+                        {!collapsed && (
+                          <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Clients</p>
                         )}
                       </motion.li>
                     </Link>
 
                     <Separator className="w-full bg-[var(--color-border-subtle)]" />
 
-                    {!isCollapsed && (
+                    {!collapsed && (
                       <Link
                         href="/app/feedback"
-                        className="flex h-auto w-full flex-col items-center justify-center rounded-md px-2 py-2 transition hover-accent-50 text-[var(--color-text-primary)] font-medium text-base border border-[var(--color-border-default)]"
+                        className="flex h-auto w-full flex-col items-center justify-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-primary)] font-medium text-[length:var(--text-sm)] border border-[var(--color-border-default)]"
                       >
                         <motion.div variants={variants}>
                           <div className="text-center leading-tight">
@@ -228,62 +252,62 @@ export function SessionNavBar({
                   </div>
                 </ScrollArea>
               </div>
-              <div className="flex flex-col p-2 border-t border-[var(--color-border-subtle)] gap-2">
+              <div className="flex flex-col p-[var(--space-2)] border-t border-[var(--color-border-subtle)] gap-[var(--space-2)]">
                 <Link
                   href="/app/integrations"
-                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
+                  className="flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-muted)]"
                 >
                   <Zap className="h-4 w-4 shrink-0" />
                   <motion.li variants={variants}>
-                    {!isCollapsed && (
-                      <p className="ml-2 text-sm font-medium">Integrations</p>
+                    {!collapsed && (
+                      <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Integrations</p>
                     )}
                   </motion.li>
                 </Link>
                 <Link
                   href="/app/chat-history"
-                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
+                  className="flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-muted)]"
                 >
                   <MessageSquare className="h-4 w-4 shrink-0" />
                   <motion.li variants={variants}>
-                    {!isCollapsed && (
-                      <p className="ml-2 text-sm font-medium">Chat History</p>
+                    {!collapsed && (
+                      <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Chat History</p>
                     )}
                   </motion.li>
                 </Link>
                 <Link
                   href="/settings"
-                  className="flex h-8 w-full flex-row items-center rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]"
+                  className="flex h-8 w-full flex-row items-center rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-muted)]"
                 >
                   <Settings className="h-4 w-4 shrink-0" />
                   <motion.li variants={variants}>
-                    {!isCollapsed && (
-                      <p className="ml-2 text-sm font-medium">Settings</p>
+                    {!collapsed && (
+                      <p className="ml-[var(--space-2)] text-[length:var(--text-sm)] font-medium">Settings</p>
                     )}
                   </motion.li>
                 </Link>
                 <div>
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger className="w-full">
-                      <div className="flex h-8 w-full flex-row items-center gap-2 rounded-md px-2 py-1.5 transition hover-accent-50 text-[var(--color-text-muted)]">
+                      <div className="flex h-8 w-full flex-row items-center gap-[var(--space-2)] rounded-[var(--radius-md)] px-[var(--space-2)] py-[var(--space-2)] transition hover-accent-50 text-[var(--color-text-muted)]">
                         <Avatar className="size-6 bg-[var(--color-accent)]">
                           <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
-                          <AvatarFallback className="bg-[var(--color-accent)] text-white font-bold text-xs">
+                          <AvatarFallback className="bg-[var(--color-accent)] text-white font-bold text-[length:var(--text-xs)]">
                             {userName?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <motion.li
                           variants={variants}
-                          className="flex w-full items-center gap-2"
+                          className="flex w-full items-center gap-[var(--space-2)]"
                         >
-                          {!isCollapsed && (
-                            <p className="text-sm font-medium text-[var(--color-text-primary)]">{userName}</p>
+                          {!collapsed && (
+                            <p className="text-[length:var(--text-sm)] font-medium text-[var(--color-text-primary)]">{userName}</p>
                           )}
                         </motion.li>
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent sideOffset={5} className="bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-lg">
-                      <div className="flex flex-row items-center gap-2 p-2">
+                    <DropdownMenuContent sideOffset={5} className="bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] rounded-[var(--radius-md)]">
+                      <div className="flex flex-row items-center gap-[var(--space-2)] p-[var(--space-2)]">
                         <Avatar className="size-8 bg-[var(--color-accent)]">
                           <AvatarImage src={avatarUrl} alt={userName} className="object-cover" />
                           <AvatarFallback className="bg-[var(--color-accent)] text-white font-bold">
@@ -291,17 +315,17 @@ export function SessionNavBar({
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col text-left">
-                          <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          <span className="text-[length:var(--text-sm)] font-medium text-[var(--color-text-primary)]">
                             {userName}
                           </span>
-                          <span className="line-clamp-1 text-xs text-[var(--color-text-muted)]">
+                          <span className="line-clamp-1 text-[length:var(--text-xs)] text-[var(--color-text-muted)]">
                             {userEmail}
                           </span>
                         </div>
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut} className="text-[var(--color-text-primary)] cursor-pointer">
-                        <LogOut className="h-4 w-4 mr-2" />
+                        <LogOut className="h-4 w-4 mr-[var(--space-2)]" />
                         Sign out
                       </DropdownMenuItem>
                     </DropdownMenuContent>

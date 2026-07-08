@@ -135,12 +135,13 @@ export function AIInputWithSuggestions({
           border-radius: 4px;
         }
         .ai-input-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #2D3E4D;
+          background: var(--color-text-secondary);
         }
       `}</style>
       <div className={cn("w-full", className)}>
         <div
-          className="relative border border-[var(--color-border-subtle)] focus-within:border-[var(--color-border-default)] rounded-2xl bg-white transition-all duration-150"
+          className="relative border border-[var(--color-border-subtle)] focus-within:border-[var(--color-border-default)] rounded-2xl transition-all duration-150"
+          style={{ backgroundColor: "var(--color-surface)" }}
           style={{
             height: `${textareaHeight + 50}px`,
             paddingRight: showScrollbar ? '20px' : '0',
@@ -210,7 +211,8 @@ export function AIInputWithSuggestions({
 
           <button
             type="button"
-            className="absolute right-3 bottom-3 p-2 rounded-lg bg-teal-100 hover:bg-teal-200 transition-colors duration-200 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="absolute right-3 bottom-3 p-2 rounded-lg transition-colors duration-200 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+          style={{ backgroundColor: "var(--color-accent-bg)" }}
           >
             <ArrowUp className="w-5 h-5" />
           </button>

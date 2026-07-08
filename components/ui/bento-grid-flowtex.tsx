@@ -173,7 +173,7 @@ export function BentoGridFlowtex() {
       <div className="max-w-7xl w-full mx-auto">
         {/* Title */}
         <motion.h2
-          className="text-[clamp(2.5rem,5vw,5rem)] font-bold text-[var(--color-bg-base)] mb-16 leading-tight"
+          className="text-[clamp(2.5rem,5vw,5rem)] font-bold text-[var(--color-text-primary)] mb-16 leading-tight"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

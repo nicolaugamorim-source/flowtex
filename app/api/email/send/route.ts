@@ -53,7 +53,11 @@ export async function POST(request: NextRequest) {
 
     if (result.success) {
       if (userId) {
-        await captureServerEvent(userId, "email_sent", {});
+        await captureServerEvent(userId, "email_sent", {
+          subject_length: subject.length,
+          body_length: body.length,
+          recipient_domain: to.split('@')[1] || undefined,
+        });
       }
       return NextResponse.json({
         success: true,

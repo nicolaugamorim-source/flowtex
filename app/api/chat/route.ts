@@ -8,6 +8,7 @@ import { ensureValidGoogleToken } from '@/lib/ensure-valid-token';
 import { saveChatMessage, getChatHistory } from '@/lib/database';
 import { checkSubscriptionAPI } from '@/lib/protect-api-route';
 import { captureServerEvent } from '@/lib/posthog-server';
+import { checkChatRateLimit } from '@/lib/rate-limit';
 
 // Main AI chat endpoint — talks to Claude with tool access to the user's
 // calendar, Gmail, and chat history, and persists the conversation.
@@ -318,6 +319,18 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.log('Could not get userId from session');
       }
+    }
+
+    // Catches a runaway retry loop or script before it reaches the (paid)
+    // Anthropic call or any Gmail/Calendar/Notion API — never sends the
+    // message, so the client can safely re-show it as unsent.
+    const rateLimitKey = userId || request.headers.get('x-forwarded-for') || 'anonymous';
+    const rateLimit = checkChatRateLimit(rateLimitKey);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'rate_limited', retryAfterSeconds: rateLimit.retryAfterSeconds },
+        { status: 429 }
+      );
     }
 
     // Saves the assistant's reply before sending it back, so tool-driven responses
@@ -899,6 +912,70 @@ export async function POST(request: NextRequest) {
           required: ['name'],
         },
       },
+      {
+        name: 'update_client',
+        description: 'Update an existing client\'s details (e.g. name, company, email, phone, status, notes, or avatar color). Use this when the user asks to change, edit, or correct information about a client, or to add/replace their notes. Only pass the fields that should change.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            client_id: {
+              type: 'string',
+              description: 'The exact ID of the client to update, if already known from a previous get_clients call. Leave empty if you only know the client by name.',
+            },
+            client_lookup_name: {
+              type: 'string',
+              description: 'The name or company of the client to update, used to find them when client_id is not known. Required if client_id is not provided. Never invent or guess an ID — use this field instead.',
+            },
+            name: {
+              type: 'string',
+              description: 'New name for the client (optional)',
+            },
+            company: {
+              type: 'string',
+              description: 'New company name (optional)',
+            },
+            email: {
+              type: 'string',
+              description: 'New email address (optional)',
+            },
+            phone: {
+              type: 'string',
+              description: 'New phone number (optional)',
+            },
+            status: {
+              type: 'string',
+              description: 'New client status, e.g. "lead", "active" (optional)',
+            },
+            notes: {
+              type: 'string',
+              description: 'New notes content, replacing the existing notes (optional). If the user asks to add a note, combine it with any existing notes already known from context.',
+            },
+            avatar_color: {
+              type: 'string',
+              description: 'New avatar color as a hex code, e.g. "#00D4A4" (optional). Use this when the user asks to change the client\'s color.',
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'delete_client',
+        description: 'Permanently delete a client from the CRM. This action cannot be undone.',
+        input_schema: {
+          type: 'object',
+          properties: {
+            client_id: {
+              type: 'string',
+              description: 'The exact ID of the client to delete, if already known from a previous get_clients call. Leave empty if you only know the client by name.',
+            },
+            client_lookup_name: {
+              type: 'string',
+              description: 'The name or company of the client to delete, used to find them when client_id is not known. Required if client_id is not provided. Never invent or guess an ID — use this field instead.',
+            },
+          },
+          required: [],
+        },
+      },
     ];
 
     // Call Claude API with tools
@@ -1465,7 +1542,10 @@ Quoting rule: never use emojis in your own writing, except when directly quoting
 
           if (userId) {
             await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_calendar_event' });
-            await captureServerEvent(userId, 'calendar_event_created', {});
+            await captureServerEvent(userId, 'calendar_event_created', {
+              has_client_linked: Boolean(matchedClientName),
+              has_description: Boolean(description),
+            });
           }
 
           // Find the calendar name
@@ -1850,7 +1930,7 @@ Tone: semi-formal. Never use emojis, even if the original email contains them.`,
           const page = await createNotionPage(userId, parent_id, title, properties);
 
           await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'create_notion_page' });
-          await captureServerEvent(userId, 'notion_page_created', {});
+          await captureServerEvent(userId, 'notion_page_created', { has_status: Boolean(status) });
 
           return saveAssistantReply({
             content: userLanguage === 'pt' ? `Criada:` : `Created:`,
@@ -2299,6 +2379,159 @@ Tone: semi-formal. Never use emojis, even if the original email contains them.`,
           const errorMsg = error instanceof Error ? error.message : String(error);
           return saveAssistantReply({
             content: `Error creating client: ${errorMsg}`,
+            role: 'assistant',
+          });
+        }
+      }
+
+      if (toolUse && (toolUse.name === 'update_client' || toolUse.name === 'delete_client') && userId) {
+        // Resolve a client_id/client_lookup_name pair to a real client row.
+        // Never trust a client_id the model supplies unless it's a real UUID — it sometimes hallucinates one.
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const { client_id, client_lookup_name } = toolUse.input;
+
+        const resolveClient = async (): Promise<
+          { match: { id: string; name: string; company: string | null } } | { errorMessage: string }
+        > => {
+          if (client_id && UUID_RE.test(client_id)) {
+            const { data } = await supabaseServer
+              .from('clients')
+              .select('id, name, company')
+              .eq('id', client_id)
+              .eq('user_id', userId)
+              .maybeSingle();
+            if (data) return { match: data };
+          }
+
+          const lookupName = client_lookup_name || (client_id && !UUID_RE.test(client_id) ? client_id : undefined);
+          if (!lookupName) {
+            return { errorMessage: userLanguage === 'pt' ? 'Não sei a que cliente te referes.' : "I don't know which client you mean." };
+          }
+
+          const { data: matches } = await supabaseServer
+            .from('clients')
+            .select('id, name, company')
+            .eq('user_id', userId)
+            .or(`name.ilike.%${lookupName}%,company.ilike.%${lookupName}%`);
+
+          if (!matches || matches.length === 0) {
+            return { errorMessage: userLanguage === 'pt' ? `Nenhum cliente encontrado para "${lookupName}".` : `No client found matching "${lookupName}".` };
+          }
+          if (matches.length > 1) {
+            const names = matches.map((m) => m.name).join(', ');
+            return { errorMessage: userLanguage === 'pt' ? `Vários clientes correspondem a "${lookupName}": ${names}. Sê mais específico.` : `Multiple clients match "${lookupName}": ${names}. Please be more specific.` };
+          }
+          return { match: matches[0] };
+        };
+
+        const resolved = await resolveClient();
+        if (!('match' in resolved)) {
+          return saveAssistantReply({ content: resolved.errorMessage, role: 'assistant' });
+        }
+        const resolvedClientId = resolved.match.id;
+
+        if (toolUse.name === 'update_client') {
+          const { name, company, email, phone, status, notes, avatar_color } = toolUse.input;
+
+          try {
+            const updateData: Record<string, any> = {};
+            if (name !== undefined) updateData.name = name;
+            if (company !== undefined) updateData.company = company;
+            if (email !== undefined) updateData.email = email;
+            if (phone !== undefined) updateData.phone = phone;
+            if (status !== undefined) updateData.status = status;
+            if (notes !== undefined) updateData.notes = notes;
+            if (avatar_color !== undefined) updateData.avatar_color = avatar_color;
+
+            if (Object.keys(updateData).length === 0) {
+              return saveAssistantReply({
+                content: userLanguage === 'pt'
+                  ? 'Nada para atualizar — indica que campo queres alterar.'
+                  : 'Nothing to update — specify which field to change.',
+                role: 'assistant',
+              });
+            }
+
+            const { data: updatedClient, error } = await supabaseServer
+              .from('clients')
+              .update(updateData)
+              .eq('id', resolvedClientId)
+              .eq('user_id', userId)
+              .select()
+              .maybeSingle();
+
+            if (error) throw error;
+            if (!updatedClient) {
+              return saveAssistantReply({
+                content: userLanguage === 'pt' ? 'Cliente não encontrado.' : 'Client not found.',
+                role: 'assistant',
+              });
+            }
+
+            await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'update_client' });
+
+            return saveAssistantReply({
+              content: userLanguage === 'pt' ? 'Atualizado:' : 'Updated:',
+              role: 'assistant',
+              bubbles: [
+                {
+                  type: 'custom',
+                  title: updatedClient.name,
+                  subtitle: updatedClient.company || undefined,
+                  badge: { label: updatedClient.status, color: 'info' },
+                },
+              ],
+            });
+          } catch (error) {
+            console.error('Error updating client:', error);
+            const errorMsg = error instanceof Error
+              ? error.message
+              : (error && typeof error === 'object' && 'message' in error)
+                ? String((error as { message: unknown }).message)
+                : String(error);
+            return saveAssistantReply({
+              content: userLanguage === 'pt'
+                ? `Erro ao atualizar cliente: ${errorMsg}`
+                : `Error updating client: ${errorMsg}`,
+              role: 'assistant',
+            });
+          }
+        }
+
+        // toolUse.name === 'delete_client'
+        try {
+          const { error } = await supabaseServer
+            .from('clients')
+            .delete()
+            .eq('id', resolvedClientId)
+            .eq('user_id', userId);
+
+          if (error) throw error;
+
+          await captureServerEvent(userId, 'chat_tool_used', { tool_name: 'delete_client' });
+
+          return saveAssistantReply({
+            content: userLanguage === 'pt' ? 'Removido:' : 'Deleted:',
+            role: 'assistant',
+            bubbles: [
+              {
+                type: 'custom',
+                title: resolved.match.name,
+                badge: { label: userLanguage === 'pt' ? 'Removido' : 'Deleted', color: 'error' },
+              },
+            ],
+          });
+        } catch (error) {
+          console.error('Error deleting client:', error);
+          const errorMsg = error instanceof Error
+            ? error.message
+            : (error && typeof error === 'object' && 'message' in error)
+              ? String((error as { message: unknown }).message)
+              : String(error);
+          return saveAssistantReply({
+            content: userLanguage === 'pt'
+              ? `Erro ao remover cliente: ${errorMsg}`
+              : `Error deleting client: ${errorMsg}`,
             role: 'assistant',
           });
         }

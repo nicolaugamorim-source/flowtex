@@ -133,23 +133,23 @@ export default function OnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-8 h-8 border-4 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[var(--color-text-muted)]">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-bg)] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <img src="/logo.svg" alt="Flowtex" width={48} height={48} className="mx-auto mb-6" />
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome to Flowtex</h1>
-          <p className="text-lg text-gray-600">Let's set up your workspace in 2 steps</p>
+          <h1 className="text-4xl font-bold text-[var(--color-text-primary)] mb-2">Welcome to Flowtex</h1>
+          <p className="text-lg text-[var(--color-text-muted)]">Let's set up your workspace in 2 steps</p>
         </div>
 
         {/* Progress Indicator */}
@@ -159,18 +159,18 @@ export default function OnboardingPage() {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-colors ${
                   step >= 1
-                    ? "bg-[var(--color-accent)] text-white"
-                    : "bg-gray-200 text-gray-600"
+                    ? "bg-[var(--color-accent)] text-[var(--color-bg)]"
+                    : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]"
                 }`}
               >
                 1
               </div>
-              <span className="text-gray-700 font-medium">About your business</span>
+              <span className="text-[var(--color-text-secondary)] font-medium">About your business</span>
             </div>
 
             <div
               className={`flex-1 h-1 mx-4 transition-colors ${
-                step >= 2 ? "bg-[var(--color-accent)]" : "bg-gray-200"
+                step >= 2 ? "bg-[var(--color-accent)]" : "bg-[var(--color-surface-2)]"
               }`}
             ></div>
 
@@ -178,19 +178,19 @@ export default function OnboardingPage() {
               className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-colors ${
                 step >= 2
                   ? "bg-[var(--color-accent)] text-white"
-                  : "bg-gray-200 text-gray-600"
+                  : "bg-[var(--color-surface-2)] text-[var(--color-text-muted)]"
               }`}
             >
               2
             </div>
-            <span className="text-gray-700 font-medium ml-4">Your project context</span>
+            <span className="text-[var(--color-text-secondary)] font-medium ml-4">Your project context</span>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleNextStep} className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <form onSubmit={handleNextStep} className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-8">
           {error && hasTriedSubmit && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            <div className="mb-6 p-4 bg-[var(--color-error-bg)] border border-[var(--color-error)] rounded-lg text-[var(--color-error)] text-sm">
               {error}
             </div>
           )}
@@ -199,7 +199,7 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               {/* Full Name */}
               <div>
-                <Label htmlFor="fullName" className="text-gray-900 block text-sm font-medium">
+                <Label htmlFor="fullName" className="text-[var(--color-text-primary)] block text-sm font-medium">
                   Full Name
                 </Label>
                 <Input
@@ -208,16 +208,16 @@ export default function OnboardingPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Your name"
-                  className="mt-2 bg-white border-gray-200"
+                  className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]"
                   disabled
                 />
-                <p className="mt-1 text-xs text-gray-500">From your Google account</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">From your Google account</p>
               </div>
 
               {/* Business Name */}
               <div>
-                <Label htmlFor="businessName" className="text-gray-900 block text-sm font-medium">
-                  Business Name <span className="text-red-500">*</span>
+                <Label htmlFor="businessName" className="text-[var(--color-text-primary)] block text-sm font-medium">
+                  Business Name <span className="text-[var(--color-error)]">*</span>
                 </Label>
                 <Input
                   id="businessName"
@@ -225,17 +225,17 @@ export default function OnboardingPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="Your company or project name"
-                  className="mt-2 bg-white border-gray-200"
+                  className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]"
                 />
               </div>
 
               {/* Business Type */}
               <div>
-                <Label htmlFor="businessType" className="text-gray-900 block text-sm font-medium">
-                  Business Type <span className="text-red-500">*</span>
+                <Label htmlFor="businessType" className="text-[var(--color-text-primary)] block text-sm font-medium">
+                  Business Type <span className="text-[var(--color-error)]">*</span>
                 </Label>
                 <Select value={businessType} onValueChange={setBusinessType}>
-                  <SelectTrigger className="mt-2 bg-white border-gray-200">
+                  <SelectTrigger className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]">
                     <SelectValue placeholder="Select your business type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -250,7 +250,7 @@ export default function OnboardingPage() {
 
               {/* Industry */}
               <div>
-                <Label htmlFor="industry" className="text-gray-900 block text-sm font-medium">
+                <Label htmlFor="industry" className="text-[var(--color-text-primary)] block text-sm font-medium">
                   Industry
                 </Label>
                 <Input
@@ -259,14 +259,14 @@ export default function OnboardingPage() {
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
                   placeholder="e.g. Design, Tech, Marketing"
-                  className="mt-2 bg-white border-gray-200"
+                  className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]"
                 />
-                <p className="mt-1 text-xs text-gray-500">Optional</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Optional</p>
               </div>
 
               {/* Clients */}
               <div>
-                <Label htmlFor="clients" className="text-gray-900 block text-sm font-medium">
+                <Label htmlFor="clients" className="text-[var(--color-text-primary)] block text-sm font-medium">
                   Who are your clients?
                 </Label>
                 <textarea
@@ -274,10 +274,10 @@ export default function OnboardingPage() {
                   value={clients}
                   onChange={(e) => setClients(e.target.value)}
                   placeholder="Describe your typical clients or customer base"
-                  className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent resize-none"
+                  className="mt-2 w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent resize-none"
                   rows={4}
                 />
-                <p className="mt-1 text-xs text-gray-500">Optional</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Optional</p>
               </div>
             </div>
           )}
@@ -286,7 +286,7 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               {/* Business Brief */}
               <div>
-                <Label htmlFor="businessBrief" className="text-gray-900 block text-sm font-medium">
+                <Label htmlFor="businessBrief" className="text-[var(--color-text-primary)] block text-sm font-medium">
                   Business Brief
                 </Label>
                 <textarea
@@ -294,15 +294,15 @@ export default function OnboardingPage() {
                   value={businessBrief}
                   onChange={(e) => setBusinessBrief(e.target.value)}
                   placeholder="Tell Flowtex about your business — what you're building, your main goals, your key clients. This is the context your AI will always have."
-                  className="mt-2 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent resize-none"
+                  className="mt-2 w-full px-3 py-2 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent resize-none"
                   rows={6}
                 />
-                <p className="mt-1 text-xs text-gray-500">Optional but highly recommended</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Optional but highly recommended</p>
               </div>
 
               {/* Tools Used */}
               <div>
-                <Label htmlFor="toolsUsed" className="text-gray-900 block text-sm font-medium">
+                <Label htmlFor="toolsUsed" className="text-[var(--color-text-primary)] block text-sm font-medium">
                   Main tools you use
                 </Label>
                 <Input
@@ -311,9 +311,9 @@ export default function OnboardingPage() {
                   value={toolsUsed}
                   onChange={(e) => setToolsUsed(e.target.value)}
                   placeholder="e.g. Notion, Gmail, Slack, Linear"
-                  className="mt-2 bg-white border-gray-200"
+                  className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]"
                 />
-                <p className="mt-1 text-xs text-gray-500">Optional</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Optional</p>
               </div>
             </div>
           )}
@@ -325,7 +325,7 @@ export default function OnboardingPage() {
               disabled={isSaving}
               className={`flex-1 ${
                 isSaving ? "opacity-50 cursor-not-allowed" : ""
-              } bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)]`}
+              } bg-[var(--color-accent)] text-[var(--color-bg)] hover:bg-[var(--color-accent-dark)]`}
             >
               {isSaving ? "Saving..." : step === 1 ? "Continue" : "Complete onboarding"}
             </Button>
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
         </form>
 
         {/* Footer */}
-        <p className="mt-8 text-center text-sm text-gray-600">
+        <p className="mt-8 text-center text-sm text-[var(--color-text-muted)]">
           You can update this information anytime in settings
         </p>
       </div>

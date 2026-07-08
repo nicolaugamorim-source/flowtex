@@ -46,13 +46,3 @@ export {
   buildAIContextString,
   type AIContextData,
 } from './ai-context';
-
-// Waitlist
-export {
-  addToWaitlist,
-  isOnWaitlist,
-  getWaitlistCount,
-  getWaitlistEntries,
-  removeFromWaitlist,
-  type WaitlistEntryData,
-} from './waitlist';

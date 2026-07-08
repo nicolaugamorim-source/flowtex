@@ -4,17 +4,29 @@ import { Sun, Moon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const [isDark, setIsDark] = useState(true)
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+    const current = document.documentElement.getAttribute('data-theme') ?? 'dark'
+    setIsDark(current === 'dark')
+  }, [])
+
   if (!mounted) return null
-
-  const isDark = theme === 'dark'
 
   const handleThemeChange = async () => {
     const newTheme = isDark ? 'light' : 'dark'
+
+    // Update DOM attribute and localStorage
+    document.documentElement.setAttribute('data-theme', newTheme)
+    localStorage.setItem('flowtex-theme', newTheme)
+
+    // Keep next-themes in sync
     setTheme(newTheme)
+
+    setIsDark(!isDark)
 
     // Save preference to Supabase
     try {

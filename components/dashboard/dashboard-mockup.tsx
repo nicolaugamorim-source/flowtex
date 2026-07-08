@@ -61,7 +61,7 @@ export const DashboardMockup = () => {
               <input
                 type="text"
                 placeholder="Search projects, tasks..."
-                className="w-full pl-9 pr-4 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export const DashboardMockup = () => {
                   <p className="font-semibold text-[var(--color-text-primary)] text-sm">Acme Call</p>
                 </div>
 
-                <div className="bg-white rounded-xl p-3 space-y-2 border border-[var(--color-border-default)]">
+                <div className="bg-[var(--color-bg-elevated)] rounded-xl p-3 space-y-2 border border-[var(--color-border-default)]">
                   <div className="flex items-start gap-3">
                     <Calendar size={16} className="text-[var(--color-accent)] mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-[var(--color-text-primary)]">
@@ -134,10 +134,10 @@ export const DashboardMockup = () => {
               </div>
 
               <div className="flex gap-2">
-                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
+                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
                   <Zap size={14} className="inline mr-1" /> More
                 </button>
-                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
+                <button className="px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] text-xs font-medium hover:bg-[var(--color-bg-base)] transition-colors">
                   👍
                 </button>
               </div>
@@ -152,7 +152,7 @@ export const DashboardMockup = () => {
               <input
                 type="text"
                 placeholder="Ask Flowtex anything... 'Schedule...', 'Create...', 'Send...'"
-                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-default)] bg-white text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
+                className="w-full px-4 py-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-elevated)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]"
               />
             </div>
             <button className="p-3 rounded-xl bg-[var(--color-accent)] text-[var(--color-text-primary)] hover:bg-[var(--color-accent-hover)] transition-colors flex-shrink-0">
@@ -234,7 +234,7 @@ interface IntegrationBadgeProps {
 }
 
 const IntegrationBadge: React.FC<IntegrationBadgeProps> = ({ icon, label, connected }) => (
-  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[var(--color-border-default)]">
+  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-default)]">
     <div className="text-[var(--color-text-secondary)]">
       {icon}
     </div>

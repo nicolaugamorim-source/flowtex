@@ -1,114 +1,220 @@
 @import "tailwindcss";
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   PALETTE — Dark is the default (:root). Override per theme below.
+   Legacy component tokens (--color-bg-base, --color-bg-card …) are remapped
+   here once so no component file needs changing — they resolve dynamically
+   to whatever palette vars are in scope.
+══════════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  /* LIGHT MODE */
-  --color-bg-base: #F8FAFC;
-  --color-bg-secondary: #F1F5F9;
-  --color-bg-card: #E8EFF5;
-  --color-bg-elevated: #DDE6EF;
-  --color-bg-subtle: #D0DCE8;
-  --color-border-subtle: #E2EAF1;
-  --color-border-default: #C8D8E6;
-  --color-border-strong: #A8BDD0;
-  --color-text-primary: #0D1F2D;
-  --color-text-secondary: #2E4A62;
-  --color-text-muted: #4A6880;
-  --color-text-disabled: #7A96AA;
-  --color-accent: #00D4A4;
-  --color-accent-light: #7FECDA;
-  --color-accent-hover: #00A882;
-  --color-accent-pressed: #007D62;
-  --color-accent-subtle: #E0F7F2;
-  --color-accent-glow: #00F5C0;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
+  /* ── Dark palette (default) ─────────────────────────────────────────────── */
+  --color-bg:           #13181F;
+  --color-surface:      #1E2530;
+  --color-surface-2:    #2C3440;
+  --color-overlay:      #3D4553;
+  --color-border-subtle:#2C3440;
+  --color-border:       #3D4553;
+  --color-border-strong:#5A6478;
+  --color-text-primary: #E8E3DC;
+  --color-text-secondary:#B8B2AA;
+  --color-text-muted:   #7A8190;
+  --color-icon:         #4A5260;
+  --color-icon-active:  #7A8190;
+  --color-accent:       #DFAA45;
+  --color-accent-dark:  #CC9A38;
+  --color-accent-light: #F5C96A;
+  --color-accent-bg:    #2E2010;
+  --color-success:      #4E9E7A;
+  --color-success-bg:   #0E2318;
+  --color-error:        #C4695A;
+  --color-error-bg:     #2A1210;
+  --color-info:         #5B8DB8;
+  --color-info-bg:      #1A2230;
+  --color-warning:      #C9A96E;
+  --color-warning-bg:   #1E1A0E;
 
-  /* Kanban columns */
-  --color-column-backlog: #B8CADA;
-  --color-column-progress: #00B894;
-  --color-column-review: #5B9BD5;
-  --color-column-done: #2ECC8A;
+  /* ── Legacy component token remaps ──────────────────────────────────────── */
+  /* These resolve at computed-value time so they automatically reflect     */
+  /* whichever [data-theme] block is in scope.                              */
+  --color-bg-base:        var(--color-bg);
+  --color-bg-secondary:   var(--color-surface);
+  --color-bg-card:        var(--color-surface);
+  --color-bg-elevated:    var(--color-surface-2);
+  --color-bg-subtle:      var(--color-surface-2);
+  --color-border-default: var(--color-border);
+  --color-text-disabled:  var(--color-text-muted);
+  --color-accent-hover:   var(--color-accent-dark);
+  --color-accent-pressed: var(--color-accent-dark);
+  --color-accent-subtle:  var(--color-accent-bg);
+  --color-accent-glow:    var(--color-accent);
 
-  /* Task categories */
-  --color-category-task-bg: #D4F0EA;
-  --color-category-task-text: #006B52;
-  --color-category-client-bg: #D6E8FA;
-  --color-category-client-text: #1A5FA8;
-  --color-category-idea-bg: #FDF0C8;
-  --color-category-idea-text: #8A6200;
-  --color-category-bug-bg: #FDDDD8;
-  --color-category-bug-text: #A83220;
+  /* ── Kanban columns ─────────────────────────────────────────────────────── */
+  --color-column-backlog:       var(--color-surface);
+  --color-column-backlog-text:  var(--color-text-muted);
+  --color-column-progress:      var(--color-accent-bg);
+  --color-column-progress-text: var(--color-accent);
+  --color-column-review:        var(--color-info-bg);
+  --color-column-review-text:   var(--color-info);
+  --color-column-done:          var(--color-success-bg);
+  --color-column-done-text:     var(--color-success);
 
-  /* Task priorities */
-  --color-priority-low-border: #C4D6E3;
-  --color-priority-low-text: #5A7A8F;
-  --color-priority-medium-border: #FFBF4D;
-  --color-priority-medium-text: #8A6200;
-  --color-priority-high-border: #F47560;
-  --color-priority-high-text: #A83220;
+  /* ── Task priorities ─────────────────────────────────────────────────────── */
+  --color-priority-low-bg:          var(--color-surface);
+  --color-priority-low-border:      var(--color-border);
+  --color-priority-low-text:        var(--color-text-muted);
+  --color-priority-medium-bg:       var(--color-accent-bg);
+  --color-priority-medium-border:   var(--color-accent);
+  --color-priority-medium-text:     var(--color-accent);
+  --color-priority-high-bg:         var(--color-error-bg);
+  --color-priority-high-border:     var(--color-error);
+  --color-priority-high-text:       var(--color-error);
 
-  /* Delete states */
-  --color-delete-confirm-bg: #FDDDD8;
-  --color-delete-hover-bg: #FEE2E2;
+  /* ── Task categories ─────────────────────────────────────────────────────── */
+  --color-category-task-bg:    #0D1E30;
+  --color-category-task-text:  #90B8E8;
+  --color-category-client-bg:  #0D2818;
+  --color-category-client-text:#88D0A8;
+  --color-category-idea-bg:    #301A08;
+  --color-category-idea-text:  #E8A870;
+  --color-category-bug-bg:     #300D18;
+  --color-category-bug-text:   #E888A0;
+
+  /* ── CRM status ─────────────────────────────────────────────────────────── */
+  --color-status-lead-bg:     var(--color-info-bg);
+  --color-status-lead-text:   var(--color-info);
+  --color-status-active-bg:   var(--color-accent-bg);
+  --color-status-active-text: var(--color-accent);
+  --color-status-closed-bg:   var(--color-success-bg);
+  --color-status-closed-text: var(--color-success);
+  --color-status-churned-bg:  var(--color-surface);
+  --color-status-churned-text:var(--color-text-muted);
+
+  /* ── Delete states ───────────────────────────────────────────────────────── */
+  --color-delete-confirm-bg: var(--color-error-bg);
+  --color-delete-hover-bg:   color-mix(in srgb, var(--color-error-bg) 80%, var(--color-error) 20%);
+
+  /* Spacing (4pt grid) — clamp() reaches its max (== the original fixed Tailwind
+     value) at a 1024px viewport, so any normal laptop/desktop window renders
+     identically to the old fixed spacing. Only phones/small tablets scale down. */
+  --space-1: clamp(2px, 0.4vw, 4px);
+  --space-2: clamp(4px, 0.8vw, 8px);
+  --space-3: clamp(6px, 1.2vw, 12px);
+  --space-4: clamp(8px, 1.6vw, 16px);
+  --space-5: clamp(10px, 2vw, 20px);
+  --space-6: clamp(12px, 2.4vw, 24px);
+  --space-8: clamp(16px, 3.2vw, 32px);
+  --space-10: clamp(20px, 4vw, 40px);
+  --space-12: clamp(24px, 4.8vw, 48px);
+  --space-16: clamp(32px, 6.3vw, 64px);
+
+  /* Typography — same 1024px saturation point as spacing above. */
+  --text-xs: clamp(10px, 1.2vw, 12px);
+  --text-sm: clamp(11px, 1.4vw, 14px);
+  --text-base: clamp(13px, 1.6vw, 16px);
+  --text-lg: clamp(14px, 1.8vw, 18px);
+  --text-xl: clamp(16px, 2vw, 20px);
+  --text-2xl: clamp(18px, 2.4vw, 24px);
+  --text-3xl: clamp(22px, 3vw, 30px);
+  --text-4xl: clamp(28px, 4vw, 40px);
+  --text-5xl: clamp(36px, 5.5vw, 56px);
+
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Border radius — same 1024px saturation point as spacing above. */
+  --radius-sm: clamp(4px, 0.6vw, 6px);
+  --radius-md: clamp(6px, 0.8vw, 8px);
+  --radius-lg: clamp(8px, 1.2vw, 12px);
+  --radius-xl: clamp(10px, 1.6vw, 16px);
+  --radius-full: 9999px;
 }
 
-[data-theme="dark"] {
-  /* DARK MODE */
-  --color-bg-base: #080C12;
-  --color-bg-secondary: #0D1420;
-  --color-bg-card: #161E2E;
-  --color-bg-elevated: #1F2E42;
-  --color-bg-subtle: #243450;
-  --color-border-subtle: #1A2535;
-  --color-border-default: #253648;
-  --color-border-strong: #2E4460;
-  --color-text-primary: #EDF2F7;
-  --color-text-secondary: #A8BBC9;
-  --color-text-muted: #7A92A8;
-  --color-text-disabled: #4A6478;
-  --color-accent: #00D4A4;
-  --color-accent-light: #2EDFC2;
-  --color-accent-hover: #00A882;
-  --color-accent-pressed: #007D62;
-  --color-accent-subtle: #0D2E28;
-  --color-accent-glow: #00F5C0;
-  --color-success: #22C55E;
-  --color-warning: #F59E0B;
-  --color-error: #EF4444;
-  --color-info: #3B82F6;
+/* ── Explicit dark theme (matches :root — needed when switching back from light) */
+[data-theme="dark"], .dark {
+  --color-bg:           #13181F;
+  --color-surface:      #1E2530;
+  --color-surface-2:    #2C3440;
+  --color-overlay:      #3D4553;
+  --color-border-subtle:#2C3440;
+  --color-border:       #3D4553;
+  --color-border-strong:#5A6478;
+  --color-text-primary: #E8E3DC;
+  --color-text-secondary:#B8B2AA;
+  --color-text-muted:   #7A8190;
+  --color-icon:         #4A5260;
+  --color-icon-active:  #7A8190;
+  --color-accent:       #DFAA45;
+  --color-accent-dark:  #CC9A38;
+  --color-accent-light: #F5C96A;
+  --color-accent-bg:    #2E2010;
+  --color-success:      #4E9E7A;
+  --color-success-bg:   #0E2318;
+  --color-error:        #C4695A;
+  --color-error-bg:     #2A1210;
+  --color-info:         #5B8DB8;
+  --color-info-bg:      #1A2230;
+  --color-warning:      #C9A96E;
+  --color-warning-bg:   #1E1A0E;
 
-  /* Kanban columns (same as light mode for now) */
-  --color-column-backlog: #B8CADA;
-  --color-column-progress: #00B894;
-  --color-column-review: #5B9BD5;
-  --color-column-done: #2ECC8A;
-
-  /* Task categories (adjusted for dark mode visibility) */
-  --color-category-task-bg: #0D4B42;
-  --color-category-task-text: #7FE4D0;
-  --color-category-client-bg: #0D2E52;
-  --color-category-client-text: #6DB3FF;
-  --color-category-idea-bg: #4A4014;
-  --color-category-idea-text: #FFD966;
-  --color-category-bug-bg: #4A2420;
-  --color-category-bug-text: #FF8B7F;
-
-  /* Task priorities (adjusted for dark mode visibility) */
-  --color-priority-low-border: #3D5A72;
-  --color-priority-low-text: #9DBED0;
-  --color-priority-medium-border: #8B6F1E;
-  --color-priority-medium-text: #FFD966;
-  --color-priority-high-border: #7D3D2D;
-  --color-priority-high-text: #FF9B8F;
-
-  /* Delete states (adjusted for dark mode) */
-  --color-delete-confirm-bg: #4A2420;
-  --color-delete-hover-bg: #5C3330;
+  /* Override categories for dark */
+  --color-category-task-bg:    #0D1E30;
+  --color-category-task-text:  #90B8E8;
+  --color-category-client-bg:  #0D2818;
+  --color-category-client-text:#88D0A8;
+  --color-category-idea-bg:    #301A08;
+  --color-category-idea-text:  #E8A870;
+  --color-category-bug-bg:     #300D18;
+  --color-category-bug-text:   #E888A0;
 }
 
-/* Smooth transition between themes */
+/* ── Light theme ─────────────────────────────────────────────────────────── */
+[data-theme="light"], .light {
+  --color-bg:           #F5F2EE;
+  --color-surface:      #FFFFFF;
+  --color-surface-2:    #F0ECE7;
+  --color-overlay:      #E8E3DC;
+  --color-border-subtle:#EDE8E2;
+  --color-border:       #D4CFC8;
+  --color-border-strong:#B8B2AA;
+  --color-text-primary: #1A1F28;
+  --color-text-secondary:#3D4553;
+  --color-text-muted:   #7A8190;
+  --color-icon:         #B8B2AA;
+  --color-icon-active:  #7A8190;
+  --color-accent:       #C9900A;
+  --color-accent-dark:  #B87F08;
+  --color-accent-light: #DFAA45;
+  --color-accent-bg:    #FEF3C7;
+  --color-success:      #197A5A;
+  --color-success-bg:   #D1FAE5;
+  --color-error:        #C0392B;
+  --color-error-bg:     #FEE2E2;
+  --color-info:         #2563A8;
+  --color-info-bg:      #DBEAFE;
+  --color-warning:      #92620A;
+  --color-warning-bg:   #FEF3C7;
+
+  /* Override categories for light */
+  --color-category-task-bg:    #DBEAFE;
+  --color-category-task-text:  #2563A8;
+  --color-category-client-bg:  #D1FAE5;
+  --color-category-client-text:#197A5A;
+  --color-category-idea-bg:    #FEF3C7;
+  --color-category-idea-text:  #92620A;
+  --color-category-bug-bg:     #FEE2E2;
+  --color-category-bug-text:   #C0392B;
+}
+
+/* ── Smooth theme transitions ────────────────────────────────────────────── */
 *, *::before, *::after {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
@@ -119,41 +225,37 @@ html, body {
   overflow-x: hidden !important;
 }
 
+/* ── Satoshi font-face ───────────────────────────────────────────────────── */
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Light.woff2') format('woff2');
   font-weight: 300;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Regular.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Medium.woff2') format('woff2');
   font-weight: 500;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Bold.woff2') format('woff2');
   font-weight: 600;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Satoshi';
   src: url('/fonts/Satoshi-Black.woff2') format('woff2');
@@ -162,218 +264,116 @@ html, body {
 }
 
 @layer base {
-  :root {
-    /* Backgrounds - Light Mode */
-    --color-bg-base: #F8FAFC;
-    --color-bg-secondary: #F1F5F9;
-    --color-bg-card: #E8EFF5;
-    --color-bg-elevated: #DDE6EF;
-    --color-bg-subtle: #D0DCE8;
-
-    /* Borders */
-    --color-border-subtle: #E2EAF1;
-    --color-border-default: #C8D8E6;
-    --color-border-strong: #A8BDD0;
-
-    /* Text - Light Mode */
-    --color-text-primary: #0D1F2D;
-    --color-text-secondary: #2E4A62;
-    --color-text-muted: #4A6880;
-    --color-text-disabled: #7A96AA;
-
-    /* Accent - Teal */
-    --color-accent: #00D4A4;
-    --color-accent-hover: #00A882;
-    --color-accent-pressed: #007D62;
-    --color-accent-subtle: #E0F7F2;
-    --color-accent-glow: #00F5C0;
-
-    /* Semantic */
-    --color-success: #22C55E;
-    --color-warning: #F59E0B;
-    --color-error: #EF4444;
-    --color-info: #3B82F6;
-
-    /* Legacy aliases */
-    --bg-base: var(--color-bg-base);
-    --bg-surface: var(--color-bg-card);
-    --bg-elevated: var(--color-bg-elevated);
-    --border: var(--color-border-default);
-    --border-hover: var(--color-border-strong);
-    --primary: var(--color-accent);
-    --primary-hover: var(--color-accent-hover);
-    --primary-muted: rgba(0, 212, 164, 0.08);
-    --text-primary: #9CA3AF;
-    --text-secondary: #9CA3AF;
-    --text-muted: #9CA3AF;
-
-    /* Brand variables for glow */
-    --brand: 158 100% 41%;
-    --brand-foreground: 158 99% 52%;
-  }
-
   html {
     @apply scroll-smooth;
     font-family: 'Satoshi', sans-serif;
   }
 
   body {
-    @apply bg-[#F8FAFC] text-[#0D1F2D];
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: 'Satoshi', sans-serif;
     font-weight: 400;
   }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-primary: var(--primary);
-  --color-secondary: var(--secondary);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --font-sans: var(--font-inter);
-}
-
 @layer utilities {
-  .delay-100 {
-    animation-delay: 100ms;
-  }
-  .delay-200 {
-    animation-delay: 200ms;
-  }
-  .delay-300 {
-    animation-delay: 300ms;
-  }
-  .delay-500 {
-    animation-delay: 500ms;
-  }
-  .delay-700 {
-    animation-delay: 700ms;
-  }
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-500 { animation-delay: 500ms; }
+  .delay-700 { animation-delay: 700ms; }
 
   .fade-top-lg {
-    mask-image: linear-gradient(to bottom,
-      transparent,
-      rgba(0, 0, 0, 1) 8rem
-    );
-  }
-
-  .hover-accent-50 {
-    @apply transition;
-  }
-
-  .hover-accent-50:hover {
-    background-color: rgba(0, 212, 164, 0.05);
+    mask-image: linear-gradient(to bottom, transparent, rgba(0,0,0,1) 8rem);
   }
 
   .glass {
-    @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)];
+    @apply backdrop-blur-md border shadow-[inset_0_1px_0_rgba(255,255,255,0.1)];
+    background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+    border-color: var(--color-border-subtle);
   }
 
   .scrollbar-minimal {
     scrollbar-width: thin;
-    scrollbar-color: #9CA3AF transparent;
+    scrollbar-color: var(--color-border) transparent;
   }
-
-  .scrollbar-minimal::-webkit-scrollbar {
-    width: 16px !important;
-    background: transparent !important;
-  }
-
+  .scrollbar-minimal::-webkit-scrollbar { width: 16px !important; background: transparent !important; }
   .scrollbar-minimal::-webkit-scrollbar-track,
   .scrollbar-minimal::-webkit-scrollbar-track-piece,
-  .scrollbar-minimal::-webkit-scrollbar-corner {
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-
+  .scrollbar-minimal::-webkit-scrollbar-corner { background: transparent !important; box-shadow: none !important; }
   .scrollbar-minimal::-webkit-scrollbar-thumb {
-    background-color: #9CA3AF !important;
+    background-color: var(--color-border) !important;
     border-radius: 9999px !important;
     border: none !important;
   }
 
-  .scrollbar-minimal::-webkit-scrollbar-button {
-    background-color: #9CA3AF !important;
-  }
-
   .gradient-brand {
-    @apply bg-gradient-to-br from-[#00D4A4] to-[#00A882];
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
   }
 
   .shadow-diffusion {
-    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
   }
-
   .shadow-diffusion-hover {
-    box-shadow: 0 40px 80px -20px rgba(0, 212, 164, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 40px 80px -20px color-mix(in srgb, var(--color-accent) 15%, transparent), inset 0 1px 0 rgba(255,255,255,0.05);
   }
 
   .pulse-soft {
-    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse-soft 2s cubic-bezier(0.4,0,0.6,1) infinite;
   }
-
   @keyframes pulse-soft {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
   }
 
   .pulse-glow {
-    animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    animation: pulse-glow 3s cubic-bezier(0.4,0,0.6,1) infinite;
   }
-
   @keyframes pulse-glow {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(0, 212, 164, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 0 8px rgba(0, 212, 164, 0);
-    }
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 40%, transparent); }
+    50%       { box-shadow: 0 0 0 8px transparent; }
   }
 
   .marquee {
     animation: marquee 20s linear infinite;
   }
-
   @keyframes marquee {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
   }
 
   .float {
     animation: float 3s ease-in-out infinite;
   }
-
   @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-10px); }
   }
 
-  @keyframes strikethrough {
-    from {
-      width: 0%;
-    }
-    to {
-      width: 100%;
-    }
+  /* Toast enter/exit — plain keyframes because tailwindcss-animate's
+     animate-in/slide-in-from-* utilities are inert under Tailwind v4's
+     CSS-first config (the plugin is never loaded without an @plugin directive). */
+  .toast-slide-in {
+    animation: toast-slide-in 200ms ease-out forwards;
+  }
+  @keyframes toast-slide-in {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .toast-slide-out {
+    animation: toast-slide-out 200ms ease-in forwards;
+  }
+  @keyframes toast-slide-out {
+    from { transform: translateY(0);    opacity: 1; }
+    to   { transform: translateY(100%); opacity: 0; }
   }
 
   .note-strike {
     position: relative;
     display: inline-block;
   }
-
   .note-strike::after {
     content: '';
     position: absolute;
@@ -381,91 +381,43 @@ html, body {
     top: 50%;
     height: 1.5px;
     width: 0%;
-    background-color: #00D4A4;
+    background-color: var(--color-accent);
     transform: translateY(-50%);
   }
-
   .note-strike.done::after {
     animation: strikethrough 0.3s ease-out forwards;
+  }
+  @keyframes strikethrough {
+    from { width: 0%; }
+    to   { width: 100%; }
+  }
+
+  .hover-accent-50:hover {
+    background-color: color-mix(in srgb, var(--color-accent) 5%, transparent);
   }
 }
 
 @keyframes morph-0 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    border-radius: 0%;
-  }
-  25% {
-    transform: translate(20px, -20px) scale(1.2);
-    border-radius: 50%;
-  }
-  50% {
-    transform: translate(40px, 0) scale(0.8);
-    border-radius: 25%;
-  }
-  75% {
-    transform: translate(20px, 20px) scale(1.1);
-    border-radius: 75%;
-  }
+  0%, 100% { transform: translate(0,0) scale(1); border-radius: 0%; }
+  25%       { transform: translate(20px,-20px) scale(1.2); border-radius: 50%; }
+  50%       { transform: translate(40px,0) scale(0.8); border-radius: 25%; }
+  75%       { transform: translate(20px,20px) scale(1.1); border-radius: 75%; }
 }
-
 @keyframes morph-1 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    border-radius: 0%;
-  }
-  25% {
-    transform: translate(-20px, -20px) scale(1.3) rotate(90deg);
-    border-radius: 50%;
-  }
-  50% {
-    transform: translate(-40px, 0) scale(0.7) rotate(180deg);
-    border-radius: 25%;
-  }
-  75% {
-    transform: translate(-20px, 20px) scale(1.2) rotate(270deg);
-    border-radius: 75%;
-  }
+  0%, 100% { transform: translate(0,0) scale(1) rotate(0deg); border-radius: 0%; }
+  25%       { transform: translate(-20px,-20px) scale(1.3) rotate(90deg); border-radius: 50%; }
+  50%       { transform: translate(-40px,0) scale(0.7) rotate(180deg); border-radius: 25%; }
+  75%       { transform: translate(-20px,20px) scale(1.2) rotate(270deg); border-radius: 75%; }
 }
-
 @keyframes morph-2 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    border-radius: 0%;
-  }
-  25% {
-    transform: translate(-20px, 20px) scale(0.9);
-    border-radius: 100%;
-  }
-  50% {
-    transform: translate(0, 40px) scale(1.4);
-    border-radius: 0%;
-  }
-  75% {
-    transform: translate(20px, 20px) scale(0.8);
-    border-radius: 50%;
-  }
+  0%, 100% { transform: translate(0,0) scale(1); border-radius: 0%; }
+  25%       { transform: translate(-20px,20px) scale(0.9); border-radius: 100%; }
+  50%       { transform: translate(0,40px) scale(1.4); border-radius: 0%; }
+  75%       { transform: translate(20px,20px) scale(0.8); border-radius: 50%; }
 }
-
 @keyframes morph-3 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1) rotate(0deg);
-    border-radius: 0%;
-  }
-  25% {
-    transform: translate(20px, 20px) scale(1.1) rotate(-90deg);
-    border-radius: 25%;
-  }
-  50% {
-    transform: translate(0, -40px) scale(1.3) rotate(-180deg);
-    border-radius: 100%;
-  }
-  75% {
-    transform: translate(-20px, -20px) scale(0.9) rotate(-270deg);
-    border-radius: 75%;
-  }
+  0%, 100% { transform: translate(0,0) scale(1) rotate(0deg); border-radius: 0%; }
+  25%       { transform: translate(20px,20px) scale(1.1) rotate(-90deg); border-radius: 25%; }
+  50%       { transform: translate(0,-40px) scale(1.3) rotate(-180deg); border-radius: 100%; }
+  75%       { transform: translate(-20px,-20px) scale(0.9) rotate(-270deg); border-radius: 75%; }
 }

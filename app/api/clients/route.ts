@@ -103,7 +103,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    await captureServerEvent(user.id, "client_created", {});
+    await captureServerEvent(user.id, "client_created", {
+      status: client.status,
+      has_email: Boolean(client.email),
+      has_company: Boolean(client.company),
+      source: "dashboard",
+    });
 
     return NextResponse.json({ client: { ...client, avatar_url: getGravatarUrl(client.email) } }, { status: 201 });
   } catch (error) {

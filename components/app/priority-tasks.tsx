@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppCache } from "@/lib/app-cache";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFitCount } from "@/lib/use-fit-count";
 
 interface Task {
   id: string;
@@ -38,10 +39,23 @@ const getColumnColor = (columnId: string): string => {
   return colorMap[columnId] || "var(--color-column-backlog)";
 };
 
+// Text color paired with getColumnColor's background, so the badge stays legible
+// in both themes instead of the fixed white text it used to have (invisible on
+// the Backlog badge in light mode, since its background is plain white there).
+const getColumnTextColor = (columnId: string): string => {
+  const colorMap: Record<string, string> = {
+    "todo": "var(--color-column-backlog-text)",
+    "in_progress": "var(--color-column-progress-text)",
+    "review": "var(--color-column-review-text)",
+    "done": "var(--color-column-done-text)",
+  };
+  return colorMap[columnId] || "var(--color-column-backlog-text)";
+};
+
 const TaskSkeleton = () => (
-  <div className="flex items-center gap-2 mb-2">
+  <div className="flex items-center gap-[var(--space-2)] mb-[var(--space-2)]">
     <Skeleton style={{ width: 8, height: 8, borderRadius: "50%" }} />
-    <Skeleton style={{ flex: 1, height: 12, borderRadius: 4 }} />
+    <Skeleton style={{ flex: 1, height: 12, borderRadius: "var(--radius-sm)" }} />
     <Skeleton style={{ width: 60, height: 18, borderRadius: 999 }} />
   </div>
 );
@@ -75,7 +89,7 @@ export const PriorityTasks = () => {
               // Then sort by state (review > progress > backlog)
               return (stateOrder[a.column_id as keyof typeof stateOrder] ?? 3) - (stateOrder[b.column_id as keyof typeof stateOrder] ?? 3);
             })
-            .slice(0, 4);
+            .slice(0, 20); // keep a pool larger than any card could fit; useFitCount trims per-render
 
           setTasks(filtered);
           setCache("kanbanTasks", filtered);
@@ -94,13 +108,16 @@ export const PriorityTasks = () => {
     router.push("/app/kanban");
   };
 
+  const { ref: listRef, count: fitCount } = useFitCount<HTMLDivElement>(4, [isLoading]);
+  const displayTasks = tasks.slice(0, fitCount);
+
   return (
-    <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col">
-      <h3 className="text-[var(--color-text-primary)] text-xl font-semibold mb-4">
+    <div data-onboarding="tasks-card" className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full min-h-0 flex flex-col">
+      <h3 className="text-[var(--color-text-primary)] text-[length:var(--text-lg)] font-semibold mb-[var(--space-4)]">
         Priority tasks
       </h3>
 
-      <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+      <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-3)] overflow-hidden" ref={listRef}>
         {isLoading ? (
           <>
             <TaskSkeleton />
@@ -108,12 +125,12 @@ export const PriorityTasks = () => {
             <TaskSkeleton />
             <TaskSkeleton />
           </>
-        ) : tasks.length > 0 ? (
-          tasks.map((task) => (
+        ) : displayTasks.length > 0 ? (
+          displayTasks.map((task) => (
             <button
               key={task.id}
               onClick={handleTaskClick}
-              className="bg-[var(--color-bg-elevated)] p-3 rounded-lg border border-[var(--color-border-default)] text-sm h-16 flex items-center justify-between gap-3 hover:bg-[var(--color-bg-secondary)] transition-colors text-left border-l-4"
+              className="bg-[var(--color-bg-elevated)] p-[var(--space-3)] rounded-[var(--radius-sm)] border border-[var(--color-border-default)] text-[length:var(--text-sm)] h-16 flex items-center justify-between gap-[var(--space-3)] hover:bg-[var(--color-surface-2)] transition-colors text-left border-l-4"
               style={{ borderLeftColor: getPriorityColor(task.priority) }}
             >
               <p className="font-medium text-[var(--color-text-primary)] truncate flex-1 min-w-0">
@@ -121,9 +138,10 @@ export const PriorityTasks = () => {
               </p>
 
               <div
-                className="text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 text-white"
+                className="text-[length:var(--text-xs)] font-medium px-[var(--space-2)] py-[var(--space-1)] rounded-full flex-shrink-0"
                 style={{
                   backgroundColor: getColumnColor(task.column_id),
+                  color: getColumnTextColor(task.column_id),
                 }}
               >
                 {task.column_name || task.column_id}
@@ -131,7 +149,7 @@ export const PriorityTasks = () => {
             </button>
           ))
         ) : (
-          <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
+          <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
             No pending tasks
           </div>
         )}
@@ -139,7 +157,7 @@ export const PriorityTasks = () => {
 
       <Link
         href="/app/kanban"
-        className="mt-4 text-xs text-[var(--color-text-muted)] hover:underline font-medium"
+        className="mt-[var(--space-4)] text-[length:var(--text-xs)] text-[var(--color-text-muted)] hover:underline font-medium"
       >
         View all tasks →
       </Link>

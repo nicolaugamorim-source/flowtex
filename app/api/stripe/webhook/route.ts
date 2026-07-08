@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
+import { captureServerEvent } from "@/lib/posthog-server";
+import { sendProductEmail } from "@/lib/emails/send";
+import {
+  paymentFailedEmail,
+  paymentSucceededEmail,
+  trialEndingEmail,
+  trialStartedEmail,
+  accountActivatedEmail,
+  cancellationScheduledEmail,
+  subscriptionEndedEmail,
+} from "@/lib/emails/templates";
 
 // Handles Stripe webhook events (checkout completed, subscription updated/cancelled, etc.)
 // and syncs the resulting subscription state onto the user's profile.
@@ -17,6 +28,52 @@ function getSupabaseAdmin() {
 // normalize here at the boundary instead of touching every call site.
 function toProfileStatus(stripeStatus: Stripe.Subscription.Status): string {
   return stripeStatus === "canceled" ? "cancelled" : stripeStatus;
+}
+
+// Resolves the app's user id for a Stripe subscription, falling back to a
+// profile lookup by customer id when the metadata wasn't set (e.g. subscriptions
+// created before this field existed, or created directly in the Stripe dashboard).
+async function resolveUserId(subscription: Stripe.Subscription): Promise<string | undefined> {
+  if (subscription.metadata?.user_id) return subscription.metadata.user_id;
+
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .eq("stripe_customer_id", subscription.customer as string)
+    .maybeSingle();
+
+  return data?.id;
+}
+
+// Looks up the name/email to put in a product email by Stripe customer id —
+// used by the invoice-based events below, which don't carry a subscription object.
+async function resolveCustomerProfile(
+  customerId: string
+): Promise<{ id: string; email: string; full_name: string | null } | undefined> {
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email, full_name")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+
+  return data ?? undefined;
+}
+
+// Same as resolveCustomerProfile but keyed by the app's own user id — used by
+// the subscription-object events below, which already resolved a userId.
+async function resolveProfileById(
+  userId: string
+): Promise<{ email: string; full_name: string | null } | undefined> {
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return data ?? undefined;
 }
 
 async function syncSubscriptionToProfile(subscription: Stripe.Subscription) {
@@ -115,6 +172,34 @@ export async function POST(request: NextRequest) {
           );
           await syncSubscriptionToProfile(subscription);
           await enforceCardTrialLimit(subscription);
+
+          const userId = await resolveUserId(subscription);
+          if (userId) {
+            const plan = subscription.items.data[0]?.price?.id;
+            await captureServerEvent(userId, "checkout_completed", {
+              plan,
+              status: subscription.status,
+              trial: subscription.status === "trialing",
+            });
+            if (subscription.status === "trialing") {
+              await captureServerEvent(userId, "trial_started", { plan });
+              const profile = await resolveProfileById(userId);
+              if (profile?.email && subscription.trial_end) {
+                const trialEndDate = new Date(subscription.trial_end * 1000).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                });
+                await sendProductEmail(profile.email, trialStartedEmail(profile.full_name || "", trialEndDate));
+              }
+            } else {
+              await captureServerEvent(userId, "subscription_started", { plan });
+              const profile = await resolveProfileById(userId);
+              if (profile?.email) {
+                await sendProductEmail(profile.email, accountActivatedEmail(profile.full_name || ""));
+              }
+            }
+          }
         }
         break;
       }
@@ -123,12 +208,127 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.created": {
         const subscription = event.data.object as Stripe.Subscription;
         await syncSubscriptionToProfile(subscription);
+
+        const userId = await resolveUserId(subscription);
+        if (userId) {
+          const plan = subscription.items.data[0]?.price?.id;
+          if (subscription.cancel_at_period_end) {
+            await captureServerEvent(userId, "subscription_cancel_scheduled", { plan });
+
+            // Stripe can fire `updated` again while cancel_at_period_end stays
+            // true (e.g. an unrelated metadata change) — only email the first
+            // time it actually flips, or every such update would re-send this.
+            const previousAttributes = (event.data as { previous_attributes?: Partial<Stripe.Subscription> }).previous_attributes;
+            const justScheduled =
+              event.type === "customer.subscription.updated" &&
+              previousAttributes?.cancel_at_period_end === false;
+
+            // Stripe API 2024+ moved current_period_end from the subscription
+            // itself onto each subscription item.
+            const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
+            if (justScheduled && currentPeriodEnd) {
+              const profile = await resolveProfileById(userId);
+              if (profile?.email) {
+                const accessUntil = new Date(currentPeriodEnd * 1000).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                });
+                await sendProductEmail(profile.email, cancellationScheduledEmail(profile.full_name || "", accessUntil));
+              }
+            }
+          } else if (event.type === "customer.subscription.updated") {
+            await captureServerEvent(userId, "subscription_updated", {
+              plan,
+              status: subscription.status,
+            });
+          }
+        }
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         await syncSubscriptionToProfile(subscription);
+
+        const userId = await resolveUserId(subscription);
+        if (userId) {
+          await captureServerEvent(userId, "subscription_canceled", {
+            plan: subscription.items.data[0]?.price?.id,
+          });
+          const profile = await resolveProfileById(userId);
+          if (profile?.email) {
+            await sendProductEmail(profile.email, subscriptionEndedEmail(profile.full_name || ""));
+          }
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const profile = await resolveCustomerProfile(invoice.customer as string);
+        if (profile) {
+          await captureServerEvent(profile.id, "payment_failed", {
+            amount_due: invoice.amount_due,
+            currency: invoice.currency,
+          });
+          if (profile.email) {
+            await sendProductEmail(profile.email, paymentFailedEmail(profile.full_name || ""));
+          }
+        }
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        // Every invoice fires this, including $0 trial-start invoices — only
+        // email for an actual charge, so trial users don't get a confusing
+        // "payment received" message.
+        if (invoice.amount_paid > 0) {
+          const profile = await resolveCustomerProfile(invoice.customer as string);
+          if (profile?.email) {
+            await captureServerEvent(profile.id, "payment_succeeded", {
+              amount_paid: invoice.amount_paid,
+              currency: invoice.currency,
+            });
+
+            // The very first invoice of a subscription created without a trial
+            // fires this in the same beat as checkout.session.completed, which
+            // already sends accountActivatedEmail — skip the duplicate here and
+            // only email for renewals (billing_reason "subscription_cycle").
+            if (invoice.billing_reason !== "subscription_create") {
+              const amount = (invoice.amount_paid / 100).toLocaleString("en-US", {
+                style: "currency",
+                currency: invoice.currency.toUpperCase(),
+              });
+              await sendProductEmail(profile.email, paymentSucceededEmail(profile.full_name || "", amount));
+            }
+          }
+        }
+        break;
+      }
+
+      case "customer.subscription.trial_will_end": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = await resolveUserId(subscription);
+        if (userId) {
+          const supabaseAdmin = getSupabaseAdmin();
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", userId)
+            .maybeSingle();
+
+          await captureServerEvent(userId, "trial_ending_soon", {});
+
+          if (profile?.email && subscription.trial_end) {
+            const daysLeft = Math.max(
+              1,
+              Math.ceil((subscription.trial_end * 1000 - Date.now()) / (1000 * 60 * 60 * 24))
+            );
+            await sendProductEmail(profile.email, trialEndingEmail(profile.full_name || "", daysLeft));
+          }
+        }
         break;
       }
 

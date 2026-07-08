@@ -134,8 +134,8 @@ export default function PricingPage() {
     return (
       <div className="min-h-screen bg-[var(--color-bg-base)] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-8 h-8 border-4 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[var(--color-text-muted)]">Loading...</p>
         </div>
       </div>
     );
@@ -148,8 +148,8 @@ export default function PricingPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
             {isLoggedIn && pricingInfo.hasActiveSubscription && (
-              <div className="p-3 bg-green-50 border-2 border-green-200 rounded-lg inline-block">
-                <p className="text-green-900 text-sm">
+              <div className="p-3 bg-[var(--color-success-bg)] border-2 border-[var(--color-success)] rounded-lg inline-block">
+                <p className="text-[var(--color-success)] text-sm">
                   ✅ Active{" "}
                   <span className="font-semibold">
                     {pricingInfo.planName || "subscription"}
@@ -177,7 +177,7 @@ export default function PricingPage() {
             <Link href="/app">
               <Button
                 variant="outline"
-                className="border-indigo-600 text-indigo-600 hover:bg-indigo-50 h-9"
+                className="border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent-bg)] h-9"
               >
                 Back to App
               </Button>

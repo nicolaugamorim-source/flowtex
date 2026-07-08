@@ -44,6 +44,12 @@ const columnColor: Record<string, string> = {
   Review: "var(--color-column-review)",
 };
 
+const columnTextColor: Record<string, string> = {
+  "To Do": "var(--color-column-backlog-text)",
+  "In Progress": "var(--color-column-progress-text)",
+  Review: "var(--color-column-review-text)",
+};
+
 const CURRENT_STREAK = 12;
 const TOTAL_DAYS = 27 * 7;
 
@@ -179,8 +185,8 @@ export const AppDashboardMockup = () => {
               >
                 <p className="text-xs font-medium text-[var(--color-text-primary)] truncate flex-1 min-w-0">{task.title}</p>
                 <div
-                  className="text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 text-white"
-                  style={{ backgroundColor: columnColor[task.column] }}
+                  className="text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: columnColor[task.column], color: columnTextColor[task.column] }}
                 >
                   {task.column}
                 </div>

@@ -63,11 +63,15 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
           onClick={onClick}
           className={cn(
             "relative group px-5 py-2 rounded-full whitespace-nowrap",
-            "text-sm font-semibold text-[var(--color-text-primary)]",
-            "bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]",
-            "transition-colors shadow-md hover:shadow-lg",
+            "text-sm font-semibold transition-colors shadow-md hover:shadow-lg",
             className
           )}
+          style={{
+            backgroundColor: "var(--color-accent)",
+            color: "var(--color-bg)",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--color-accent-dark)")}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = "var(--color-accent)")}
         >
           {label}
         </motion.button>
@@ -82,10 +86,12 @@ const DockItem = React.forwardRef<HTMLButtonElement, DockItemProps>(
         onClick={onClick}
         className={cn(
           "relative group px-4 py-2 rounded-lg whitespace-nowrap",
-          "text-sm font-medium text-[var(--color-text-primary)]",
-          "hover:bg-[color-mix(in_srgb,var(--color-text-primary)_12%,transparent)] transition-colors",
+          "text-sm font-medium transition-colors",
           className
         )}
+        style={{ color: "var(--color-text-muted)" }}
+        onMouseEnter={e => (e.currentTarget.style.color = "var(--color-text-primary)")}
+        onMouseLeave={e => (e.currentTarget.style.color = "var(--color-text-muted)")}
       >
         {label}
       </motion.button>
@@ -100,12 +106,15 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
       <div ref={ref} className={cn("flex items-center justify-center p-4", className)}>
         <motion.div
           className={cn(
-            "flex items-center gap-3 px-16 py-2 rounded-full",
-            "backdrop-blur-lg border border-[color-mix(in_srgb,var(--color-border-default)_60%,transparent)]",
-            "bg-[color-mix(in_srgb,var(--color-bg-card)_55%,transparent)] shadow-lg",
-            "hover:shadow-xl transition-shadow duration-300",
+            "flex items-center gap-3 px-6 py-2 rounded-full",
+            "backdrop-blur-lg",
+            "shadow-lg hover:shadow-xl transition-shadow duration-300",
             "max-w-5xl"
           )}
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--color-surface) 88%, transparent)",
+            border: "1px solid var(--color-border-subtle)",
+          }}
         >
           {items.map((item, index) => (
             <DockItem key={item.label} {...item} className={index === 0 ? "mr-8" : ""} />

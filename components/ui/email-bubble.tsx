@@ -24,13 +24,14 @@ export function EmailBubble({
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-lg p-4 w-full max-w-sm bg-gradient-to-br from-[var(--color-bg-base)] to-[#EFF5FB] text-[var(--color-text-primary)] border border-[var(--color-border-subtle)]"
+      className="rounded-lg p-4 w-full max-w-sm text-[var(--color-text-primary)] border border-[var(--color-border-subtle)]"
+      style={{ backgroundColor: "var(--color-surface)" }}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <div className="flex items-start gap-2">
-            <Mail className="w-5 h-5 text-[#6366F1] mt-0.5 flex-shrink-0" />
+            <Mail className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "var(--color-accent)" }} />
             <div className="flex-1">
               <h3 className="text-base font-bold leading-snug mb-1 text-[var(--color-text-primary)]">
                 {subject}
@@ -48,7 +49,7 @@ export function EmailBubble({
       </div>
 
       {/* Summary */}
-      <div className="bg-white/60 rounded-md p-3 border border-[var(--color-border-subtle)] mb-3">
+      <div className="rounded-md p-3 border border-[var(--color-border-subtle)] mb-3" style={{ backgroundColor: "var(--color-surface-2)" }}>
         <p className="text-sm font-bold text-[var(--color-text-primary)] mb-2">{summaryTitle}</p>
         <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">
           {summary}
@@ -57,7 +58,7 @@ export function EmailBubble({
 
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-[#6366F1] bg-[#EEF2FF] px-2.5 py-1 rounded-md">
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-md" style={{ color: "var(--color-accent)", backgroundColor: "var(--color-accent-bg)" }}>
           Email
         </span>
       </div>

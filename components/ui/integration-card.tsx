@@ -53,8 +53,8 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-base)] group-hover:bg-[var(--color-accent)]/10 transition-colors duration-300">
               {isConnected ? (
                 <>
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="text-xs font-medium text-green-600">Connected</span>
+                  <CheckCircle2 className="h-4 w-4" style={{ color: "var(--color-success)" }} />
+                  <span className="text-xs font-medium" style={{ color: "var(--color-success)" }}>Connected</span>
                 </>
               ) : (
                 <>
@@ -78,7 +78,7 @@ export const IntegrationCard = React.forwardRef<HTMLDivElement, IntegrationCardP
             <button
               onClick={onConnect}
               disabled={isLoading}
-              className="w-full mt-4 px-4 py-2 bg-[var(--color-accent)] hover:bg-[#00C494] disabled:bg-[var(--color-accent)]/50 text-white font-medium rounded-lg transition-colors duration-200"
+              className="w-full mt-4 px-4 py-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] disabled:bg-[var(--color-accent)]/50 text-white font-medium rounded-lg transition-colors duration-200"
             >
               {isLoading ? 'Connecting...' : 'Connect'}
             </button>

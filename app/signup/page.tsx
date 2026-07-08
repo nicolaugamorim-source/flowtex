@@ -1,8 +1,7 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { SignupForm } from "@/components/ui/login-signup";
-
-// Signup route — just renders the shared SignupForm component.
+// Sign-up is Google-only now, same flow as sign-in (the OAuth callback
+// creates the account on first login) — redirect any old links here.
 export default function SignupPage() {
-  return <SignupForm />;
+  redirect("/login");
 }

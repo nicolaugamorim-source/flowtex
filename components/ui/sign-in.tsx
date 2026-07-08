@@ -29,13 +29,13 @@ interface SignInPageProps {
 }
 
 const GlassInputWrapper = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-lg border border-[var(--color-border-default)] bg-white/50 backdrop-blur-sm transition-all focus-within:border-[var(--color-accent)]/70 focus-within:bg-[#F0FDFB]">
+  <div className="rounded-lg border border-[var(--color-border-default)] backdrop-blur-sm transition-all focus-within:border-[var(--color-accent)]/70" style={{ backgroundColor: "var(--color-surface-2)" }}>
     {children}
   </div>
 );
 
 const TestimonialCard = ({ testimonial, delay }: { testimonial: Testimonial, delay: string }) => (
-  <div className={`${delay} flex items-start gap-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-[var(--color-border-default)] p-4 w-64`}>
+  <div className={`${delay} flex items-start gap-3 rounded-2xl backdrop-blur-xl border border-[var(--color-border-default)] p-4 w-64`} style={{ backgroundColor: "var(--color-overlay)" }}>
     <img src={testimonial.avatarSrc} className="h-10 w-10 object-cover rounded-lg" alt="avatar" />
     <div className="text-sm leading-snug">
       <p className="flex items-center gap-1 font-semibold text-[var(--color-text-primary)]">{testimonial.name}</p>

@@ -11,6 +11,7 @@ import { CookieConsent } from "@/components/ui/cookie-consent";
 import { AICommandProvider } from "@/lib/ai-command-context";
 import { AICommandModal } from "@/components/ui/ai-command-modal";
 import { GoogleProvider } from "@/lib/google-context";
+import { ToastProvider } from "@/components/ui/toast-provider";
 import { PostHogProvider } from "./providers/posthog-provider";
 import "@/lib/cookie-reset";
 import "./globals.css";
@@ -31,10 +32,10 @@ const metadataBase = process.env.NEXT_PUBLIC_APP_URL
 
 export const metadata: Metadata = {
   metadataBase,
-  title: "Flowtex — The AI that runs your business while you build it.",
+  title: "Flowtex — The AI that knows your business while you build it.",
   description: "Flowtex connects your tools, learns your business context, and acts on it. No re-explaining. No switching apps. Just results.",
   openGraph: {
-    title: "Flowtex — The AI that runs your business while you build it.",
+    title: "Flowtex — The AI that knows your business while you build it.",
     description: "Flowtex connects your tools, learns your business context, and acts on it. No re-explaining. No switching apps. Just results.",
     images: [
       {
@@ -65,19 +66,21 @@ export default function RootLayout({
         <PostHogProvider>
         <ThemeProvider
           attribute="data-theme"
-          defaultTheme="light"
+          defaultTheme="dark"
           enableSystem={false}
           storageKey="flowtex-theme"
         >
           <GoogleProvider>
             <AICommandProvider>
               <CookieProvider>
-                <AuthHandler />
-                {children}
-                <CookieConsent />
-                <AICommandModal />
-                <Analytics />
-                <SpeedInsights />
+                <ToastProvider>
+                  <AuthHandler />
+                  {children}
+                  <CookieConsent />
+                  <AICommandModal />
+                  <Analytics />
+                  <SpeedInsights />
+                </ToastProvider>
               </CookieProvider>
             </AICommandProvider>
           </GoogleProvider>

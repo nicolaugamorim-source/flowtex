@@ -12,7 +12,7 @@ const buttonVariants = cva(
         default:
           "bg-[var(--color-accent)] text-[var(--color-text-primary)] shadow-sm shadow-black/5 hover:bg-[var(--color-accent-hover)] hover:shadow-[0_20px_40px_-15px_rgba(0,212,164,0.3)] transition-all duration-300",
         destructive:
-          "bg-red-600 text-white shadow-sm shadow-black/5 hover:bg-red-700",
+          "bg-[var(--color-error)] text-white shadow-sm shadow-black/5 hover:opacity-90",
         outline:
           "border border-[var(--color-accent)]/30 bg-transparent text-[var(--color-accent)] shadow-sm shadow-black/5 hover:bg-[var(--color-accent)]/10 hover:border-[var(--color-accent)]/50 transition-all duration-300",
         secondary:

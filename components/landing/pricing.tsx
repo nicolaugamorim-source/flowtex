@@ -131,13 +131,14 @@ export function Pricing({
               )}
               <div
                 className={cn(
-                  "rounded-2xl border border-[var(--color-border-default)] p-6 bg-[var(--color-bg-base)] flex flex-col relative z-10 min-h-[560px]",
+                  "rounded-2xl p-6 flex flex-col relative z-10 min-h-[560px]",
                 )}
+                style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
               >
               {plan.isPopular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[var(--color-accent)] py-1 px-4 rounded-full flex items-center gap-1">
-                  <Star className="h-4 w-4 text-white fill-white" />
-                  <span className="text-white text-sm font-semibold">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 py-1 px-4 rounded-full flex items-center gap-1" style={{ backgroundColor: "var(--color-accent)" }}>
+                  <Star className="h-4 w-4" style={{ color: "var(--color-bg)", fill: "var(--color-bg)" }} />
+                  <span className="text-sm font-semibold" style={{ color: "var(--color-bg)" }}>
                     Popular
                   </span>
                 </div>

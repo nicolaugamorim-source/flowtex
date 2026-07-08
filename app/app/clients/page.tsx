@@ -2,8 +2,11 @@
 
 // CRM-style clients page — list, create, edit and view per-client emails/meetings.
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Plus, Search, Trash2, Edit2, Mail, Calendar, FileText, Users, X, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, Search, Trash2, Edit2, Mail, Calendar, FileText, Users, X, Sparkles, RefreshCw, ChevronLeft } from "lucide-react";
 import { useGoogle } from "@/lib/google-context";
+import { useToast } from "@/components/ui/toast-provider";
+import { classifyError } from "@/lib/error-messages";
+import { ConfirmDeleteModal } from "@/components/ui/confirm-delete-modal";
 
 interface Client {
   id: string;
@@ -102,48 +105,48 @@ const EmailDetailModal = ({
   if (!email && !isLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-[var(--space-4)]">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-bg-card)] shadow-2xl"
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-[var(--radius-xl)] border border-[var(--color-border-default)] bg-[var(--color-bg-card)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+          className="absolute top-4 right-4 p-[var(--space-1)] rounded-full text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
         >
           <X size={18} />
         </button>
 
         {isLoading || !email ? (
-          <div className="p-8 animate-pulse space-y-4">
-            <div className="h-6 bg-[var(--color-bg-elevated)] rounded w-2/3" />
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-1/2" />
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-full mt-6" />
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-full" />
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-3/4" />
+          <div className="p-[var(--space-8)] animate-pulse space-y-[var(--space-4)]">
+            <div className="h-6 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-2/3" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/2" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full mt-[var(--space-6)]" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-3/4" />
           </div>
         ) : (
-          <div className="p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#3B82F6]/10 text-[#3B82F6] flex-shrink-0">
+          <div className="p-[var(--space-6)]">
+            <div className="flex items-start gap-[var(--space-3)] mb-[var(--space-4)]">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--color-info-bg)] text-[var(--color-info)] flex-shrink-0">
                 <Mail size={18} />
               </div>
-              <div className="flex-1 min-w-0 pr-6">
-                <h3 className="text-base font-semibold text-[var(--color-text-primary)] leading-snug">{email.subject}</h3>
-                <p className="text-xs text-[var(--color-text-muted)] mt-1">{email.from}</p>
-                <p className="text-xs text-[var(--color-text-disabled)] mt-0.5">
+              <div className="flex-1 min-w-0 pr-[var(--space-6)]">
+                <h3 className="text-[length:var(--text-base)] font-semibold text-[var(--color-text-primary)] leading-snug">{email.subject}</h3>
+                <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)] mt-[var(--space-1)]">{email.from}</p>
+                <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] mt-[var(--space-1)]">
                   {email.date ? new Date(email.date).toLocaleString() : ""}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] p-4">
+            <div className="rounded-[var(--radius-lg)] bg-[var(--color-bg-base)] border border-[var(--color-border-subtle)] p-[var(--space-4)]">
               {email.mimeType === "text/html" ? (
                 <EmailHtmlFrame html={email.body} />
               ) : (
-                <p className="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{email.body}</p>
+                <p className="text-[length:var(--text-sm)] text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{email.body}</p>
               )}
             </div>
           </div>
@@ -170,11 +173,11 @@ const getInitials = (name: string) => {
 // when the image fails to load (e.g. Gravatar 404s because the email has no avatar set).
 const ClientAvatar = ({
   client,
-  size = 40,
-  textSize = "text-sm",
+  size = "clamp(32px, 3vw, 40px)",
+  textSize = "text-[length:var(--text-sm)]",
 }: {
   client: Client;
-  size?: number;
+  size?: number | string;
   textSize?: string;
 }) => {
   const [imageFailed, setImageFailed] = useState(false);
@@ -207,7 +210,7 @@ const getStatusColor = (status: string) => {
     case "active":
       return { bg: "var(--color-accent-subtle)", text: "var(--color-accent-pressed)" };
     case "lead":
-      return { bg: "#FEF3C7", text: "#B45309" };
+      return { bg: "var(--color-warning-bg)", text: "var(--color-warning)" };
     case "inactive":
       return { bg: "var(--color-bg-card)", text: "var(--color-text-disabled)" };
     default:
@@ -215,17 +218,55 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Mirrors ClientCard exactly: p-4, rounded-lg, border-l-4 (transparent — no
+// row is selected while loading), avatar circle, name + status pill, "Last
+// contact" text block on the right.
 const ClientSkeleton = () => (
-  <div className="space-y-3">
+  <div className="animate-pulse">
     {[1, 2, 3, 4, 5].map((i) => (
-      <div key={i} className="p-4 border-l-4 border-transparent rounded-lg animate-pulse">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[var(--color-bg-card)]" />
-          <div className="flex-1">
-            <div className="h-4 bg-[var(--color-bg-card)] rounded w-32 mb-2" />
-            <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-24" />
+      <div key={i} className="p-[var(--space-4)] rounded-[var(--radius-lg)] border-l-4 border-l-transparent mb-[var(--space-2)]">
+        <div className="flex items-center gap-[var(--space-3)]">
+          <div className="rounded-full bg-[var(--color-bg-card)] flex-shrink-0" style={{ width: "clamp(40px, 4vw, 56px)", height: "clamp(40px, 4vw, 56px)" }} />
+          <div className="flex-1 min-w-0">
+            <div className="h-4 bg-[var(--color-bg-card)] rounded-[var(--radius-sm)]" style={{ width: "45%" }} />
+            <div className="mt-[var(--space-2)] h-5 w-16 rounded-full bg-[var(--color-bg-elevated)]" />
+          </div>
+          <div className="flex-shrink-0" style={{ width: 64 }}>
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full mb-[var(--space-1)]" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-2/3 ml-auto" />
           </div>
         </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Mirrors the emails-tab row: p-3, rounded-lg, border, subject/from/snippet
+// stacked left, date on the right.
+const EmailRowSkeleton = () => (
+  <div className="animate-pulse space-y-[var(--space-3)]">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="p-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-base)]">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="h-3.5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-2/3 mb-[var(--space-1)]" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/3 mb-[var(--space-1)]" />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+          </div>
+          <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] flex-shrink-0 ml-[var(--space-2)]" style={{ width: 56 }} />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Mirrors the meetings-tab row: p-3, rounded-lg, border, title + date/time stacked.
+const MeetingRowSkeleton = () => (
+  <div className="animate-pulse space-y-[var(--space-3)]">
+    {[1, 2, 3].map((i) => (
+      <div key={i} className="p-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-base)]">
+        <div className="h-3.5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/2 mb-[var(--space-1)]" />
+        <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/3" />
       </div>
     ))}
   </div>
@@ -286,10 +327,10 @@ const ClientFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--color-bg-card)] rounded-lg p-6 max-w-md w-full border border-[var(--color-border-default)]">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{isEditing ? "Edit Client" : "Add Client"}</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-[var(--space-4)]">
+      <div className="bg-[var(--color-bg-card)] rounded-[var(--radius-xl)] p-[var(--space-6)] max-w-[clamp(400px,40vw,520px)] w-full border border-[var(--color-border-default)]">
+        <div className="flex items-center justify-between mb-[var(--space-6)]">
+          <h2 className="text-[length:var(--text-lg)] font-semibold text-[var(--color-text-primary)]">{isEditing ? "Edit Client" : "Add Client"}</h2>
           <button
             onClick={onClose}
             className="text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)]"
@@ -298,13 +339,13 @@ const ClientFormModal = ({
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-[var(--space-4)]">
           <input
             type="text"
             placeholder="Name *"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
           />
 
           <input
@@ -312,7 +353,7 @@ const ClientFormModal = ({
             placeholder="Company"
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
           />
 
           <input
@@ -320,7 +361,7 @@ const ClientFormModal = ({
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
           />
 
           <input
@@ -328,7 +369,7 @@ const ClientFormModal = ({
             placeholder="Phone"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
           />
 
           <input
@@ -336,17 +377,17 @@ const ClientFormModal = ({
             placeholder="Website"
             value={form.website}
             onChange={(e) => setForm({ ...form, website: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
           />
 
           <div>
-            <label className="text-sm font-medium text-[var(--color-text-muted)] block mb-2">Status</label>
-            <div className="flex gap-2">
+            <label className="text-[length:var(--text-sm)] font-medium text-[var(--color-text-muted)] block mb-[var(--space-2)]">Status</label>
+            <div className="flex gap-[var(--space-2)]">
               {STATUS_OPTIONS.map((status) => (
                 <button
                   key={status}
                   onClick={() => setForm({ ...form, status })}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-[var(--space-3)] py-[var(--space-1)] rounded-full text-[length:var(--text-xs)] font-medium transition-colors ${
                     form.status === status
                       ? "bg-[var(--color-accent)] text-white"
                       : "bg-[var(--color-bg-base)] border border-[var(--color-border-default)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]"
@@ -359,8 +400,8 @@ const ClientFormModal = ({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-[var(--color-text-muted)] block mb-2">Avatar Color</label>
-            <div className="flex gap-2">
+            <label className="text-[length:var(--text-sm)] font-medium text-[var(--color-text-muted)] block mb-[var(--space-2)]">Avatar Color</label>
+            <div className="flex gap-[var(--space-2)]">
               {AVATAR_COLORS.map((color) => (
                 <button
                   key={color}
@@ -380,21 +421,21 @@ const ClientFormModal = ({
             placeholder="Notes"
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="w-full px-3 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)] resize-none h-20"
+            className="w-full px-[var(--space-3)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)] resize-none h-20"
           />
         </div>
 
-        <div className="flex gap-2 mt-6">
+        <div className="flex gap-[var(--space-2)] mt-[var(--space-6)]">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] font-medium hover:bg-[var(--color-bg-base)] transition-colors"
+            className="flex-1 px-[var(--space-4)] py-[var(--space-2)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] font-medium hover:bg-[var(--color-bg-base)] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!form.name.trim() || isSubmitting}
-            className="flex-1 px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg font-medium hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
+            className="flex-1 px-[var(--space-4)] py-[var(--space-2)] bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] font-medium hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
           >
             {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Add Client"}
           </button>
@@ -420,26 +461,26 @@ const ClientCard = ({
   return (
     <div
       onClick={onClick}
-      className={`p-4 rounded-lg border-l-4 cursor-pointer transition-all mb-2 ${
+      className={`p-[var(--space-4)] rounded-[var(--radius-lg)] border-l-4 cursor-pointer transition-all mb-[var(--space-2)] ${
         isSelected
           ? "border-l-[var(--color-accent)] bg-[var(--color-accent-subtle)]"
           : "border-l-transparent hover:bg-[var(--color-bg-secondary)]"
       }`}
     >
-      <div className="flex items-center gap-3">
-        <ClientAvatar client={client} size={56} textSize="text-lg" />
+      <div className="flex items-center gap-[var(--space-3)]">
+        <ClientAvatar client={client} size="clamp(40px, 4vw, 56px)" textSize="text-[length:var(--text-lg)]" />
 
         <div className="flex-1 min-w-0">
           <p className="truncate">
-            <span className="text-base font-semibold text-[var(--color-text-primary)]">{client.name}</span>
+            <span className="text-[length:var(--text-base)] font-semibold text-[var(--color-text-primary)]">{client.name}</span>
             {client.company && (
-              <span className="text-base font-normal text-[var(--color-text-muted)]"> | {client.company}</span>
+              <span className="text-[length:var(--text-base)] font-normal text-[var(--color-text-muted)]"> | {client.company}</span>
             )}
           </p>
 
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-[var(--space-2)] mt-[var(--space-2)]">
             <span
-              className="px-2 py-0.5 rounded-full text-xs font-medium"
+              className="px-[var(--space-2)] py-[var(--space-1)] rounded-full text-[length:var(--text-xs)] font-medium"
               style={{ backgroundColor: statusColors.bg, color: statusColors.text }}
             >
               {client.status.charAt(0).toUpperCase() + client.status.slice(1)}
@@ -447,7 +488,7 @@ const ClientCard = ({
           </div>
         </div>
 
-        <p className="text-xs text-[var(--color-text-disabled)] flex-shrink-0 text-right whitespace-nowrap self-center">
+        <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] flex-shrink-0 text-right whitespace-nowrap self-center">
           Last contact
           <br />
           {lastContactDays === undefined
@@ -463,6 +504,16 @@ const ClientCard = ({
 
 const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googleAccessToken: string | null }) => {
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Lets the onboarding guide switch tabs programmatically as it narrates each one.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent<string>).detail;
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener("flowtex:clients-guide-set-tab", handler);
+    return () => window.removeEventListener("flowtex:clients-guide-set-tab", handler);
+  }, []);
   const [emails, setEmails] = useState<Email[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [notes, setNotes] = useState(client.notes || "");
@@ -596,9 +647,9 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--space-6)]">
       {/* Tab Navigation */}
-      <div className="flex gap-1 border-b border-[var(--color-border-default)]">
+      <div data-onboarding="clients-tabs-nav" className="flex gap-[var(--space-1)] border-b border-[var(--color-border-default)]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -606,7 +657,7 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
               setActiveTab(tab.id);
               tab.onClick?.();
             }}
-            className={`px-4 py-2 border-b-2 transition-colors ${
+            className={`px-[var(--space-4)] py-[var(--space-2)] border-b-2 transition-colors ${
               activeTab === tab.id
                 ? "border-[var(--color-text-primary)] text-[var(--color-text-primary)]"
                 : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
@@ -619,53 +670,59 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
 
       {/* Tab Content */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+        <div data-onboarding="clients-tab-overview" className="space-y-[var(--space-6)]">
+          <div className="grid grid-cols-2 gap-[var(--space-4)]">
             <div
               onClick={lastEmail ? () => openEmail(lastEmail.id) : undefined}
-              className={`p-4 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border-default)] ${lastEmail ? "cursor-pointer hover:bg-[var(--color-bg-secondary)] transition-colors" : ""}`}
+              className={`p-[var(--space-4)] rounded-[var(--radius-lg)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] ${lastEmail ? "cursor-pointer hover:bg-[var(--color-bg-secondary)] transition-colors" : ""}`}
             >
-              <p className="text-sm text-[var(--color-text-muted)] mb-1">Last Email</p>
+              <p className="text-[length:var(--text-sm)] text-[var(--color-text-muted)] mb-[var(--space-1)]">Last Email</p>
               {loadingEmails ? (
-                <p className="text-2xl font-bold text-[var(--color-text-primary)]">—</p>
+                <div className="animate-pulse">
+                  <div className="h-4 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-3/4 mb-[var(--space-1)]" />
+                  <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/3 mt-[var(--space-1)]" />
+                </div>
               ) : lastEmail ? (
                 <>
-                  <p className="text-base font-semibold text-[var(--color-text-primary)] truncate">{lastEmail.subject}</p>
-                  <p className="text-sm text-[var(--color-text-muted)] mt-1">{new Date(lastEmail.date).toLocaleDateString()}</p>
+                  <p className="text-[length:var(--text-base)] font-semibold text-[var(--color-text-primary)] truncate">{lastEmail.subject}</p>
+                  <p className="text-[length:var(--text-sm)] text-[var(--color-text-muted)] mt-[var(--space-1)]">{new Date(lastEmail.date).toLocaleDateString()}</p>
                 </>
               ) : (
-                <p className="text-base text-[var(--color-text-disabled)]">No emails yet</p>
+                <p className="text-[length:var(--text-base)] text-[var(--color-text-disabled)]">No emails yet</p>
               )}
             </div>
-            <div className="p-4 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border-default)]">
-              <p className="text-sm text-[var(--color-text-muted)] mb-1">Next Meeting</p>
+            <div className="p-[var(--space-4)] rounded-[var(--radius-lg)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)]">
+              <p className="text-[length:var(--text-sm)] text-[var(--color-text-muted)] mb-[var(--space-1)]">Next Meeting</p>
               {loadingMeetings ? (
-                <p className="text-2xl font-bold text-[var(--color-text-primary)]">—</p>
+                <div className="animate-pulse">
+                  <div className="h-4 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-3/4 mb-[var(--space-1)]" />
+                  <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-1/2 mt-[var(--space-1)]" />
+                </div>
               ) : nextMeeting ? (
                 <>
-                  <p className="text-base font-semibold text-[var(--color-text-primary)] truncate">{nextMeeting.title}</p>
-                  <p className="text-sm text-[var(--color-text-muted)] mt-1">
+                  <p className="text-[length:var(--text-base)] font-semibold text-[var(--color-text-primary)] truncate">{nextMeeting.title}</p>
+                  <p className="text-[length:var(--text-sm)] text-[var(--color-text-muted)] mt-[var(--space-1)]">
                     {new Date(nextMeeting.start).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                     {" · "}
                     {new Date(nextMeeting.start).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </>
               ) : (
-                <p className="text-base text-[var(--color-text-disabled)]">None scheduled</p>
+                <p className="text-[length:var(--text-base)] text-[var(--color-text-disabled)]">None scheduled</p>
               )}
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border-default)]">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+          <div className="p-[var(--space-4)] rounded-[var(--radius-lg)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)]">
+            <div className="flex items-center justify-between mb-[var(--space-2)]">
+              <div className="flex items-center gap-[var(--space-2)]">
                 <Sparkles size={18} className="text-[var(--color-accent)]" />
-                <p className="text-base font-medium text-[var(--color-text-primary)]">AI Insight</p>
+                <p className="text-[length:var(--text-base)] font-medium text-[var(--color-text-primary)]">AI Insight</p>
               </div>
               {insight && !loadingInsight && (
                 <button
                   onClick={generateInsight}
-                  className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                  className="flex items-center gap-[var(--space-1)] text-[length:var(--text-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   <RefreshCw size={13} /> Regenerate
                 </button>
@@ -673,35 +730,35 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
             </div>
 
             {loadingInsight ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-full" />
-                <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-5/6" />
-                <div className="h-3 bg-[var(--color-bg-elevated)] rounded w-2/3" />
+              <div className="space-y-[var(--space-2)] animate-pulse">
+                <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+                <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-5/6" />
+                <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-2/3" />
               </div>
             ) : insight ? (
               <>
-                <p className="text-base text-[var(--color-text-secondary)] leading-relaxed">{insight}</p>
+                <p className="text-[length:var(--text-base)] text-[var(--color-text-secondary)] leading-relaxed">{insight}</p>
                 {insightGeneratedAt && (
-                  <p className="text-sm text-[var(--color-text-disabled)] mt-2">
+                  <p className="text-[length:var(--text-sm)] text-[var(--color-text-disabled)] mt-[var(--space-2)]">
                     Generated {new Date(insightGeneratedAt).toLocaleString()}
                   </p>
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-base text-[var(--color-text-muted)]">
+              <div className="flex items-center justify-between gap-[var(--space-4)]">
+                <p className="text-[length:var(--text-base)] text-[var(--color-text-muted)]">
                   Get an AI read on this client — how the relationship is going and what to do next, based on notes, emails and meetings.
                 </p>
                 <button
                   onClick={generateInsight}
-                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors flex-shrink-0"
+                  className="px-[var(--space-3)] py-[var(--space-1)] text-[length:var(--text-sm)] font-medium rounded-[var(--radius-md)] bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors flex-shrink-0"
                 >
                   Generate insight
                 </button>
               </div>
             )}
             {insightError && (
-              <p className="text-xs mt-2" style={{ color: "var(--color-error)" }}>
+              <p className="text-[length:var(--text-xs)] mt-[var(--space-2)]" style={{ color: "var(--color-error)" }}>
                 Could not generate the insight. Try again.
               </p>
             )}
@@ -710,11 +767,11 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
       )}
 
       {activeTab === "emails" && (
-        <div className="space-y-3">
+        <div data-onboarding="clients-tab-emails" className="space-y-[var(--space-3)]">
           {loadingEmails ? (
-            <ClientSkeleton />
+            <EmailRowSkeleton />
           ) : emails.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-[var(--space-8)]">
               <p className="text-[var(--color-text-disabled)]">No emails found for this client</p>
             </div>
           ) : (
@@ -722,17 +779,17 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
               <div
                 key={email.id}
                 onClick={() => openEmail(email.id)}
-                className="p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-base)] hover:bg-[var(--color-bg-secondary)] cursor-pointer transition-colors"
+                className="p-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-base)] hover:bg-[var(--color-bg-secondary)] cursor-pointer transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className={`text-sm ${email.isUnread ? "font-bold" : ""} text-[var(--color-text-primary)]`}>
+                    <p className={`text-[length:var(--text-sm)] ${email.isUnread ? "font-bold" : ""} text-[var(--color-text-primary)]`}>
                       {email.subject}
                     </p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{email.from}</p>
-                    <p className="text-xs text-[var(--color-text-disabled)] mt-1 line-clamp-2">{email.snippet}</p>
+                    <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)]">{email.from}</p>
+                    <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] mt-[var(--space-1)] line-clamp-2">{email.snippet}</p>
                   </div>
-                  <p className="text-xs text-[var(--color-text-disabled)] whitespace-nowrap ml-2">
+                  <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] whitespace-nowrap ml-[var(--space-2)]">
                     {new Date(email.date).toLocaleDateString()}
                   </p>
                 </div>
@@ -751,21 +808,21 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
       )}
 
       {activeTab === "meetings" && (
-        <div className="space-y-3">
+        <div data-onboarding="clients-tab-meetings" className="space-y-[var(--space-3)]">
           {loadingMeetings ? (
-            <ClientSkeleton />
+            <MeetingRowSkeleton />
           ) : meetings.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-[var(--space-8)]">
               <p className="text-[var(--color-text-disabled)]">No meetings found for this client</p>
             </div>
           ) : (
             meetings.map((meeting) => (
               <div
                 key={meeting.id}
-                className="p-3 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-base)]"
+                className="p-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] bg-[var(--color-bg-base)]"
               >
-                <p className="text-sm font-medium text-[var(--color-text-primary)]">{meeting.title}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">
+                <p className="text-[length:var(--text-sm)] font-medium text-[var(--color-text-primary)]">{meeting.title}</p>
+                <p className="text-[length:var(--text-xs)] text-[var(--color-text-muted)]">
                   {new Date(meeting.start).toLocaleString()}
                 </p>
               </div>
@@ -775,15 +832,15 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
       )}
 
       {activeTab === "notes" && (
-        <div>
+        <div data-onboarding="clients-tab-notes">
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             onBlur={saveNotes}
             placeholder="Write anything about this client — context, preferences, history..."
-            className="w-full h-64 p-4 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)] resize-none"
+            className="w-full h-64 p-[var(--space-4)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)] resize-none"
           />
-          {isSavingNotes && <p className="text-xs text-[var(--color-text-disabled)] mt-2">Saving...</p>}
+          {isSavingNotes && <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] mt-[var(--space-2)]">Saving...</p>}
         </div>
       )}
     </div>
@@ -793,6 +850,7 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
 // Client/CRM dashboard — lists clients with notes, last-contact info, and
 // per-client emails/meetings pulled from connected integrations.
 export default function ClientsPage() {
+  const toast = useToast();
   const { googleAccessToken } = useGoogle();
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -801,9 +859,15 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "lead" | "inactive">("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isAddingClient, setIsAddingClient] = useState(false);
+
+  // Lets the onboarding guide know when the "Add Client" modal opens/closes, so it can
+  // get out of the way (the modal renders above the guide's dark overlay otherwise).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(showAddModal ? "flowtex:clients-guide-modal-open" : "flowtex:clients-guide-modal-close"));
+  }, [showAddModal]);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
+  const [clientPendingDelete, setClientPendingDelete] = useState<Client | null>(null);
   const [lastContactMap, setLastContactMap] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
@@ -845,14 +909,20 @@ export default function ClientsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to add client"), { status: response.status });
       const data = await response.json();
       if (data.client) {
         setClients([data.client, ...clients]);
         setSelectedClient(data.client);
         setShowAddModal(false);
+        window.dispatchEvent(new CustomEvent("flowtex:clients-guide-client-created"));
       }
     } catch (err) {
       console.error("Failed to add client:", err);
+      toast.show({
+        ...classifyError(err, "Client", "saved"),
+        onRetry: () => handleAddClient(formData),
+      });
     } finally {
       setIsAddingClient(false);
     }
@@ -867,6 +937,7 @@ export default function ClientsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to update client"), { status: response.status });
       const data = await response.json();
       if (data.client) {
         setClients(clients.map((c) => (c.id === data.client.id ? data.client : c)));
@@ -877,22 +948,32 @@ export default function ClientsPage() {
       }
     } catch (err) {
       console.error("Failed to update client:", err);
+      toast.show({
+        ...classifyError(err, "Client", "updated"),
+        onRetry: () => handleEditClient(formData),
+      });
     } finally {
       setIsSavingEdit(false);
     }
   };
 
-  const handleDeleteClient = async (id: string) => {
+  const handleDeleteClient = async (id: string): Promise<boolean> => {
     try {
-      await fetch(`/api/clients/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/clients/${id}`, { method: "DELETE" });
+      if (!res.ok) throw Object.assign(new Error("Failed to delete client"), { status: res.status });
       const remaining = clients.filter((c) => c.id !== id);
       setClients(remaining);
       if (selectedClient?.id === id) {
         setSelectedClient(remaining[0] || null);
       }
-      setConfirmingDeleteId(null);
+      return true;
     } catch (err) {
       console.error("Failed to delete client:", err);
+      toast.show({
+        ...classifyError(err, "Client", "deleted"),
+        onRetry: () => handleDeleteClient(id),
+      });
+      return false;
     }
   };
 
@@ -907,25 +988,25 @@ export default function ClientsPage() {
   }, [clients, searchQuery, statusFilter]);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)]">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-[var(--color-bg-card)] border-b border-[var(--color-border-default)]">
-        <div className="px-8 py-6 space-y-4">
-          <div className="flex items-start justify-between gap-8">
+        <div className="px-[var(--space-8)] py-[var(--space-6)] space-y-[var(--space-4)]">
+          <div className="flex items-start justify-between gap-[var(--space-8)]">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Clients</h1>
-              <p className="text-sm text-[var(--color-text-muted)]">Your client relationships, in context.</p>
+              <h1 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">Clients</h1>
             </div>
             <button
+              data-onboarding="clients-add-button"
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg font-medium hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-2 flex-shrink-0"
+              className="px-[var(--space-4)] py-[var(--space-2)] bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] font-medium hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-[var(--space-2)] flex-shrink-0"
             >
               <Plus size={18} /> Add Client
             </button>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex items-center gap-3">
+          <div data-onboarding-group="clients-list-search" className="flex items-center gap-[var(--space-3)]">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-2.5 text-[var(--color-text-disabled)]" size={16} />
               <input
@@ -933,14 +1014,14 @@ export default function ClientsPage() {
                 placeholder="Search clients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
+                className="w-full pl-[var(--space-8)] pr-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 text-xs border border-[var(--color-border-default)] rounded-lg focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
+              className="px-[var(--space-3)] py-[var(--space-2)] text-[length:var(--text-xs)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] focus:outline-none focus:border-[var(--color-accent)] bg-[var(--color-bg-base)] text-[var(--color-text-primary)]"
             >
               <option value="all">All</option>
               <option value="active">Active</option>
@@ -954,20 +1035,24 @@ export default function ClientsPage() {
       {/* Main Content */}
       <div className="flex h-[calc(100vh-180px)]">
         {/* Left Panel: Client List */}
-        <div className="w-[35%] border-r border-[var(--color-border-default)] overflow-y-auto bg-[var(--color-bg-base)]">
-          <div className="p-4">
+        {/* Left Panel: Client List — hidden on small screens once a client is selected. */}
+        <div
+          data-onboarding-group="clients-list-search"
+          className={`${selectedClient ? "hidden md:block" : "block"} w-full md:w-[35%] border-r border-[var(--color-border-default)] overflow-y-auto bg-[var(--color-bg-base)]`}
+        >
+          <div className="p-[var(--space-4)]">
             {isLoading ? (
               <ClientSkeleton />
             ) : clients.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-[var(--color-text-disabled)] mx-auto mb-3 opacity-50" />
+              <div className="text-center py-[var(--space-12)]">
+                <Users className="w-12 h-12 text-[var(--color-text-disabled)] mx-auto mb-[var(--space-3)] opacity-50" />
                 <p className="text-[var(--color-text-primary)] font-medium">No clients yet</p>
-                <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                <p className="text-[length:var(--text-sm)] text-[var(--color-text-muted)] mb-[var(--space-4)]">
                   Add your first client to start tracking relationships.
                 </p>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg font-medium hover:bg-[var(--color-accent-hover)] transition-colors inline-flex items-center gap-2"
+                  className="px-[var(--space-4)] py-[var(--space-2)] bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] font-medium hover:bg-[var(--color-accent-hover)] transition-colors inline-flex items-center gap-[var(--space-2)]"
                 >
                   <Plus size={16} /> Add Client
                 </button>
@@ -978,10 +1063,7 @@ export default function ClientsPage() {
                   key={client.id}
                   client={client}
                   isSelected={selectedClient?.id === client.id}
-                  onClick={() => {
-                    setSelectedClient(client);
-                    setConfirmingDeleteId(null);
-                  }}
+                  onClick={() => setSelectedClient(client)}
                   lastContactDays={lastContactMap[client.id]}
                 />
               ))
@@ -990,47 +1072,49 @@ export default function ClientsPage() {
         </div>
 
         {/* Right Panel: Client Detail */}
-        <div className="flex-1 overflow-y-auto bg-[var(--color-bg-base)]">
+        {/* Right Panel: Client Detail — the only panel shown on small screens once a
+            client is selected; a "Back" button there returns to the list. */}
+        <div
+          data-onboarding="clients-detail-panel"
+          className={`${selectedClient ? "block" : "hidden md:block"} flex-1 overflow-y-auto bg-[var(--color-bg-base)]`}
+        >
           {selectedClient ? (
-            <div className="p-8">
-              <div className="flex items-start gap-6 mb-8 pb-6 border-b border-[var(--color-border-default)]">
-                <ClientAvatar client={selectedClient} size={64} textSize="text-2xl" />
+            <div className="p-[var(--space-8)]">
+              <button
+                onClick={() => setSelectedClient(null)}
+                className="md:hidden flex items-center gap-[var(--space-1)] text-[length:var(--text-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-[var(--space-4)]"
+              >
+                <ChevronLeft size={16} /> Back to clients
+              </button>
+              <div data-onboarding="clients-detail-header" className="flex items-start gap-[var(--space-6)] mb-[var(--space-8)] pb-[var(--space-6)] border-b border-[var(--color-border-default)]">
+                <ClientAvatar client={selectedClient} size="clamp(40px, 4vw, 56px)" textSize="text-[length:var(--text-2xl)]" />
 
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
+                  <h2 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">
                     {selectedClient.name}
                     {selectedClient.company && (
-                      <span className="text-2xl font-normal text-[var(--color-text-muted)]"> | {selectedClient.company}</span>
+                      <span className="text-[length:var(--text-2xl)] font-normal text-[var(--color-text-muted)]"> | {selectedClient.company}</span>
                     )}
                   </h2>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-[var(--color-text-muted)]">
+                  <div className="flex items-center gap-[var(--space-4)] mt-[var(--space-2)] text-[length:var(--text-sm)] text-[var(--color-text-muted)]">
                     {selectedClient.email && <span>{selectedClient.email}</span>}
                     {selectedClient.phone && <span>{selectedClient.phone}</span>}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-[var(--space-2)]">
                   <button
                     onClick={() => setEditingClient(selectedClient)}
-                    className="p-2 text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)] rounded-lg transition-colors"
+                    className="p-[var(--space-2)] text-[var(--color-text-disabled)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-card)] rounded-[var(--radius-md)] transition-colors"
                   >
                     <Edit2 size={18} />
                   </button>
-                  {confirmingDeleteId === selectedClient.id ? (
-                    <button
-                      onClick={() => handleDeleteClient(selectedClient.id)}
-                      className="px-3 py-2 text-xs font-medium text-white bg-[var(--color-error)] rounded-lg transition-colors"
-                    >
-                      Confirm delete?
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmingDeleteId(selectedClient.id)}
-                      className="p-2 text-[var(--color-text-disabled)] hover:text-[var(--color-error)] hover:bg-[var(--color-bg-card)] rounded-lg transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setClientPendingDelete(selectedClient)}
+                    className="p-[var(--space-2)] text-[var(--color-text-disabled)] hover:text-[var(--color-error)] hover:bg-[var(--color-bg-card)] rounded-[var(--radius-md)] transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
 
@@ -1038,7 +1122,7 @@ export default function ClientsPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <Users className="w-16 h-16 text-[var(--color-text-disabled)] mb-4 opacity-30" />
+              <Users className="w-16 h-16 text-[var(--color-text-disabled)] mb-[var(--space-4)] opacity-30" />
               <p className="text-[var(--color-text-primary)] font-medium">Select a client to see their details</p>
             </div>
           )}
@@ -1052,6 +1136,15 @@ export default function ClientsPage() {
         onSubmit={handleEditClient}
         initialData={editingClient}
         isSubmitting={isSavingEdit}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!clientPendingDelete}
+        onClose={() => setClientPendingDelete(null)}
+        onConfirm={() => handleDeleteClient(clientPendingDelete!.id)}
+        title="Delete client?"
+        description={`"${clientPendingDelete?.name ?? ""}" will be permanently deleted. This can't be undone.`}
+        successMessage="Client deleted"
       />
     </div>
   );

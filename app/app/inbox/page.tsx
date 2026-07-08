@@ -6,6 +6,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Mail, Search, Circle, ChevronLeft, Trash2 } from "lucide-react";
 import { useAppCache } from "@/lib/app-cache";
+import { useToast } from "@/components/ui/toast-provider";
+import { classifyError } from "@/lib/error-messages";
+import { ConfirmDeleteModal } from "@/components/ui/confirm-delete-modal";
 
 interface GmailMessage {
   id: string;
@@ -26,28 +29,42 @@ interface EmailDetail {
   mimeType: string;
 }
 
+// Mirrors EmailListItem exactly: px-4 py-3 row, border-l-4 (transparent since
+// no row is selected while loading), dot column, sender/date row + subject row.
 const EmailListSkeleton = () => (
-  <div className="space-y-2">
-    {[1, 2, 3, 4, 5].map((i) => (
-      <div key={i} className="p-4 border-b border-[var(--color-border-subtle)] animate-pulse">
-        <div className="h-4 bg-[var(--color-bg-elevated)] rounded mb-2 w-3/4" />
-        <div className="h-3 bg-[var(--color-bg-card)] rounded w-full mb-1" />
-        <div className="h-2 bg-[var(--color-bg-card)] rounded w-2/3" />
+  <div className="animate-pulse">
+    {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+      <div
+        key={i}
+        className="px-[var(--space-4)] py-[var(--space-3)] border-b border-[var(--color-border-subtle)] border-l-4 border-l-transparent flex items-start gap-[var(--space-3)]"
+      >
+        <div className="w-2 self-center flex items-center justify-center flex-shrink-0">
+          <div className="w-2 h-2 rounded-full bg-[var(--color-bg-elevated)]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-[var(--space-2)] mb-[var(--space-1)]">
+            <div className="h-3.5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)]" style={{ width: "40%" }} />
+            <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] flex-shrink-0" style={{ width: 48 }} />
+          </div>
+          <div className="h-3.5 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)]" style={{ width: "70%" }} />
+        </div>
+        <div className="flex-shrink-0 self-center" style={{ width: 16, height: 16 }} />
       </div>
     ))}
   </div>
 );
 
+// Mirrors the body pane only (p-8, max-w-none) — the header above it (subject/
+// from/to/date) is real markup rendered outside this skeleton's branch.
 const EmailDetailSkeleton = () => (
-  <div className="p-8 animate-pulse space-y-4">
-    <div className="h-8 bg-[var(--color-bg-elevated)] rounded w-3/4 mb-6" />
-    <div className="h-4 bg-[var(--color-bg-card)] rounded w-1/2 mb-2" />
-    <div className="h-4 bg-[var(--color-bg-card)] rounded w-2/3" />
-    <div className="mt-8 space-y-3">
-      <div className="h-3 bg-[var(--color-bg-card)] rounded w-full" />
-      <div className="h-3 bg-[var(--color-bg-card)] rounded w-full" />
-      <div className="h-3 bg-[var(--color-bg-card)] rounded w-3/4" />
-    </div>
+  <div className="max-w-none animate-pulse space-y-[var(--space-3)]">
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-11/12" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-3/4" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-full" />
+    <div className="h-3 bg-[var(--color-bg-elevated)] rounded-[var(--radius-sm)] w-5/6" />
   </div>
 );
 
@@ -95,16 +112,12 @@ const EmailListItem = ({
   email,
   isSelected,
   onClick,
-  onDelete,
-  deleteConfirmId,
-  setDeleteConfirmId,
+  onRequestDelete,
 }: {
   email: GmailMessage;
   isSelected: boolean;
   onClick: () => void;
-  onDelete: (id: string) => void;
-  deleteConfirmId: string | null;
-  setDeleteConfirmId: (id: string | null) => void;
+  onRequestDelete: (email: GmailMessage) => void;
 }) => {
   const [trashHovered, setTrashHovered] = useState(false);
 
@@ -129,28 +142,29 @@ const EmailListItem = ({
   return (
     <div
       onClick={onClick}
-      className={`group px-4 py-3 border-b border-[var(--color-border-subtle)] cursor-pointer transition-all flex items-start gap-3 ${
+      className={`group px-[var(--space-4)] py-[var(--space-3)] border-b border-[var(--color-border-subtle)] cursor-pointer transition-all flex items-start gap-[var(--space-3)] ${
         isSelected
           ? "border-l-4 border-l-[var(--color-accent)] bg-[var(--color-accent-subtle)]"
           : "border-l-4 border-l-transparent hover:bg-[var(--color-bg-base)]"
       }`}
     >
-      {/* Unread dot */}
-      {email.isUnread && (
-        <Circle size={8} className="text-[var(--color-accent)] mt-2 flex-shrink-0 fill-current" />
-      )}
-      {!email.isUnread && <div className="w-2 mt-2 flex-shrink-0" />}
+      {/* Unread dot — centred against the whole card's height, not just one line. */}
+      <div className="w-2 self-center flex items-center justify-center flex-shrink-0">
+        {email.isUnread && (
+          <Circle size={8} className="text-[var(--color-accent)] fill-current" />
+        )}
+      </div>
 
       {/* Email content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <p className={`text-sm ${email.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)]"}`}>
+        <div className="flex items-center justify-between gap-[var(--space-2)] mb-[var(--space-1)]">
+          <p className={`text-[length:var(--text-sm)] ${email.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)]"}`}>
             {email.sender}
           </p>
-          <span className="text-xs text-[var(--color-text-disabled)] flex-shrink-0">{formatDate(email.date)}</span>
+          <span className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] flex-shrink-0">{formatDate(email.date)}</span>
         </div>
         <p
-          className={`text-sm truncate ${
+          className={`text-[length:var(--text-sm)] truncate ${
             email.isUnread ? "font-bold text-[var(--color-text-primary)]" : "text-[var(--color-text-primary)]"
           }`}
         >
@@ -163,34 +177,18 @@ const EmailListItem = ({
         data-trash-button="true"
         onClick={(e) => {
           e.stopPropagation();
-          if (deleteConfirmId === email.id) {
-            onDelete(email.id);
-            setDeleteConfirmId(null);
-          } else {
-            setDeleteConfirmId(email.id);
-          }
+          onRequestDelete(email);
         }}
         onMouseEnter={() => setTrashHovered(true)}
         onMouseLeave={() => setTrashHovered(false)}
-        className="flex-shrink-0 self-center px-2 py-1.5 rounded-full transition-colors text-xs font-medium"
+        className="flex-shrink-0 self-center px-[var(--space-2)] py-[var(--space-1)] rounded-full transition-colors text-[length:var(--text-xs)] font-medium"
         style={{
-          color:
-            deleteConfirmId === email.id
-              ? "var(--color-error)"
-              : trashHovered
-              ? "var(--color-error)"
-              : "var(--color-text-disabled)",
-          backgroundColor:
-            deleteConfirmId === email.id
-              ? "var(--color-delete-confirm-bg)"
-              : trashHovered
-              ? "var(--color-delete-hover-bg)"
-              : "transparent",
+          color: trashHovered ? "var(--color-error)" : "var(--color-text-disabled)",
+          backgroundColor: trashHovered ? "var(--color-delete-hover-bg)" : "transparent",
           cursor: "pointer",
-          border: deleteConfirmId === email.id ? "1px solid var(--color-error)" : "none",
         }}
       >
-        {deleteConfirmId === email.id ? "Delete?" : <Trash2 size={16} />}
+        <Trash2 size={16} />
       </button>
     </div>
   );
@@ -199,6 +197,7 @@ const EmailListItem = ({
 // Gmail inbox view inside the app — lists/reads/marks-read/deletes emails
 // via the Gmail API, with local caching to avoid refetching on every visit.
 export default function InboxPage() {
+  const toast = useToast();
   const searchParams = useSearchParams();
   const { cache, setCache, isStale } = useAppCache();
   const [emails, setEmails] = useState<GmailMessage[]>([]);
@@ -208,18 +207,7 @@ export default function InboxPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "read">("all");
   const [gmailConnected, setGmailConnected] = useState(true);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-trash-button="true"]')) {
-        setDeleteConfirmId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [emailPendingDelete, setEmailPendingDelete] = useState<GmailMessage | null>(null);
 
   useEffect(() => {
     // Check if we have valid cache with 25 emails (allEmails, not dashboard's 4)
@@ -244,6 +232,15 @@ export default function InboxPage() {
       }
     }
   }, [searchParams, emails]);
+
+  // Lets the onboarding guide open the first email so it has something real to spotlight.
+  useEffect(() => {
+    const handler = () => {
+      if (emails.length > 0 && !selectedEmail) handleSelectEmail(emails[0]);
+    };
+    window.addEventListener("flowtex:inbox-guide-select-first", handler);
+    return () => window.removeEventListener("flowtex:inbox-guide-select-first", handler);
+  }, [emails, selectedEmail]);
 
   const fetchEmails = async () => {
     setIsLoadingList(true);
@@ -332,7 +329,10 @@ export default function InboxPage() {
     }
   };
 
-  const handleDeleteEmail = async (emailId: string) => {
+  // Awaited by the delete confirmation modal, which already shows its own
+  // loading/success state — so this only mutates local state once Gmail has
+  // actually confirmed the delete, instead of the old optimistic-then-rollback dance.
+  const handleDeleteEmail = async (emailId: string): Promise<boolean> => {
     try {
       const response = await fetch("/api/gmail/delete", {
         method: "POST",
@@ -343,34 +343,40 @@ export default function InboxPage() {
       if (!response.ok) {
         const data = await response.json();
         console.error("[INBOX] Failed to delete email:", data);
-        return;
+        toast.show({
+          ...classifyError(Object.assign(new Error("Failed to delete email"), { status: response.status }), "Email", "deleted"),
+          onRetry: () => handleDeleteEmail(emailId),
+        });
+        return false;
       }
 
       console.log("[INBOX] Deleted email from Gmail:", emailId);
-
       const updatedEmails = emails.filter((e) => e.id !== emailId);
       setEmails(updatedEmails);
       setCache("allInboxEmails", updatedEmails);
-
-      if (selectedEmail?.id === emailId) {
-        setSelectedEmail(null);
-      }
+      if (selectedEmail?.id === emailId) setSelectedEmail(null);
+      return true;
     } catch (err) {
       console.error("[INBOX] Delete email error:", err);
+      toast.show({
+        ...classifyError(err, "Email", "deleted"),
+        onRetry: () => handleDeleteEmail(emailId),
+      });
+      return false;
     }
   };
 
   if (!gmailConnected) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-base)] p-8">
-        <Link href="/app" className="flex items-center gap-2 text-[var(--color-accent)] mb-8">
+      <div className="min-h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)] p-[var(--space-8)]">
+        <Link href="/app" className="flex items-center gap-[var(--space-2)] text-[var(--color-accent)] mb-[var(--space-8)]">
           <ChevronLeft size={20} /> Back to dashboard
         </Link>
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <Mail size={48} className="mx-auto mb-4 text-[var(--color-text-disabled)]" />
-            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Gmail not connected</h2>
-            <p className="text-[var(--color-text-disabled)] mb-6">Connect Gmail in integrations to view your inbox</p>
+            <Mail size={48} className="mx-auto mb-[var(--space-4)] text-[var(--color-text-disabled)]" />
+            <h2 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)] mb-[var(--space-2)]">Gmail not connected</h2>
+            <p className="text-[var(--color-text-disabled)] mb-[var(--space-6)]">Connect Gmail in integrations to view your inbox</p>
             <a href="/app/integrations" className="text-[var(--color-accent)] hover:underline">
               Go to Integrations
             </a>
@@ -381,35 +387,39 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[var(--color-bg-base)]">
       <div className="flex h-screen flex-col">
-        <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-4">
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Inbox</h1>
+        <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-card)] p-[var(--space-4)]">
+          <h1 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">Inbox</h1>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* Left Panel: Email List */}
-          <div className="w-[35%] border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] flex flex-col">
+          {/* Left Panel: Email List — hidden on small screens once an email is open, so the
+              detail view gets the full width there instead of squeezing both panels. */}
+          <div
+            data-onboarding="inbox-list"
+            className={`${selectedEmail ? "hidden md:flex" : "flex"} w-full md:w-[35%] border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] flex-col`}
+          >
             {/* Search Bar */}
-            <div className="p-4 border-b border-[var(--color-border-subtle)]">
-              <div className="relative mb-3">
+            <div className="p-[var(--space-4)] border-b border-[var(--color-border-subtle)]">
+              <div className="relative mb-[var(--space-3)]">
                 <Search className="absolute left-3 top-3 text-[var(--color-text-disabled)]" size={18} />
                 <input
                   type="text"
                   placeholder="Search emails..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
+                  className="w-full pl-[var(--space-10)] pr-[var(--space-4)] py-[var(--space-2)] bg-[var(--color-bg-base)] border border-[var(--color-border-default)] rounded-[var(--radius-md)] text-[var(--color-text-primary)] placeholder-[var(--color-text-disabled)] focus:outline-none focus:border-[var(--color-accent)]"
                 />
               </div>
 
               {/* Filter Pills */}
-              <div className="flex gap-2">
+              <div className="flex gap-[var(--space-2)]">
                 {(["all", "unread", "read"] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    className={`px-[var(--space-3)] py-[var(--space-1)] rounded-full text-[length:var(--text-xs)] font-medium transition-colors ${
                       activeFilter === filter
                         ? "bg-[var(--color-accent)] text-[var(--color-bg-base)] font-medium"
                         : "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-card)]"
@@ -438,24 +448,32 @@ export default function InboxPage() {
                     email={email}
                     isSelected={selectedEmail?.id === email.id}
                     onClick={() => handleSelectEmail(email)}
-                    onDelete={handleDeleteEmail}
-                    deleteConfirmId={deleteConfirmId}
-                    setDeleteConfirmId={setDeleteConfirmId}
+                    onRequestDelete={setEmailPendingDelete}
                   />
                 ))
               )}
             </div>
           </div>
 
-          {/* Right Panel: Email Detail */}
-          <div className="w-[65%] bg-[var(--color-bg-base)] flex flex-col">
+          {/* Right Panel: Email Detail — the only panel shown on small screens once an
+              email is selected; a "Back" button there returns to the list. */}
+          <div
+            data-onboarding="inbox-expanded"
+            className={`${selectedEmail ? "flex" : "hidden md:flex"} flex-1 bg-[var(--color-bg-base)] flex-col`}
+          >
             {selectedEmail ? (
               <>
-                <div className="border-b border-[var(--color-border-subtle)] p-8 space-y-4">
-                  <h1 className="text-3xl font-bold text-[var(--color-text-primary)] leading-tight">
+                <div className="border-b border-[var(--color-border-subtle)] p-[var(--space-8)] space-y-[var(--space-4)]">
+                  <button
+                    onClick={() => setSelectedEmail(null)}
+                    className="md:hidden flex items-center gap-[var(--space-1)] text-[length:var(--text-sm)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] mb-[var(--space-2)]"
+                  >
+                    <ChevronLeft size={16} /> Back to inbox
+                  </button>
+                  <h1 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)] leading-tight">
                     {selectedEmail.subject}
                   </h1>
-                  <div className="space-y-2 text-[var(--color-text-disabled)]">
+                  <div className="space-y-[var(--space-2)] text-[var(--color-text-disabled)]">
                     <p>
                       <span className="font-semibold">From:</span> {selectedEmail.from}
                     </p>
@@ -475,7 +493,7 @@ export default function InboxPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-[var(--space-8)]">
                   {isLoadingDetail ? (
                     <EmailDetailSkeleton />
                   ) : (
@@ -493,13 +511,22 @@ export default function InboxPage() {
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center">
-                <Mail size={48} className="text-[var(--color-border-default)] mb-4" />
+                <Mail size={48} className="text-[var(--color-border-default)] mb-[var(--space-4)]" />
                 <p className="text-[var(--color-text-disabled)]">Select an email to read</p>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteModal
+        isOpen={!!emailPendingDelete}
+        onClose={() => setEmailPendingDelete(null)}
+        onConfirm={() => handleDeleteEmail(emailPendingDelete!.id)}
+        title="Delete email?"
+        description={`"${emailPendingDelete?.subject ?? ""}" will be permanently deleted from Gmail. This can't be undone.`}
+        successMessage="Email deleted"
+      />
     </div>
   );
 }

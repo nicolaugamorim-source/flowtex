@@ -21,13 +21,6 @@ interface CalendarEvent {
   };
 }
 
-interface Note {
-  id: string;
-  content: string;
-  is_done: boolean;
-  created_at?: string;
-}
-
 const MILESTONE_MESSAGES: Record<string, string[]> = {
   "1": [
     "First day. The hardest one.",
@@ -221,7 +214,7 @@ const checkAndResetDailyCounters = () => {
   }
 };
 
-const getTodaysActivityCount = (thisWeekEvents: CalendarEvent[], quickNotes: Note[]): number => {
+const getTodaysActivityCount = (thisWeekEvents: CalendarEvent[]): number => {
   checkAndResetDailyCounters();
   const today = new Date().toDateString();
 
@@ -237,13 +230,6 @@ const getTodaysActivityCount = (thisWeekEvents: CalendarEvent[], quickNotes: Not
     return eventDate === today;
   }).length;
   count += eventsToday;
-
-  const notesToday = quickNotes.filter((n) => {
-    if (!n.created_at) return false;
-    const noteDate = new Date(n.created_at).toDateString();
-    return noteDate === today;
-  }).length;
-  count += notesToday;
 
   return count;
 };
@@ -288,7 +274,6 @@ export const DailyStreak = () => {
   const [dailyPhrase, setDailyPhrase] = useState<string>("");
   const [todaysActivityCount, setTodaysActivityCount] = useState(0);
   const [thisWeekEvents, setThisWeekEvents] = useState<CalendarEvent[]>([]);
-  const [quickNotes, setQuickNotes] = useState<Note[]>([]);
   const [activityHistory, setActivityHistory] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
@@ -339,7 +324,6 @@ export const DailyStreak = () => {
 
   const fetchActivityData = async () => {
     let events: CalendarEvent[] = [];
-    let notes: Note[] = [];
 
     try {
       const calendarResponse = await fetch("/api/calendar/dashboard-events");
@@ -352,18 +336,7 @@ export const DailyStreak = () => {
       console.error("Failed to fetch calendar events:", err);
     }
 
-    try {
-      const notesResponse = await fetch("/api/notes");
-      const notesData = await notesResponse.json();
-      if (notesData.notes) {
-        notes = notesData.notes;
-        setQuickNotes(notes);
-      }
-    } catch (err) {
-      console.error("Failed to fetch notes:", err);
-    }
-
-    const activityCount = getTodaysActivityCount(events, notes);
+    const activityCount = getTodaysActivityCount(events);
     setTodaysActivityCount(activityCount);
   };
 
@@ -422,16 +395,40 @@ flowtex.xyz #buildinpublic`;
   };
 
   if (isLoading) {
+    // Structural clone of the real card below: top number+label+phrase row,
+    // "today's activity" line, full-width activity square grid, legend, bottom row.
     return (
-      <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col gap-3">
-        <div className="flex flex-col items-center gap-3">
-          <Skeleton style={{ width: 80, height: 56, borderRadius: 8 }} />
-          <Skeleton style={{ width: 160, height: 12, borderRadius: 4 }} />
-          <div className="grid grid-cols-10 gap-1 mt-2">
+      <div className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full min-h-0 flex flex-col gap-[var(--space-5)]">
+        <div className="flex items-center justify-center gap-[var(--space-6)] w-full">
+          <div className="flex items-center gap-[var(--space-2)] flex-shrink-0">
+            <Skeleton style={{ width: 64, height: 56, borderRadius: "var(--radius-md)" }} />
+            <div className="flex flex-col gap-[var(--space-1)]">
+              <Skeleton style={{ width: 40, height: 12, borderRadius: "var(--radius-sm)" }} />
+              <Skeleton style={{ width: 56, height: 12, borderRadius: "var(--radius-sm)" }} />
+            </div>
+          </div>
+          <Skeleton style={{ flex: 1, height: 16, borderRadius: "var(--radius-sm)" }} />
+        </div>
+
+        <Skeleton style={{ width: 160, height: 12, borderRadius: "var(--radius-sm)" }} />
+
+        <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-4)] items-center w-full overflow-hidden">
+          <div className="grid grid-cols-10 gap-[var(--space-1)] w-full">
             {Array(30).fill(0).map((_, i) => (
-              <Skeleton key={i} style={{ width: 14, height: 14, borderRadius: 3 }} />
+              <div key={i} className="animate-pulse aspect-square w-full bg-[var(--color-bg-elevated)]" style={{ borderRadius: "2px" }} />
             ))}
           </div>
+          <div className="flex items-center justify-end gap-[var(--space-2)] w-full">
+            <Skeleton style={{ width: 24, height: 10, borderRadius: "var(--radius-sm)" }} />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} style={{ width: 10, height: 10, borderRadius: "2px" }} />
+            ))}
+            <Skeleton style={{ width: 24, height: 10, borderRadius: "var(--radius-sm)" }} />
+          </div>
+        </div>
+
+        <div className="pt-[var(--space-3)] border-t border-[var(--color-border-subtle)]">
+          <Skeleton style={{ width: 128, height: 12, borderRadius: "var(--radius-sm)" }} />
         </div>
       </div>
     );
@@ -442,76 +439,70 @@ flowtex.xyz #buildinpublic`;
   const activityCount = activityHistory.get(today) || 0;
 
   return (
-    <div className="bg-[var(--color-bg-card)] rounded-2xl border border-[var(--color-border-default)] p-6 h-full flex flex-col gap-5 relative">
+    <div data-onboarding="streak-card" className="bg-[var(--color-bg-card)] rounded-[var(--radius-lg)] border border-[var(--color-border-default)] p-[var(--space-6)] h-full min-h-0 flex flex-col gap-[var(--space-5)] relative overflow-hidden">
       {/* Top Section: Streak number + labels on left, phrase in center */}
-      <div className="flex items-center justify-center gap-6 w-full">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <p className="text-8xl font-bold text-[var(--color-text-primary)] leading-none">{calculateDayStreak(activityHistory)}</p>
-          <div className="flex flex-col gap-0.5">
-            <p className="text-lg font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
-            <p className="text-lg font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
+      <div className="flex items-center justify-center gap-[var(--space-6)] w-full">
+        <div className="flex items-center gap-[var(--space-2)] flex-shrink-0">
+          <p className="text-[clamp(28px,min(6vw,7vh),96px)] font-bold text-[var(--color-text-primary)] leading-none">{calculateDayStreak(activityHistory)}</p>
+          <div className="flex flex-col gap-[var(--space-1)]">
+            <p className="text-[length:var(--text-lg)] font-semibold text-[var(--color-text-primary)] uppercase">Day</p>
+            <p className="text-[length:var(--text-lg)] font-semibold text-[var(--color-text-primary)] uppercase">Streak</p>
           </div>
         </div>
 
-        <p className="text-lg font-bold text-[var(--color-text-primary)] flex-1 text-center">{dailyPhrase}</p>
+        <p className="text-[length:var(--text-lg)] font-bold text-[var(--color-text-primary)] flex-1 text-center">{dailyPhrase}</p>
       </div>
 
       {/* Today's Activity */}
       <div>
-        <p className="text-sm text-[var(--color-text-disabled)]">Today's activity: {activityCount} actions</p>
+        <p className="text-[length:var(--text-sm)] text-[var(--color-text-disabled)]">Today's activity: {activityCount} actions</p>
       </div>
 
       {/* GitHub-style Activity Graph - Full Year */}
-      <div className="flex flex-col gap-4 items-center">
-        {/* Graph Container with Horizontal Scroll */}
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: "420px" }} className="flex gap-1 pb-4 justify-center">
-            {/* Day Labels on the Left */}
-            <div className="flex flex-col gap-1 mr-2">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <p key={day} className="text-xs text-[var(--color-text-disabled)] h-[14px] flex items-center">
-                  {day}
-                </p>
-              ))}
-            </div>
+      <div className="flex-1 min-h-0 flex flex-col gap-[var(--space-4)] items-center w-full overflow-hidden">
+        {/* Graph Container — one single grid for both the day labels and the squares, so
+            every row (label + its 27 squares) shares the exact same height and the exact
+            same gap in both directions. Squares use aspect-square (driven by their 1fr
+            column width) so they're always true squares, not stretched rectangles. */}
+        <div
+          className="grid grid-flow-col grid-rows-7 gap-[var(--space-1)] pb-[var(--space-4)] w-full"
+          style={{ gridTemplateColumns: `auto repeat(${weeks.length}, minmax(0, 1fr))` }}
+        >
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            <p key={day} className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)] flex items-center pr-[var(--space-2)]">
+              {day}
+            </p>
+          ))}
 
-            {/* Grid Container */}
-            <div className="flex gap-1">
-              {weeks.map((week, weekIdx) => (
-                <div key={weekIdx} className="flex flex-col gap-1">
-                  {/* Week Column */}
-                  {week.days.map((day, dayIdx) => {
-                    const colors = getColorForActivityCount(day.actionCount, day.isToday, day.isFuture);
-                    const dateObj = new Date(day.date);
-                    const monthName = dateObj.toLocaleString("default", { month: "long" });
-                    const dayNum = dateObj.getDate();
-                    const suffix = getOrdinalSuffix(dayNum);
-                    const tooltip = day.actionCount === 0
-                      ? `No contributions on ${monthName} ${dayNum}${suffix}`
-                      : `${day.actionCount} contribution${day.actionCount !== 1 ? "s" : ""} on ${monthName} ${dayNum}${suffix}`;
+          {weeks.map((week, weekIdx) =>
+            week.days.map((day, dayIdx) => {
+              const colors = getColorForActivityCount(day.actionCount, day.isToday, day.isFuture);
+              const dateObj = new Date(day.date);
+              const monthName = dateObj.toLocaleString("default", { month: "long" });
+              const dayNum = dateObj.getDate();
+              const suffix = getOrdinalSuffix(dayNum);
+              const tooltip = day.actionCount === 0
+                ? `No contributions on ${monthName} ${dayNum}${suffix}`
+                : `${day.actionCount} contribution${day.actionCount !== 1 ? "s" : ""} on ${monthName} ${dayNum}${suffix}`;
 
-                    return (
-                      <div
-                        key={`${weekIdx}-${dayIdx}`}
-                        className={`transition-colors ${colors.border}`}
-                        style={{
-                          width: "14px",
-                          height: "14px",
-                          borderRadius: "2px",
-                          backgroundColor: colors.bg,
-                        }}
-                        title={tooltip}
-                      />
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
+              return (
+                <div
+                  key={`${weekIdx}-${dayIdx}`}
+                  className={`transition-colors w-full aspect-square ${colors.border}`}
+                  style={{
+                    minWidth: "2px",
+                    borderRadius: "2px",
+                    backgroundColor: colors.bg,
+                  }}
+                  title={tooltip}
+                />
+              );
+            })
+          )}
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-end gap-2 text-xs text-[var(--color-text-disabled)]">
+        <div className="flex items-center justify-end gap-[var(--space-2)] text-[length:var(--text-xs)] text-[var(--color-text-disabled)]">
           <span>Less</span>
           <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "var(--color-bg-base)", border: "1px solid var(--color-border-default)" }} />
           <div style={{ width: "10px", height: "10px", borderRadius: "2px", backgroundColor: "var(--color-accent-light)", border: "1px solid var(--color-border-default)" }} />
@@ -523,13 +514,13 @@ flowtex.xyz #buildinpublic`;
       </div>
 
       {/* Bottom row */}
-      <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
-        <p className="text-xs text-[var(--color-text-disabled)]">Longest streak: {streak?.longest_streak ?? 0} days</p>
+      <div className="flex items-center justify-between pt-[var(--space-3)] border-t border-[var(--color-border-subtle)]">
+        <p className="text-[length:var(--text-xs)] text-[var(--color-text-disabled)]">Longest streak: {streak?.longest_streak ?? 0} days</p>
       </div>
 
       {/* Toast notification */}
       {showToast && (
-        <div className="fixed bottom-4 right-4 bg-[var(--color-text-primary)] text-white text-xs px-4 py-2 rounded-lg shadow-lg">
+        <div className="fixed bottom-4 right-4 bg-[var(--color-text-primary)] text-white text-[length:var(--text-xs)] px-[var(--space-4)] py-[var(--space-2)] rounded-[var(--radius-md)] shadow-lg">
           Copied!
         </div>
       )}
