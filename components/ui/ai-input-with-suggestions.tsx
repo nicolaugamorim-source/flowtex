@@ -141,8 +141,8 @@ export function AIInputWithSuggestions({
       <div className={cn("w-full", className)}>
         <div
           className="relative border border-[var(--color-border-subtle)] focus-within:border-[var(--color-border-default)] rounded-2xl transition-all duration-150"
-          style={{ backgroundColor: "var(--color-surface)" }}
           style={{
+            backgroundColor: "var(--color-surface)",
             height: `${textareaHeight + 50}px`,
             paddingRight: showScrollbar ? '20px' : '0',
             paddingTop: showScrollbar ? '26px' : '0',
