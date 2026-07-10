@@ -42,8 +42,16 @@ export function emailLayout(bodyHtml: string, footerNote?: string): string {
           <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:12px;">
             <tr>
               <td style="padding:32px 32px 8px;text-align:center;">
-                <img src="${LOGO_URL}" alt="Flowtex" width="36" height="36" style="display:block;margin:0 auto 12px;width:36px;height:36px;" />
-                <span style="display:block;margin-bottom:16px;font-size:28px;font-weight:700;color:${BRAND.accent};letter-spacing:-0.01em;">Flowtex</span>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 16px;">
+                  <tr>
+                    <td style="padding-right:12px;vertical-align:middle;">
+                      <img src="${LOGO_URL}" alt="" width="72" height="72" style="display:block;width:72px;height:72px;" />
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <span style="font-size:26px;font-weight:700;letter-spacing:-0.01em;"><span style="color:#DFAA45;">Flow</span><span style="color:#F0D080;">tex</span></span>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
