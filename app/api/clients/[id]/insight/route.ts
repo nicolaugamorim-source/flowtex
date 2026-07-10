@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getValidGoogleToken } from "@/lib/google-auth";
 import { decodeMimeHeader } from "@/lib/google-gmail";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -14,6 +15,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
     const cookieStore = await cookies();
     const supabase = createServerClient(

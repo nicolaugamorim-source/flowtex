@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { createNotification } from "@/lib/notifications";
 
 // Computes and updates the user's daily activity streak, returning a
 // milestone message when the new streak count hits a notable threshold.
@@ -151,6 +152,7 @@ export async function POST(request: NextRequest) {
 
     let streakCount = profile?.streak_count ?? 0;
     let longestStreak = profile?.longest_streak ?? 0;
+    const previousLongestStreak = longestStreak;
     let newLastActiveDate = lastActiveDate;
 
     console.log(`[STREAK] Processing for user ${user.id}`);
@@ -193,6 +195,20 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[STREAK] Updated - Streak: ${streakCount}, Best: ${longestStreak}`);
+
+    // Only celebrate an actual new personal best (not every day the streak
+    // simply continues below the existing record), and only once — a streak
+    // of 1 beating a longestStreak of 0 on someone's very first day isn't a
+    // "record" worth a notification.
+    if (longestStreak > previousLongestStreak && longestStreak > 1) {
+      await createNotification(
+        user.id,
+        "streak_milestone",
+        "New longest streak!",
+        `You just hit a ${longestStreak}-day streak — your best yet.`,
+        { streak: longestStreak }
+      );
+    }
 
     return NextResponse.json({
       streak_count: streakCount,

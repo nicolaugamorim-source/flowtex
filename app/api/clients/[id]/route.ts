@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getGravatarUrl } from "@/lib/gravatar";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 // Updates a single client record (e.g. notes, contact info).
 export async function PATCH(
@@ -9,6 +10,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -35,9 +41,23 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // Allowlist only user-editable columns (mirrors the POST handler in
+    // app/api/clients/route.ts) so a client can't smuggle extra keys like
+    // user_id or created_at into the update via the JSON body.
+    const { name, company, email, phone, website, status, notes, avatar_color } = body;
+    const updates: Record<string, unknown> = {};
+    if (name !== undefined) updates.name = name;
+    if (company !== undefined) updates.company = company;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone;
+    if (website !== undefined) updates.website = website;
+    if (status !== undefined) updates.status = status;
+    if (notes !== undefined) updates.notes = notes;
+    if (avatar_color !== undefined) updates.avatar_color = avatar_color;
+
     const { data: client, error } = await supabase
       .from("clients")
-      .update(body)
+      .update(updates)
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
@@ -63,6 +83,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
     const cookieStore = await cookies();
     const supabase = createServerClient(

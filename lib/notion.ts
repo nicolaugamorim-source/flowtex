@@ -1,5 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Thrown by searchNotionPages specifically, so callers can tell "Notion isn't
+// connected" apart from "search ran and found nothing" — those used to look
+// identical (both returned/resulted in an empty list).
+export class NotionNotConnectedError extends Error {
+  constructor() {
+    super('Notion is not connected or the connection has been disconnected.');
+    this.name = 'NotionNotConnectedError';
+  }
+}
+
 async function getNotionToken(userId: string): Promise<string | null> {
   if (!userId) {
     console.error('No userId provided to getNotionToken');
@@ -105,7 +115,7 @@ function fuzzyMatch(query: string, text: string): number {
 
 export async function searchNotionPages(userId: string, query: string): Promise<any[]> {
   const token = await getNotionToken(userId);
-  if (!token) return [];
+  if (!token) throw new NotionNotConnectedError();
 
   try {
     const response = await fetch('https://api.notion.com/v1/search', {
@@ -278,7 +288,12 @@ export async function deleteNotionPage(userId: string, pageId: string): Promise<
     if (!response.ok) {
       const error = await response.json();
       console.error('Notion delete failed:', error);
-      throw new Error(error.message || 'Failed to delete page');
+      // Preserve the HTTP status so callers can classify the failure (expired
+      // token, already deleted, no permission) instead of only getting text.
+      throw Object.assign(new Error(error.message || 'Failed to delete page'), {
+        status: response.status,
+        code: error.code,
+      });
     }
 
     return true;

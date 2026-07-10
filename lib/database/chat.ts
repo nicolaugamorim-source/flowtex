@@ -1,6 +1,16 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
+// UUID check — a defensive guard so these functions (which rely on RLS,
+// not an app-level ownership check, since they're called with a
+// session-derived userId) never run a query with a malformed/empty id.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function assertValidUserId(userId: string): void {
+  if (!userId || typeof userId !== 'string' || !UUID_RE.test(userId)) {
+    throw new Error('A valid userId is required');
+  }
+}
+
 export interface ChatMessageData {
   role: 'user' | 'assistant';
   content: string;
@@ -20,9 +30,7 @@ export async function saveChatMessage(
   client: SupabaseClient = supabase
 ): Promise<{ success: boolean; error?: any; messageId?: string }> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const { data: insertedData, error } = await client
       .from('chat_messages')
@@ -59,9 +67,7 @@ export async function getChatHistory(
   limit: number = 50
 ): Promise<any[]> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const { data, error } = await supabase
       .from('chat_messages')
@@ -84,9 +90,7 @@ export async function getChatHistory(
  */
 export async function getFullChatHistory(userId: string): Promise<any[]> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const { data, error } = await supabase
       .from('chat_messages')
@@ -112,9 +116,7 @@ export async function getRecentChatMessages(
   minutesBack: number = 120
 ): Promise<any[]> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const cutoffDate = new Date(Date.now() - minutesBack * 60 * 1000).toISOString();
 
@@ -142,9 +144,7 @@ export async function getChatMessagesWithActions(
   limit: number = 50
 ): Promise<any[]> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const { data, error } = await supabase
       .from('chat_messages')
@@ -168,9 +168,7 @@ export async function getChatMessagesWithActions(
  */
 export async function clearChatHistory(userId: string): Promise<{ success: boolean; error?: any }> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     const { error } = await supabase
       .from('chat_messages')
@@ -195,9 +193,7 @@ export async function getTokenUsageStats(
   period: 'day' | 'week' | 'month' = 'month'
 ): Promise<{ input_tokens: number; output_tokens: number; message_count: number }> {
   try {
-    if (!userId) {
-      throw new Error('userId is required');
-    }
+    assertValidUserId(userId);
 
     // Calculate cutoff date
     const now = new Date();

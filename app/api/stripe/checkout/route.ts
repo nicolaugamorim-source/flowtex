@@ -121,7 +121,22 @@ export async function GET(request: NextRequest) {
       throw new Error("Stripe did not return a checkout URL");
     }
 
-    return NextResponse.redirect(session.url);
+    const redirectResponse = NextResponse.redirect(session.url);
+
+    // Short-lived proof that this browser actually went through Stripe
+    // Checkout, so proxy.ts's `?checkout=success` bypass can require this
+    // cookie instead of trusting the query param alone (which anyone could
+    // append to a URL). httpOnly + 5min expiry keeps the bypass window tight;
+    // proxy.ts clears the cookie the moment it's consumed.
+    redirectResponse.cookies.set("checkout_pending", crypto.randomUUID(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 5 * 60,
+    });
+
+    return redirectResponse;
   } catch (error) {
     console.error("[STRIPE CHECKOUT] Error:", error);
     return NextResponse.json({ error: "Checkout failed" }, { status: 500 });

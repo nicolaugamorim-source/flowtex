@@ -2,10 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 // Lists/creates kanban tasks for the authenticated user.
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,12 +36,17 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Unbounded before — a power user's board (including everything they've
+    // ever archived, since the frontend fetches both in one call) would grow
+    // this response indefinitely. 1000 is far above any real board size today
+    // and cheap insurance against that.
     const { data: tasks, error } = await supabase
       .from("kanban_tasks")
       .select("*")
       .eq("user_id", user.id)
       .order("priority", { ascending: false })
-      .order("position", { ascending: true });
+      .order("position", { ascending: true })
+      .limit(1000);
 
     if (error) {
       console.error("Error fetching tasks:", error);
@@ -64,6 +75,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

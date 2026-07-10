@@ -20,6 +20,29 @@ export async function POST(request: NextRequest) {
 
     console.log("[ONBOARDING] Starting onboarding save...");
 
+    // The client already requires these before letting the user reach step 2,
+    // but that's just UX — nothing stops a direct POST here from marking an
+    // account "onboarded" with blank required fields, so enforce it again.
+    if (onboarding_completed) {
+      const missing = ["full_name", "business_name", "business_type"].filter(
+        (key) => typeof ({ full_name, business_name, business_type } as Record<string, unknown>)[key] !== "string" ||
+          !({ full_name, business_name, business_type } as Record<string, string>)[key].trim()
+      );
+      if (missing.length > 0) {
+        return NextResponse.json(
+          { error: `Missing required field(s): ${missing.join(", ")}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (typeof business_name === "string" && business_name.length > 100) {
+      return NextResponse.json(
+        { error: "Business name must be 100 characters or fewer" },
+        { status: 400 }
+      );
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

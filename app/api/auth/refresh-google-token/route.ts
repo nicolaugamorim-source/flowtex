@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { refreshGoogleAccessToken } from '@/lib/google-refresh';
+import { checkTokenRefreshRateLimit } from '@/lib/rate-limit';
 
 // Forces a refresh of the authenticated user's Google access token.
 export async function POST(request: NextRequest) {
   try {
     // Get userId from authenticated session
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user?.id) {
@@ -17,6 +36,14 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('User authenticated:', user.id);
+
+    const rateLimit = checkTokenRefreshRateLimit(user.id);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'rate_limited', retryAfterSeconds: rateLimit.retryAfterSeconds },
+        { status: 429 }
+      );
+    }
 
     // Use the refresh token stored in the database
     const freshToken = await refreshGoogleAccessToken(user.id);
@@ -37,7 +64,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Token refresh error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

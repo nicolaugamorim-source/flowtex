@@ -17,6 +17,27 @@ const LANGUAGES = [
   { code: "es", name: "Español", flag: "🇪🇸" },
 ];
 
+const NOTIFICATION_TEST_TYPES = [
+  { type: "integration_disconnected", label: "Integration disconnected" },
+  { type: "streak_milestone", label: "Streak milestone" },
+  { type: "payment_failed", label: "Payment failed" },
+  { type: "trial_ending", label: "Trial ending" },
+  { type: "subscription_canceled", label: "Subscription canceled" },
+  { type: "cancellation_scheduled", label: "Cancellation scheduled" },
+];
+
+async function sendTestNotification(type: string) {
+  try {
+    await fetch("/api/notifications/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type }),
+    });
+  } catch (error) {
+    console.error("Failed to send test notification:", error);
+  }
+}
+
 // User-facing settings page (language, theme, account info).
 export default function SettingsPage() {
   const router = useRouter();
@@ -332,6 +353,32 @@ export default function SettingsPage() {
                   >
                     Start 2
                   </button>
+                </div>
+              </div>
+
+              {/* DEV — Notifications test */}
+              <div className="animate-in fade-in grid grid-cols-1 gap-x-10 gap-y-4 py-[var(--space-8)] duration-500 md:grid-cols-10" style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
+                <div className="w-full space-y-[var(--space-1)] md:col-span-4">
+                  <h3 className="text-[length:var(--text-lg)] leading-none font-semibold text-[var(--color-text-primary)]">
+                    Notifications
+                  </h3>
+                  <p className="text-[var(--color-text-muted)] text-[length:var(--text-sm)]">
+                    Fire a sample notification to test the bell
+                  </p>
+                </div>
+                <div className="md:col-span-6 flex flex-wrap items-center gap-[var(--space-2)]">
+                  {NOTIFICATION_TEST_TYPES.map(({ type, label }) => (
+                    <button
+                      key={type}
+                      onClick={() => sendTestNotification(type)}
+                      className="text-[length:var(--text-sm)] font-medium px-[var(--space-4)] py-[var(--space-2)] rounded-[var(--radius-md)] transition-colors"
+                      style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-border-strong)')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

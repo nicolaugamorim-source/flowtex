@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 import { decodeMimeHeader } from "@/lib/google-gmail";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 // Fetches a single Gmail message's full content by ID.
 const decodeBase64 = (str: string): string => {
@@ -62,6 +63,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
 
     const cookieStore = await cookies();

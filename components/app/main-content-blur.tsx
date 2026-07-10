@@ -31,7 +31,7 @@ export function MainContentBlur({ children }: { children: React.ReactNode }) {
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 30,
+          zIndex: 35,
           pointerEvents: "none",
           opacity: sidebarExpanded ? 1 : 0,
           backdropFilter: "blur(4px)",

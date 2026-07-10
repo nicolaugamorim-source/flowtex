@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
 import { captureServerEvent } from '@/lib/posthog-server';
 
 function getAbsoluteUrl(path: string): string {
@@ -40,6 +41,34 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       console.error('No user ID in cookie');
       return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=no_user_id'));
+    }
+
+    // Defense-in-depth: cross-check the cookie-carried userId against the
+    // currently active Supabase session before binding the Notion token to
+    // it, so a stale/forged notion_user_id cookie can't attach a token to
+    // the wrong account.
+    const authClient = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
+    const { data: { user: sessionUser } } = await authClient.auth.getUser();
+
+    if (!sessionUser || sessionUser.id !== userId) {
+      console.error('Notion OAuth callback: session user does not match state-bound user id');
+      return NextResponse.redirect(getAbsoluteUrl('/app/integrations?error=session_mismatch'));
     }
 
     // Clear the state cookies

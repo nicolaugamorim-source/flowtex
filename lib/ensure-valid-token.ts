@@ -20,7 +20,32 @@ export async function ensureValidGoogleToken(
       return refreshedToken;
     }
 
-    // Refresh failed, log but continue
+    // Don't fall back to a stale token if the integration is now known to be
+    // dead (refreshGoogleAccessToken marks it inactive on a revoked grant) —
+    // that stale token can't work either, and falling back would hide the
+    // real "reconnect Google" signal behind a confusing downstream API error.
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const { data: integration } = await supabaseAdmin
+        .from('integrations')
+        .select('is_active')
+        .eq('user_id', userId)
+        .eq('provider', 'google')
+        .maybeSingle();
+
+      if (integration?.is_active === false) {
+        console.log('Google integration is inactive — not falling back to a stale token');
+        return null;
+      }
+    } catch (checkError) {
+      console.log('Could not check integration status:', checkError);
+    }
+
+    // Refresh failed for some other (likely transient) reason — fall back.
     console.log('Token refresh failed, falling back to frontend token');
   }
 
@@ -32,23 +57,4 @@ export async function ensureValidGoogleToken(
 
   console.log('No valid token available');
   return null;
-}
-
-/**
- * Get userId from Supabase session
- */
-export async function getUserIdFromSession(): Promise<string | undefined> {
-  try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id;
-  } catch (error) {
-    console.log('Could not get userId from session:', error);
-    return undefined;
-  }
 }

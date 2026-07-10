@@ -34,10 +34,33 @@ export default function OnboardingPage() {
   const [businessBrief, setBusinessBrief] = useState("");
   const [toolsUsed, setToolsUsed] = useState("");
 
+  // Refreshing mid-form used to wipe everything typed since step 1 loaded —
+  // mirror every field into sessionStorage as the user types, and restore it
+  // on mount (cleared again once the onboarding actually submits).
+  const DRAFT_KEY = "flowtex-onboarding-draft";
+
   useEffect(() => {
     // Get user data from session
     const checkUser = async () => {
       try {
+        let restoredFullName = false;
+        try {
+          const raw = sessionStorage.getItem(DRAFT_KEY);
+          if (raw) {
+            const draft = JSON.parse(raw);
+            if (draft.step) setStep(draft.step);
+            if (draft.fullName) { setFullName(draft.fullName); restoredFullName = true; }
+            if (draft.businessName) setBusinessName(draft.businessName);
+            if (draft.businessType) setBusinessType(draft.businessType);
+            if (draft.industry) setIndustry(draft.industry);
+            if (draft.clients) setClients(draft.clients);
+            if (draft.businessBrief) setBusinessBrief(draft.businessBrief);
+            if (draft.toolsUsed) setToolsUsed(draft.toolsUsed);
+          }
+        } catch (draftError) {
+          console.error("Error restoring onboarding draft:", draftError);
+        }
+
         // Import Supabase client to get user metadata
         const { createBrowserClient } = await import("@supabase/ssr");
         const supabase = createBrowserClient(
@@ -47,7 +70,7 @@ export default function OnboardingPage() {
 
         const { data: { user } } = await supabase.auth.getUser();
 
-        if (user?.user_metadata?.full_name) {
+        if (!restoredFullName && user?.user_metadata?.full_name) {
           setFullName(user.user_metadata.full_name);
         }
 
@@ -67,7 +90,17 @@ export default function OnboardingPage() {
     };
 
     checkUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  // Persist the draft on every change, once the initial restore above has run.
+  useEffect(() => {
+    if (isLoading) return;
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({ step, fullName, businessName, businessType, industry, clients, businessBrief, toolsUsed })
+    );
+  }, [isLoading, step, fullName, businessName, businessType, industry, clients, businessBrief, toolsUsed]);
 
   const handleNextStep = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +110,10 @@ export default function OnboardingPage() {
       // Validate step 1
       if (!fullName.trim() || !businessName.trim() || !businessType.trim()) {
         setError("Please fill in all required fields");
+        return;
+      }
+      if (businessName.trim().length > 100) {
+        setError("Business name must be 100 characters or fewer");
         return;
       }
       setError(null);
@@ -116,6 +153,7 @@ export default function OnboardingPage() {
 
       const { subscription_status, trial_ends_at } = await response.json();
       console.log("Onboarding completed");
+      sessionStorage.removeItem(DRAFT_KEY);
 
       const trialEndsAt = trial_ends_at ? new Date(trial_ends_at) : null;
       const hasActivePlan =
@@ -225,6 +263,7 @@ export default function OnboardingPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="Your company or project name"
+                  maxLength={100}
                   className="mt-2 bg-[var(--color-surface)] border-[var(--color-border)]"
                 />
               </div>

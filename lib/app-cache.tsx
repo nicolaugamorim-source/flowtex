@@ -8,7 +8,6 @@ interface CacheData {
   allInboxEmails?: any[]
   dashboardEmails?: { messages: any[]; totalUnread: number }
   kanbanTasks?: any[]
-  quickNotes?: any[]
   streakData?: any
   activityData?: any[]
   clients?: any[]

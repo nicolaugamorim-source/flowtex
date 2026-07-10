@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { captureServerEvent } from "@/lib/posthog-server";
 import { sendProductEmail } from "@/lib/emails/send";
+import { createNotification } from "@/lib/notifications";
 import {
   paymentFailedEmail,
   paymentSucceededEmail,
@@ -162,6 +163,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency guard: Stripe retries delivery on any non-2xx response or
+  // timeout, and several handlers below send emails/notifications, so a
+  // replayed event must not re-run side effects. A unique-constraint
+  // violation means this event id was already processed. The row is only
+  // inserted *after* all side effects below complete successfully (see end
+  // of try block) — if a handler throws partway through, no row is inserted,
+  // so Stripe's retry will reprocess the event instead of a half-applied
+  // event being silently skipped forever.
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: alreadyProcessed } = await supabaseAdmin
+    .from("processed_stripe_events")
+    .select("event_id")
+    .eq("event_id", event.id)
+    .maybeSingle();
+
+  if (alreadyProcessed) {
+    console.log(`[STRIPE WEBHOOK] Event ${event.id} already processed, skipping`);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -228,14 +249,21 @@ export async function POST(request: NextRequest) {
             const currentPeriodEnd = subscription.items.data[0]?.current_period_end;
             if (justScheduled && currentPeriodEnd) {
               const profile = await resolveProfileById(userId);
+              const accessUntil = new Date(currentPeriodEnd * 1000).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              });
               if (profile?.email) {
-                const accessUntil = new Date(currentPeriodEnd * 1000).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                });
                 await sendProductEmail(profile.email, cancellationScheduledEmail(profile.full_name || "", accessUntil));
               }
+              await createNotification(
+                userId,
+                "cancellation_scheduled",
+                "Subscription set to cancel",
+                `Your subscription is scheduled to end on ${accessUntil}. You'll keep access until then.`,
+                { accessUntil }
+              );
             }
           } else if (event.type === "customer.subscription.updated") {
             await captureServerEvent(userId, "subscription_updated", {
@@ -260,6 +288,13 @@ export async function POST(request: NextRequest) {
           if (profile?.email) {
             await sendProductEmail(profile.email, subscriptionEndedEmail(profile.full_name || ""));
           }
+          await createNotification(
+            userId,
+            "subscription_canceled",
+            "Subscription ended",
+            "Your subscription has ended. Resubscribe any time to regain access.",
+            {}
+          );
         }
         break;
       }
@@ -275,6 +310,13 @@ export async function POST(request: NextRequest) {
           if (profile.email) {
             await sendProductEmail(profile.email, paymentFailedEmail(profile.full_name || ""));
           }
+          await createNotification(
+            profile.id,
+            "payment_failed",
+            "Payment failed",
+            "We couldn't process your last payment. Update your billing details to avoid losing access.",
+            { amount_due: invoice.amount_due, currency: invoice.currency }
+          );
         }
         break;
       }
@@ -321,12 +363,21 @@ export async function POST(request: NextRequest) {
 
           await captureServerEvent(userId, "trial_ending_soon", {});
 
-          if (profile?.email && subscription.trial_end) {
+          if (subscription.trial_end) {
             const daysLeft = Math.max(
               1,
               Math.ceil((subscription.trial_end * 1000 - Date.now()) / (1000 * 60 * 60 * 24))
             );
-            await sendProductEmail(profile.email, trialEndingEmail(profile.full_name || "", daysLeft));
+            if (profile?.email) {
+              await sendProductEmail(profile.email, trialEndingEmail(profile.full_name || "", daysLeft));
+            }
+            await createNotification(
+              userId,
+              "trial_ending",
+              "Trial ending soon",
+              `Your trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. Add a payment method to keep your access.`,
+              { daysLeft }
+            );
           }
         }
         break;
@@ -334,6 +385,18 @@ export async function POST(request: NextRequest) {
 
       default:
         break;
+    }
+
+    // All side effects for this event completed successfully — now it's
+    // safe to mark it processed so a Stripe retry (or a genuine duplicate
+    // delivery) is skipped. A 23505 here just means a concurrent delivery
+    // of the same event won the race and already recorded it; that's fine.
+    const { error: idempotencyError } = await supabaseAdmin
+      .from("processed_stripe_events")
+      .insert({ event_id: event.id });
+
+    if (idempotencyError && idempotencyError.code !== "23505") {
+      console.error("[STRIPE WEBHOOK] Failed to record event idempotency key:", idempotencyError);
     }
 
     return NextResponse.json({ received: true });

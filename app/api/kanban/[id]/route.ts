@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { captureServerEvent } from "@/lib/posthog-server";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 // Updates or deletes a single kanban task (e.g. moving it between columns).
 export async function PATCH(
@@ -9,6 +10,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
 
     const cookieStore = await cookies();
@@ -44,6 +50,7 @@ export async function PATCH(
         .from("kanban_tasks")
         .select("column_id")
         .eq("id", id)
+        .eq("user_id", user.id)
         .single();
       fromColumn = existingTask?.column_id ?? null;
       updateData.column_id = body.column_id;
@@ -91,6 +98,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const { id } = await params;
 
     const cookieStore = await cookies();

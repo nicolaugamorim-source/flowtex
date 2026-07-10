@@ -95,7 +95,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-semibold text-[var(--color-text-primary)] mb-3">10. Contact Information</h2>
               <p>
-                If you have any questions about these Terms of Service, please contact us at legal@flowtex.io
+                If you have any questions about these Terms of Service, please contact us at legal@flowtex.xyz
               </p>
             </section>
           </div>

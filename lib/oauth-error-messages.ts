@@ -24,6 +24,10 @@ export const LOGIN_ERROR_MESSAGES: Record<string, OAuthErrorMessage> = {
     title: "Sign-in failed",
     message: "Something went wrong finishing sign-in. Please try again.",
   },
+  verification_failed: {
+    title: "Couldn't verify your account",
+    message: "We had trouble checking your subscription status. Please sign in again.",
+  },
 };
 
 export const INTEGRATION_ERROR_MESSAGES: Record<string, OAuthErrorMessage> = {

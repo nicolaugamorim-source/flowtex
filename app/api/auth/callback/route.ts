@@ -63,14 +63,6 @@ export async function GET(request: NextRequest) {
     console.log("[AUTH CALLBACK] Session exchanged successfully");
     console.log("[AUTH CALLBACK] User authenticated:", user.email);
 
-    // Determine if this is a brand new user (no profile row yet) before we upsert one.
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .single();
-    const isNewUser = !existingProfile;
-
     // Save Google tokens to integrations table
     console.log("[AUTH CALLBACK] Saving Google tokens to integrations...");
 
@@ -108,7 +100,14 @@ export async function GET(request: NextRequest) {
     // Create profile if doesn't exist
     console.log("[AUTH CALLBACK] Creating/updating profile...");
 
-    const { error: profileError } = await supabase
+    // With ignoreDuplicates the DB does INSERT ... ON CONFLICT DO NOTHING —
+    // on a real conflict it returns no row, so whether `insertedProfile` came
+    // back is an atomic, race-safe "was this actually a new profile?" signal.
+    // Two simultaneous callback requests (e.g. a double-clicked login) racing
+    // a separate SELECT-then-upsert could both see "no profile yet" and both
+    // fire user_signed_up; letting the unique constraint on `id` decide instead
+    // guarantees only one request ever sees itself as the inserter.
+    const { data: insertedProfile, error: profileError } = await supabase
       .from("profiles")
       .upsert(
         {
@@ -122,13 +121,16 @@ export async function GET(request: NextRequest) {
           onboarding_completed: false,
         },
         { onConflict: "id", ignoreDuplicates: true }
-      );
+      )
+      .select("id");
 
     if (profileError) {
       console.warn("[AUTH CALLBACK] Profile upsert warning:", profileError);
     } else {
       console.log("[AUTH CALLBACK] Profile created/updated");
     }
+
+    const isNewUser = !profileError && (insertedProfile?.length ?? 0) > 0;
 
     await captureServerEvent(user.id, isNewUser ? "user_signed_up" : "user_logged_in", {
       email: user.email,

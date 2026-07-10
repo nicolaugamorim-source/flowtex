@@ -10,8 +10,9 @@ export function getResendClient(): Resend {
   return client;
 }
 
-// Resend's shared onboarding@resend.dev domain only delivers to the email
-// address the Resend account itself is registered with — fine for now, but
-// verify flowtex.xyz in the Resend dashboard and update EMAIL_FROM before
-// this needs to reach real customers.
-export const EMAIL_FROM = process.env.EMAIL_FROM || "Flowtex <onboarding@resend.dev>";
+// Send-only address — no inbox exists for it, and it shouldn't (all
+// automated product email comes from here). Real support replies go to
+// support@flowtex.xyz instead (see app/api/contact/route.ts's SUPPORT_INBOX
+// and app/contact/page.tsx), which is the only address that actually
+// receives mail.
+export const EMAIL_FROM = process.env.EMAIL_FROM || "Flowtex <noreply@flowtex.xyz>";

@@ -66,8 +66,17 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
           "[API PROTECTION] Profile fetch error:",
           profileError.message
         );
-        // Allow through on DB error to avoid blocking users
-        return { authorized: true, userId: user.id };
+        // Fail closed: we can't confirm this user has a valid subscription,
+        // so the safe default is to deny, not to let them through. A 503
+        // (not 403) tells the client this is a transient verification
+        // failure worth retrying, not "you need to subscribe".
+        return {
+          authorized: false,
+          error: NextResponse.json(
+            { error: "Couldn't verify your subscription. Please try again." },
+            { status: 503 }
+          ),
+        };
       }
 
       if (!profile) {
@@ -112,8 +121,14 @@ export async function checkSubscriptionAPI(request: NextRequest): Promise<{
       };
     } catch (dbError) {
       console.error("[API PROTECTION] Database error:", dbError);
-      // Allow through on DB errors
-      return { authorized: true, userId: user.id };
+      // Same fail-closed reasoning as the profileError branch above.
+      return {
+        authorized: false,
+        error: NextResponse.json(
+          { error: "Couldn't verify your subscription. Please try again." },
+          { status: 503 }
+        ),
+      };
     }
   } catch (error) {
     console.error("[API PROTECTION] Unexpected error:", error);

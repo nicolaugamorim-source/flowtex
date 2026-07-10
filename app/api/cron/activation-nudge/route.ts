@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
 import { sendProductEmail } from "@/lib/emails/send";
 import { activationNudgeEmail } from "@/lib/emails/templates";
+
+// Constant-time comparison for the cron secret. timingSafeEqual throws on
+// mismatched buffer lengths, so that case is checked (and rejected) first
+// rather than being allowed to throw.
+function isValidCronSecret(authHeader: string | null): boolean {
+  if (!authHeader || !process.env.CRON_SECRET) return false;
+  const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET}`);
+  const actual = Buffer.from(authHeader);
+  if (expected.length !== actual.length) return false;
+  return timingSafeEqual(expected, actual);
+}
 
 // Runs daily via Vercel Cron (see vercel.json). Unlike every other email in
 // lib/emails, this one isn't triggered by a webhook — it's time-based: "signed
@@ -16,7 +28,7 @@ function getSupabaseAdmin() {
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isValidCronSecret(authHeader)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

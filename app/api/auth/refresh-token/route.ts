@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { refreshGoogleAccessToken } from '@/lib/google-refresh';
+import { checkTokenRefreshRateLimit } from '@/lib/rate-limit';
 
 /**
  * POST /api/auth/refresh-token
@@ -8,12 +10,37 @@ import { refreshGoogleAccessToken } from '@/lib/google-refresh';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
 
-    if (!userId) {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = user.id;
+
+    const rateLimit = checkTokenRefreshRateLimit(userId);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
+        { error: 'rate_limited', retryAfterSeconds: rateLimit.retryAfterSeconds },
+        { status: 429 }
       );
     }
 

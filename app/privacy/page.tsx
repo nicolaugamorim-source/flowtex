@@ -111,7 +111,7 @@ export default function PrivacyPage() {
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
               <p>
-                <strong>Email:</strong> privacy@flowtex.io<br/>
+                <strong>Email:</strong> privacy@flowtex.xyz<br/>
                 <strong>Address:</strong> Flowtex, Portugal
               </p>
             </section>

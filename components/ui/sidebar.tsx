@@ -90,7 +90,7 @@ export function SessionNavBar({
   teamName = "Flowtex",
   avatarUrl,
   userName = "User",
-  userEmail = "user@flowtex.com",
+  userEmail = "user@flowtex.xyz",
 }: SessionNavBarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [onboardingOverride, setOnboardingOverride] = useState<SidebarOnboardingOverride>(null);

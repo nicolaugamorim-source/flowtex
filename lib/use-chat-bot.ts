@@ -33,6 +33,21 @@ export interface BubbleData {
     to?: string;
     subject?: string;
     body?: string;
+    // Present when a destructive/mutating tool call found a candidate but has not
+    // executed yet — the chat UI must show a confirm button that hits the real API
+    // directly before the action happens (see components/ui/integration-bubble.tsx).
+    pendingDelete?: { eventId: string; calendarId: string };
+    pendingReschedule?: {
+      eventId: string;
+      calendarId: string;
+      summary: string;
+      description?: string;
+      startTime: string;
+      endTime: string;
+      newCalendarId?: string;
+    };
+    pendingDeleteClient?: { clientId: string; clientName: string };
+    pendingDeleteNotion?: { pageId: string; pageName: string };
   };
 }
 

@@ -45,11 +45,23 @@ function AppGuardInner({ children }: AppGuardProps) {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed, subscription_status, trial_ends_at")
-        .eq("id", userId)
-        .single();
+      let profile: { onboarding_completed: boolean; subscription_status: string | null; trial_ends_at: string | null } | null = null;
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("onboarding_completed, subscription_status, trial_ends_at")
+          .eq("id", userId)
+          .single();
+        if (error) throw error;
+        profile = data;
+      } catch (err) {
+        // Fail closed, and — critically — actually resolve the gate instead
+        // of leaving it on "loading" forever, which is what an uncaught
+        // rejection here used to do (no catch existed at all before this).
+        console.error("[APP GUARD] Failed to verify access:", err);
+        if (isMounted) router.replace("/login?error=verification_failed");
+        return;
+      }
 
       if (!isMounted) return;
 

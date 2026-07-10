@@ -193,6 +193,13 @@ export async function updateIntegrationToken(
 
 /**
  * Deactivate an integration
+ *
+ * NOTE: this only flips is_active in our DB — it does not revoke the token at
+ * the provider (Google/Notion), so a stored token remains live/valid there
+ * even after deactivation here. Not currently called from any live route
+ * (only referenced from docs); if this is wired up to a real disconnect flow,
+ * add a provider-side revocation call first (e.g. POST to
+ * https://oauth2.googleapis.com/revoke for Google).
  */
 export async function deactivateIntegration(
   userId: string,

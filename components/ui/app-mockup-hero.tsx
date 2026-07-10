@@ -21,7 +21,7 @@ export const AppMockupHero = () => {
                 <div className="w-3 h-3 rounded-full bg-[#28C940]"></div>
               </div>
               <div className="flex-1 rounded-lg px-4 py-2 text-xs font-medium" style={{ backgroundColor: "var(--color-surface-2)", color: "var(--color-text-muted)" }}>
-                app.flowtex.io/workspace
+                app.flowtex.xyz/workspace
               </div>
               <button className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
                 <MoreVertical size={16} />

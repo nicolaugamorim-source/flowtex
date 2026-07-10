@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
+import { captureServerEvent } from './posthog-server';
+import { createNotification } from './notifications';
 
 // Server-only client (service role) — this file is never imported by client
 // components, and RLS would otherwise block reading another user's stored
@@ -45,7 +47,44 @@ export async function refreshGoogleAccessToken(userId: string): Promise<string |
     });
 
     // Get new access token
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    let credentials;
+    try {
+      const result = await oauth2Client.refreshAccessToken();
+      credentials = result.credentials;
+    } catch (refreshError: any) {
+      // "invalid_grant" means the refresh token itself is dead — revoked by
+      // the user in their Google account, or expired from disuse. That's
+      // permanent, unlike a network blip, so mark the integration inactive
+      // instead of silently leaving it looking "Connected" forever.
+      const isRevoked =
+        refreshError?.response?.data?.error === 'invalid_grant' ||
+        String(refreshError?.message || '').includes('invalid_grant');
+
+      if (isRevoked) {
+        console.warn('Google refresh token revoked for user', userId, '— marking integration inactive');
+        await supabaseAdmin
+          .from('integrations')
+          .update({
+            is_active: false,
+            disconnected_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId)
+          .eq('provider', 'google');
+        await captureServerEvent(userId, 'integration_disconnected', { integration: 'google', reason: 'invalid_grant' });
+        await createNotification(
+          userId,
+          'integration_disconnected',
+          'Google disconnected',
+          'Your Google connection was lost. Reconnect it to keep Gmail, Calendar, and the assistant working.',
+          { integration: 'google' }
+        );
+      }
+
+      console.error('Error refreshing token:', refreshError);
+      return null;
+    }
+
     const newAccessToken = credentials.access_token;
 
     if (!newAccessToken) {

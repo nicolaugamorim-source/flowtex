@@ -3,10 +3,16 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidGoogleToken } from "@/lib/google-auth";
 import { deleteEmail } from "@/lib/google-gmail";
+import { checkSubscriptionAPI } from "@/lib/protect-api-route";
 
 // Deletes a Gmail message for the authenticated user.
 export async function POST(request: NextRequest) {
   try {
+    const subscriptionCheck = await checkSubscriptionAPI(request);
+    if (!subscriptionCheck.authorized) {
+      return subscriptionCheck.error || NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

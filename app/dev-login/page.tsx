@@ -1,11 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, notFound } from "next/navigation";
 import { useState } from "react";
 
 // Developer-only helper page for injecting a fake Google token into
 // localStorage, so local testing doesn't require a real OAuth round-trip.
 export default function DevLogin() {
+  // Only allow in development, mirroring app/api/streak/debug/route.ts.
+  if (process.env.NODE_ENV !== "development") {
+    notFound();
+  }
+
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 

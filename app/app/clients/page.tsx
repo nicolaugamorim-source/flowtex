@@ -503,6 +503,7 @@ const ClientCard = ({
 };
 
 const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googleAccessToken: string | null }) => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("overview");
 
   // Lets the onboarding guide switch tabs programmatically as it narrates each one.
@@ -535,6 +536,7 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
     setInsightError(false);
     try {
       const response = await fetch(`/api/clients/${client.id}/insight`, { method: "POST" });
+      if (!response.ok) throw Object.assign(new Error("Failed to generate insight"), { status: response.status });
       const data = await response.json();
       if (data.insight) {
         setInsight(data.insight);
@@ -545,6 +547,10 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
     } catch (err) {
       console.error("Failed to generate client insight:", err);
       setInsightError(true);
+      toast.show({
+        ...classifyError(err, "Insight", "generated"),
+        onRetry: () => generateInsight(),
+      });
     } finally {
       setLoadingInsight(false);
     }
@@ -556,12 +562,18 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
     setSelectedEmail(null);
     try {
       const response = await fetch(`/api/gmail/message/${emailId}`);
+      if (!response.ok) throw Object.assign(new Error("Failed to fetch email"), { status: response.status });
       const data = await response.json();
       if (data.id) {
         setSelectedEmail(data);
       }
     } catch (err) {
       console.error("Failed to fetch email detail:", err);
+      setShowEmailModal(false);
+      toast.show({
+        ...classifyError(err, "Email", "loaded"),
+        onRetry: () => openEmail(emailId),
+      });
     } finally {
       setLoadingEmailDetail(false);
     }
@@ -570,13 +582,18 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
   const saveNotes = async () => {
     setIsSavingNotes(true);
     try {
-      await fetch(`/api/clients/${client.id}`, {
+      const response = await fetch(`/api/clients/${client.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes }),
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to save notes"), { status: response.status });
     } catch (err) {
       console.error("Failed to save notes:", err);
+      toast.show({
+        ...classifyError(err, "Notes", "saved"),
+        onRetry: () => saveNotes(),
+      });
     } finally {
       setIsSavingNotes(false);
     }
@@ -589,12 +606,20 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
       const response = await fetch(`/api/clients/${client.id}/emails`, {
         headers: googleAccessToken ? { "x-google-access-token": googleAccessToken } : {},
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to fetch emails"), { status: response.status });
       const data = await response.json();
       setEmails(data.emails || []);
+      setEmailsFetched(true);
     } catch (err) {
       console.error("Failed to fetch emails:", err);
+      // Deliberately not marking emailsFetched here — an empty list on failure
+      // used to look identical to "this client has no emails"; leaving it
+      // unfetched lets the tab retry next time it's opened instead of lying.
+      toast.show({
+        ...classifyError(err, "Emails", "loaded"),
+        onRetry: () => fetchEmails(true),
+      });
     } finally {
-      setEmailsFetched(true);
       setLoadingEmails(false);
     }
   };
@@ -606,12 +631,19 @@ const ClientDetailTabs = ({ client, googleAccessToken }: { client: Client; googl
       const response = await fetch(`/api/clients/${client.id}/meetings`, {
         headers: googleAccessToken ? { "x-google-access-token": googleAccessToken } : {},
       });
+      if (!response.ok) throw Object.assign(new Error("Failed to fetch meetings"), { status: response.status });
       const data = await response.json();
       setMeetings(data.meetings || []);
+      setMeetingsFetched(true);
     } catch (err) {
       console.error("Failed to fetch meetings:", err);
+      // Same reasoning as fetchEmails — don't mark as fetched on failure, so
+      // the empty state isn't mistaken for "no meetings" and it retries later.
+      toast.show({
+        ...classifyError(err, "Meetings", "loaded"),
+        onRetry: () => fetchMeetings(true),
+      });
     } finally {
-      setMeetingsFetched(true);
       setLoadingMeetings(false);
     }
   };
@@ -878,10 +910,15 @@ export default function ClientsPage() {
   const fetchLastContact = async () => {
     try {
       const response = await fetch("/api/clients/last-contact");
+      if (!response.ok) throw Object.assign(new Error("Failed to fetch last contact"), { status: response.status });
       const data = await response.json();
       setLastContactMap(data.lastContact || {});
     } catch (err) {
+      // Low-stakes background enhancement (the "last contacted Xd ago" badge) —
+      // no retry button, a toast every time this fails would be more annoying
+      // than useful, but the user should still know why the badges are blank.
       console.error("Failed to fetch last contact info:", err);
+      toast.show(classifyError(err, "Last contact info", "loaded"));
     }
   };
 
@@ -889,6 +926,7 @@ export default function ClientsPage() {
     setIsLoading(true);
     try {
       const response = await fetch("/api/clients");
+      if (!response.ok) throw Object.assign(new Error("Failed to fetch clients"), { status: response.status });
       const data = await response.json();
       setClients(data.clients || []);
       if (data.clients?.length > 0) {
@@ -896,6 +934,10 @@ export default function ClientsPage() {
       }
     } catch (err) {
       console.error("Failed to fetch clients:", err);
+      toast.show({
+        ...classifyError(err, "Clients", "loaded"),
+        onRetry: () => fetchClients(),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -909,8 +951,16 @@ export default function ClientsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!response.ok) throw Object.assign(new Error("Failed to add client"), { status: response.status });
       const data = await response.json();
+      if (!response.ok) {
+        // 400/409 are the validation/duplicate checks below rejecting bad
+        // input — show that exact reason instead of a generic "wasn't saved".
+        if ((response.status === 400 || response.status === 409) && data.error) {
+          toast.show({ title: "Couldn't add client", message: data.error, tone: "error" });
+          return;
+        }
+        throw Object.assign(new Error("Failed to add client"), { status: response.status });
+      }
       if (data.client) {
         setClients([data.client, ...clients]);
         setSelectedClient(data.client);
@@ -996,13 +1046,6 @@ export default function ClientsPage() {
             <div>
               <h1 className="text-[length:var(--text-2xl)] font-bold text-[var(--color-text-primary)]">Clients</h1>
             </div>
-            <button
-              data-onboarding="clients-add-button"
-              onClick={() => setShowAddModal(true)}
-              className="px-[var(--space-4)] py-[var(--space-2)] bg-[var(--color-accent)] text-white rounded-[var(--radius-md)] font-medium hover:bg-[var(--color-accent-hover)] transition-colors flex items-center gap-[var(--space-2)] flex-shrink-0"
-            >
-              <Plus size={18} /> Add Client
-            </button>
           </div>
 
           {/* Search and Filters */}
@@ -1041,6 +1084,16 @@ export default function ClientsPage() {
           className={`${selectedClient ? "hidden md:block" : "block"} w-full md:w-[35%] border-r border-[var(--color-border-default)] overflow-y-auto bg-[var(--color-bg-base)]`}
         >
           <div className="p-[var(--space-4)]">
+            {!isLoading && (
+              <button
+                data-onboarding="clients-add-button"
+                onClick={() => setShowAddModal(true)}
+                className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-accent)] rounded-[var(--radius-lg)] p-[var(--space-4)] transition-all duration-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.08)] hover:-translate-y-1 flex items-center justify-center gap-[var(--space-2)] text-[var(--color-text-primary)] cursor-pointer mb-[var(--space-2)]"
+              >
+                <Plus size={20} strokeWidth={2.75} />
+                <span className="text-[13px] font-bold">Add Client</span>
+              </button>
+            )}
             {isLoading ? (
               <ClientSkeleton />
             ) : clients.length === 0 ? (

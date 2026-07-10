@@ -11,7 +11,7 @@ export type ErrorCategory = "offline" | "connection-lost" | "server" | "auth" | 
 
 // The verb matters: a failed delete isn't "wasn't saved", it's "wasn't deleted".
 // Callers pass whichever action they were actually attempting.
-export type ErrorAction = "saved" | "deleted" | "updated" | "moved" | "sent";
+export type ErrorAction = "saved" | "deleted" | "updated" | "moved" | "sent" | "loaded" | "generated";
 
 const REASONS: Record<ErrorCategory, { title: string; reason: string }> = {
   offline: { title: "You're offline", reason: "check your connection and try again." },

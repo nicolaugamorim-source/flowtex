@@ -21,21 +21,35 @@ export default async function proxy(request: NextRequest) {
     // never an anonymous/service-role lookup.
     const { supabase, response } = await createProxyClient(request);
 
+    // getUser() re-validates the JWT against the Supabase auth server (unlike
+    // getSession(), which only reads the local cookie) — matches the stricter
+    // pattern every API route already uses.
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session?.user) {
+    if (!user) {
       console.log("[PROXY] No session found, redirecting to /login");
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
     // Stripe's success redirect can land on /app before its webhook has
-    // finished syncing subscription_status — trust this one-time param
-    // (it only appears right after Stripe itself confirms payment) instead
-    // of bouncing a paying user back to /pricing on this one request.
-    if (isAppRoute && request.nextUrl.searchParams.get("checkout") === "success") {
+    // finished syncing subscription_status — trust this one-time bypass
+    // instead of bouncing a paying user back to /pricing on this one request.
+    // The query param alone is trivially spoofable (anyone can append
+    // `?checkout=success` to a URL), so also require the short-lived
+    // `checkout_pending` cookie set by /api/stripe/checkout right before it
+    // redirects to Stripe — that cookie only exists if this browser actually
+    // started a real Stripe Checkout session in the last 5 minutes. Data
+    // stays protected either way (app-guard.tsx + checkSubscriptionAPI are
+    // the real gates); this just narrows the window an empty shell can render.
+    if (
+      isAppRoute &&
+      request.nextUrl.searchParams.get("checkout") === "success" &&
+      request.cookies.get("checkout_pending")?.value
+    ) {
       console.log("[PROXY] Post-checkout redirect, allowing through once");
+      response.cookies.delete("checkout_pending");
       return response;
     }
 
@@ -43,12 +57,15 @@ export default async function proxy(request: NextRequest) {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("onboarding_completed, subscription_status, trial_ends_at")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .single();
 
       if (profileError) {
         console.warn("[PROXY] Error fetching profile:", profileError.message);
-        return response;
+        // Fail closed: an unreadable profile must not be treated as a valid
+        // subscription. Bounce to /login with a clear reason instead of the
+        // request quietly reaching /app with no verification at all.
+        return NextResponse.redirect(new URL("/login?error=verification_failed", request.url));
       }
 
       if (!profile) {
@@ -96,7 +113,8 @@ export default async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/pricing", request.url));
     } catch (dbError) {
       console.error("[PROXY] Database error:", dbError);
-      return response;
+      // Same fail-closed reasoning as the profileError branch above.
+      return NextResponse.redirect(new URL("/login?error=verification_failed", request.url));
     }
   } catch (error) {
     console.error("[PROXY] Proxy error:", error);

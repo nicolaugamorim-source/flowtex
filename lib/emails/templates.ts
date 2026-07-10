@@ -8,7 +8,7 @@ export interface EmailTemplate {
 }
 
 export function welcomeEmail(name: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: "Welcome to Flowtex",
     html: emailLayout(`
@@ -21,7 +21,7 @@ export function welcomeEmail(name: string): EmailTemplate {
 }
 
 export function trialEndingEmail(name: string, daysLeft: number): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: `Your trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`,
     html: emailLayout(`
@@ -33,7 +33,7 @@ export function trialEndingEmail(name: string, daysLeft: number): EmailTemplate 
 }
 
 export function paymentFailedEmail(name: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: "We couldn't process your payment",
     html: emailLayout(`
@@ -45,12 +45,13 @@ export function paymentFailedEmail(name: string): EmailTemplate {
 }
 
 export function paymentSucceededEmail(name: string, amount: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
+  const safeAmount = escapeHtml(amount);
   return {
     subject: "Payment received — thank you",
     html: emailLayout(`
       <h1 style="font-size:20px;margin:0 0 12px;">Payment received</h1>
-      <p style="margin:0 0 16px;">Hi ${firstName} — thanks for your payment of <strong>${amount}</strong>. Your Flowtex subscription is active.</p>
+      <p style="margin:0 0 16px;">Hi ${firstName} — thanks for your payment of <strong>${safeAmount}</strong>. Your Flowtex subscription is active.</p>
       ${emailButton("Open Flowtex", `${APP_URL}/app`)}
     `),
   };
@@ -59,7 +60,7 @@ export function paymentSucceededEmail(name: string, amount: string): EmailTempla
 // Time-based, not event-based: sent by a daily cron (app/api/cron/activation-nudge)
 // to accounts that logged in but never started a trial or subscribed.
 export function activationNudgeEmail(name: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: "Still there? Here's what Flowtex can do for you",
     html: emailLayout(`
@@ -75,7 +76,7 @@ export function activationNudgeEmail(name: string): EmailTemplate {
 // straight to a paid, non-trialing subscription, so /app is usable for the
 // first time because of an actual charge, not just an account existing.
 export function accountActivatedEmail(name: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: "You're in — Flowtex is ready",
     html: emailLayout(`
@@ -87,12 +88,13 @@ export function accountActivatedEmail(name: string): EmailTemplate {
 }
 
 export function trialStartedEmail(name: string, trialEndDate: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
+  const safeTrialEndDate = escapeHtml(trialEndDate);
   return {
     subject: "Your Flowtex trial has started",
     html: emailLayout(`
       <h1 style="font-size:20px;margin:0 0 12px;">Your trial is live</h1>
-      <p style="margin:0 0 16px;">Hi ${firstName} — your Flowtex trial is active until <strong>${trialEndDate}</strong>. Connect Gmail, Calendar, or Notion now so the assistant has something to work with from day one.</p>
+      <p style="margin:0 0 16px;">Hi ${firstName} — your Flowtex trial is active until <strong>${safeTrialEndDate}</strong>. Connect Gmail, Calendar, or Notion now so the assistant has something to work with from day one.</p>
       ${emailButton("Open Flowtex", `${APP_URL}/app`)}
     `),
   };
@@ -102,12 +104,13 @@ export function trialStartedEmail(name: string, trialEndDate: string): EmailTemp
 // this before, so a cancellation looked identical to "nothing happened" until
 // access was cut at the very end of the period.
 export function cancellationScheduledEmail(name: string, accessUntilDate: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
+  const safeAccessUntilDate = escapeHtml(accessUntilDate);
   return {
     subject: "Your subscription is set to cancel",
     html: emailLayout(`
       <h1 style="font-size:20px;margin:0 0 12px;">Cancellation confirmed</h1>
-      <p style="margin:0 0 16px;">Hi ${firstName} — your Flowtex subscription won't renew. You'll keep full access until <strong>${accessUntilDate}</strong>, then it'll end automatically. No further charge will happen.</p>
+      <p style="margin:0 0 16px;">Hi ${firstName} — your Flowtex subscription won't renew. You'll keep full access until <strong>${safeAccessUntilDate}</strong>, then it'll end automatically. No further charge will happen.</p>
       <p style="margin:0 0 16px;">Changed your mind? You can resume anytime before that date.</p>
       ${emailButton("Manage subscription", `${APP_URL}/settings`)}
     `),
@@ -118,13 +121,39 @@ export function cancellationScheduledEmail(name: string, accessUntilDate: string
 // reached its date, or the subscription was terminated some other way
 // (e.g. cancelled directly in Stripe).
 export function subscriptionEndedEmail(name: string): EmailTemplate {
-  const firstName = name?.split(" ")[0] || "there";
+  const firstName = escapeHtml(name?.split(" ")[0] || "there");
   return {
     subject: "Your Flowtex subscription has ended",
     html: emailLayout(`
       <h1 style="font-size:20px;margin:0 0 12px;">Your subscription has ended</h1>
       <p style="margin:0 0 16px;">Hi ${firstName} — your Flowtex access has ended. Your data (clients, tasks, chat history) is kept safe and picks up right where you left off if you resubscribe.</p>
       ${emailButton("Resubscribe", `${APP_URL}/pricing`)}
+    `),
+  };
+}
+
+// Internal notification sent to the support inbox when the public /contact
+// form is submitted — not a product email to a user, but reuses the same
+// layout/sending machinery rather than a one-off mail path.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function contactMessageEmail(name: string, email: string, message: string): EmailTemplate {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeMessage = escapeHtml(message);
+  return {
+    subject: `New contact form message from ${safeName}`,
+    html: emailLayout(`
+      <h1 style="font-size:20px;margin:0 0 12px;">New contact message</h1>
+      <p style="margin:0 0 8px;"><strong>From:</strong> ${safeName} (${safeEmail})</p>
+      <p style="margin:0 0 16px;white-space:pre-wrap;">${safeMessage}</p>
     `),
   };
 }

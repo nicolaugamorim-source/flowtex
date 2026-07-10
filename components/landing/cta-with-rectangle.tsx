@@ -65,6 +65,9 @@ export function CTASection({
         </div>
 
         {/* Description */}
+        {/* NOTE: description must remain static, hardcoded marketing copy only
+            (see call site in app/page.tsx) - never pass user- or CMS-controlled
+            content here, since it is rendered via dangerouslySetInnerHTML. */}
         {description && (
           <p
             className="text-lg text-[var(--color-text-secondary)] animate-fade-in-up delay-300 max-w-2xl"

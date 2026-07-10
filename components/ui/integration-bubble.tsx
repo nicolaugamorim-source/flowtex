@@ -41,8 +41,16 @@ export function IntegrationBubble({ bubble, sendMessage, googleAccessToken }: In
     return <EmailAction bubble={bubble} sendMessage={sendMessage} googleAccessToken={googleAccessToken} />;
   }
 
+  if (bubble.type === "notion" && bubble.meta?.pendingDeleteNotion) {
+    return <PendingDeleteNotion bubble={bubble} pending={bubble.meta.pendingDeleteNotion} />;
+  }
+
   if (bubble.type === "notion" && !bubble.badge) {
     return <NotionSelectAction bubble={bubble} sendMessage={sendMessage} />;
+  }
+
+  if (bubble.type === "custom" && bubble.meta?.pendingDeleteClient) {
+    return <PendingDeleteClient bubble={bubble} pending={bubble.meta.pendingDeleteClient} />;
   }
 
   return (
@@ -138,6 +146,17 @@ function EventAction({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
+  // The assistant found a candidate event but hasn't touched it yet — these two
+  // bubble shapes require an explicit human click against the real API before
+  // anything irreversible happens (see delete_calendar_event / reschedule_event
+  // handlers in app/api/chat/route.ts).
+  if (bubble.meta?.pendingDelete) {
+    return <PendingDeleteEvent bubble={bubble} pending={bubble.meta.pendingDelete} />;
+  }
+  if (bubble.meta?.pendingReschedule) {
+    return <PendingRescheduleEvent bubble={bubble} pending={bubble.meta.pendingReschedule} />;
+  }
+
   const isFinal = bubble.badge?.color === "error"; // already removed/cancelled
 
   const confirmReschedule = () => {
@@ -206,6 +225,265 @@ function EventAction({
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ---------- Pending calendar delete: assistant found the event, human must confirm ----------
+function PendingDeleteEvent({
+  bubble,
+  pending,
+}: {
+  bubble: BubbleData;
+  pending: { eventId: string; calendarId: string };
+}) {
+  const [status, setStatus] = useState<"idle" | "deleting" | "deleted" | "error">("idle");
+
+  const confirmDelete = async () => {
+    setStatus("deleting");
+    try {
+      const res = await fetch("/api/calendar/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: pending.eventId, calendarId: pending.calendarId }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setStatus("deleted");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  if (status === "deleted") {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+        Event deleted.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <DataBubble
+        type="event"
+        title={bubble.title}
+        subtitle={bubble.subtitle}
+        description={bubble.description}
+        metadata={bubble.metadata as any}
+        badge={bubble.badge}
+        actions={[
+          { label: "Cancel", variant: "outline" as const, onClick: () => {} },
+          {
+            label: status === "deleting" ? "Deleting..." : "Confirm delete",
+            variant: "danger" as const,
+            onClick: confirmDelete,
+          },
+        ]}
+      />
+      {status === "error" && (
+        <p className="text-xs mt-2" style={{ color: "var(--color-category-bug-text)" }}>
+          Could not delete the event. Try again.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------- Pending calendar reschedule: assistant found the event + new time, human must confirm ----------
+function PendingRescheduleEvent({
+  bubble,
+  pending,
+}: {
+  bubble: BubbleData;
+  pending: {
+    eventId: string;
+    calendarId: string;
+    summary: string;
+    description?: string;
+    startTime: string;
+    endTime: string;
+    newCalendarId?: string;
+  };
+}) {
+  const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+
+  const confirmReschedule = async () => {
+    setStatus("saving");
+    try {
+      const res = await fetch("/api/calendar/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: pending.eventId,
+          calendarId: pending.calendarId,
+          summary: pending.summary,
+          description: pending.description,
+          startTime: pending.startTime,
+          endTime: pending.endTime,
+          newCalendarId: pending.newCalendarId,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  if (status === "done") {
+    return (
+      <div
+        className="rounded-xl border px-4 py-3 text-sm"
+        style={{
+          borderColor: "var(--color-category-task-text)",
+          backgroundColor: "var(--color-category-task-bg)",
+          color: "var(--color-category-task-text)",
+        }}
+      >
+        Event rescheduled.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <DataBubble
+        type="event"
+        title={bubble.title}
+        subtitle={bubble.subtitle}
+        description={bubble.description}
+        metadata={bubble.metadata as any}
+        badge={bubble.badge}
+        actions={[
+          { label: "Cancel", variant: "outline" as const, onClick: () => {} },
+          {
+            label: status === "saving" ? "Saving..." : "Confirm reschedule",
+            variant: "default" as const,
+            onClick: confirmReschedule,
+          },
+        ]}
+      />
+      {status === "error" && (
+        <p className="text-xs mt-2" style={{ color: "var(--color-category-bug-text)" }}>
+          Could not reschedule the event. Try again.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------- Pending client delete: assistant found the client, human must confirm ----------
+function PendingDeleteClient({
+  bubble,
+  pending,
+}: {
+  bubble: BubbleData;
+  pending: { clientId: string; clientName: string };
+}) {
+  const [status, setStatus] = useState<"idle" | "deleting" | "deleted" | "error">("idle");
+
+  const confirmDelete = async () => {
+    setStatus("deleting");
+    try {
+      const res = await fetch(`/api/clients/${pending.clientId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      setStatus("deleted");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  if (status === "deleted") {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+        Client deleted.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <DataBubble
+        type="custom"
+        title={bubble.title}
+        subtitle={bubble.subtitle}
+        description={bubble.description}
+        metadata={bubble.metadata as any}
+        badge={bubble.badge}
+        actions={[
+          { label: "Cancel", variant: "outline" as const, onClick: () => {} },
+          {
+            label: status === "deleting" ? "Deleting..." : "Confirm delete",
+            variant: "danger" as const,
+            onClick: confirmDelete,
+          },
+        ]}
+      />
+      {status === "error" && (
+        <p className="text-xs mt-2" style={{ color: "var(--color-category-bug-text)" }}>
+          Could not delete the client. Try again.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------- Pending Notion page delete: assistant found the page, human must confirm ----------
+function PendingDeleteNotion({
+  bubble,
+  pending,
+}: {
+  bubble: BubbleData;
+  pending: { pageId: string; pageName: string };
+}) {
+  const [status, setStatus] = useState<"idle" | "deleting" | "deleted" | "error">("idle");
+
+  const confirmDelete = async () => {
+    setStatus("deleting");
+    try {
+      const res = await fetch("/api/notion/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId: pending.pageId }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setStatus("deleted");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  if (status === "deleted") {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-base)] px-4 py-3 text-sm text-[var(--color-text-muted)]">
+        Page deleted.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <DataBubble
+        type="notion"
+        title={bubble.title}
+        subtitle={bubble.subtitle}
+        description={bubble.description}
+        metadata={bubble.metadata as any}
+        badge={bubble.badge}
+        actions={[
+          { label: "Cancel", variant: "outline" as const, onClick: () => {} },
+          {
+            label: status === "deleting" ? "Deleting..." : "Confirm delete",
+            variant: "danger" as const,
+            onClick: confirmDelete,
+          },
+        ]}
+      />
+      {status === "error" && (
+        <p className="text-xs mt-2" style={{ color: "var(--color-category-bug-text)" }}>
+          Could not delete the page. Try again.
+        </p>
+      )}
     </div>
   );
 }

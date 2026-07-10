@@ -12,7 +12,7 @@ export function SidebarWrapper() {
   const [teamName, setTeamName] = useState("Flowtex");
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
   const [userName, setUserName] = useState("User");
-  const [userEmail, setUserEmail] = useState("user@flowtex.com");
+  const [userEmail, setUserEmail] = useState("user@flowtex.xyz");
   const [isLoading, setIsLoading] = useState(true);
 
   // Cached values are only applied after mount — a normal post-hydration
@@ -35,7 +35,7 @@ export function SidebarWrapper() {
         if (user) {
           console.log("User metadata:", user.user_metadata);
 
-          const email = user.email || "user@flowtex.com";
+          const email = user.email || "user@flowtex.xyz";
           setUserEmail(email);
           localStorage.setItem("userEmail", email);
 
