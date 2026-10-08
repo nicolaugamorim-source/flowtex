@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quiz</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>window.MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]]},svg:{fontCache:"global"},startup:{typeset:false}};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--txt:#1d1d1f;--sub:#6b6b70;--line:#e3e1dc;--acc:#2f5bd3;--ok:#2f9e5b;--ko:#d64545;--okbg:#e7f5ec;--kobg:#fbeaea;}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;--line:#2e2e34;--acc:#7c9cff;--okbg:#17301f;--kobg:#3a1c1c;}}
@@ -47,7 +46,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;bord
   </div>
 </div>
 <script>
-// Claude substitui QUIZ. modo: "treino" (correção imediata) ou "exame" (correção no fim).
+// Claude substitui QUIZ. modo: "treino" (correção imediata), "exame" (simulação, correção no fim)
+// ou "verificacao" (etapa ②: teste de domínio de uma aula, correção no fim; indicar "aula": "<id>").
 // tipos: "escolha" (correta = índice), "vf" (correta = true/false), "numero" (correta = valor, tolerancia opcional)
 const QUIZ = /*QUIZ*/{
  "titulo":"Quiz de exemplo","cadeira":"Exemplo","modo":"treino",
@@ -58,14 +58,18 @@ const QUIZ = /*QUIZ*/{
 
 const $ = id => document.getElementById(id);
 const resp = {}, resultado = {};
-const exame = QUIZ.modo === "exame";
-function render(el){ if (window.renderMathInElement) renderMathInElement(el,{delimiters:[
-  {left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false}); }
+const exame = QUIZ.modo === "exame" || QUIZ.modo === "verificacao";
+const NOME_MODO = {treino:"treino (correção imediata)", exame:"exame (correção no fim)", verificacao:"verificação de domínio (correção no fim)"};
+function render(el){ // fórmulas $...$ com MathJax (SVG, sem CSS externo); sem rede, fica o texto
+  const go = () => MathJax.typesetPromise([el]).catch(() => {});
+  if (window.MathJax && MathJax.typesetPromise) go();
+  else if (window.MathJax && MathJax.startup && MathJax.startup.promise) MathJax.startup.promise.then(go);
+}
 const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
 function montar(){
   $("titulo").textContent = QUIZ.titulo;
-  $("meta").textContent = `${QUIZ.cadeira} · ${QUIZ.perguntas.length} perguntas · modo ${exame ? "exame (correção no fim)" : "treino (correção imediata)"}`;
+  $("meta").textContent = `${QUIZ.cadeira} · ${QUIZ.perguntas.length} perguntas · modo ${NOME_MODO[QUIZ.modo] || NOME_MODO.treino}`;
   $("perguntas").innerHTML = QUIZ.perguntas.map((q,i) => {
     let corpo = "";
     if(q.tipo === "escolha") corpo = q.opcoes.map((o,j)=>`<button class="op" data-q="${i}" data-v="${j}">${esc(o)}</button>`).join("");
@@ -118,7 +122,11 @@ function terminar(){
   $("tabela").innerHTML = Object.entries(por).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1])
     .map(([k,[x,t]])=>`<tr><td>${esc(k)}</td><td style="text-align:right">${x}/${t}</td></tr>`).join("");
   const itens = QUIZ.perguntas.map((q,i)=>({dominio:q.dominio, subdominio:q.subdominio, acerto:resultado[i], ref:q.id}));
-  $("codigo").value = "RESULTADOS:" + JSON.stringify({tipo: exame ? "simulacao" : "quiz", cadeira: QUIZ.cadeira, itens});
+  const tipo = QUIZ.modo === "verificacao" ? "verificacao" : exame ? "simulacao" : "quiz";
+  const out = {tipo, cadeira: QUIZ.cadeira, itens};
+  if (tipo === "verificacao") out.aula = String(QUIZ.aula || "");
+  $("codigo").value = "RESULTADOS:" + JSON.stringify(out);
+  if (tipo === "verificacao") $("nota").textContent += c/n >= 0.8 ? " · domínio atingido ✓" : " · ainda não: treina os pontos falhados";
   $("fim").classList.remove("hidden");
   $("fim").scrollIntoView({behavior:"smooth"});
 }

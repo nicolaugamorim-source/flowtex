@@ -5,10 +5,10 @@ O aluno aprende melhor a **ver e mexer**. Sempre que ajudar a perceber, cria um 
 | Modelo | Para quê | O que substituis |
 |---|---|---|
 | `flashcards.html` | Sessão de revisão (spaced repetition) | O array entre `/*DECK*/` e `/*FIM*/` (output de `deck`) |
-| `quiz.html` | Mini-quiz depois de uma aula, quiz diagnóstico ou simulação (`modo: "exame"`) | O objeto entre `/*QUIZ*/` e `/*FIM*/` |
+| `quiz.html` | Treino (`modo: "treino"`), verificação de domínio da etapa ② (`modo: "verificacao"` + `aula: "<id>"`) ou simulação (`modo: "exame"`) | O objeto entre `/*QUIZ*/` e `/*FIM*/` |
 | `grafico.html` | Gráfico com sliders: curvas, equilíbrios, deslocamentos | O objeto entre `/*CONFIG*/` e `/*FIM*/` |
 
-Copia o ficheiro, substitui **só** o bloco de dados e mantém o resto. Para outros visuais (painel de proficiência, árvore de conceitos, linha do tempo, simulação estatística) escreve um artifact novo com o mesmo estilo: variáveis de cor em `:root`, modo escuro, largura de telemóvel e sem bibliotecas pesadas.
+Copia o ficheiro, substitui **só** o bloco de dados e mantém o resto. As fórmulas em `$...$` são desenhadas pelo MathJax (sem CSS externo). Se não carregar, aparecem como texto. Para outros visuais (painel de proficiência, árvore de conceitos, linha do tempo, simulação estatística) escreve um artifact novo com o mesmo estilo: variáveis de cor em `:root`, modo escuro, largura de telemóvel e sem bibliotecas pesadas.
 
 ## Regra de ouro: os dados vêm dos materiais
 - Funções, parâmetros, nomes de eixos e notação **saem dos slides**. Se o professor usa P = a − bQ, o gráfico usa isso.

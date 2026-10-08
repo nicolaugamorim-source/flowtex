@@ -1,5 +1,7 @@
 # Spaced repetition: como funciona
 
+**Papel na skill: manutenção.** Os flashcards servem para não esquecer o que já foi aprendido na etapa ① (definições, fórmulas, distinções). Não substituem o treino nem a verificação da etapa ② (`references/etapa2-estudar.md`). Ocupam 10 a 15 minutos por dia.
+
 ## Algoritmo: FSRS-4.5
 
 É o algoritmo moderno usado no Anki. Para a mesma retenção, pede menos revisões do que as caixas de Leitner ou o SM-2. Cada cartão tem:

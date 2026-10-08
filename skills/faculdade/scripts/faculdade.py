@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Gestão de estudo: cadeiras, horário, aulas, cartões (FSRS-4.5), resultados,
-proficiência e briefing diário.
+"""Gestão de estudo: cadeiras, horário, aulas (com as 2 etapas: aprender → estudar e
+verificar), cartões (FSRS-4.5), resultados, proficiência e briefing diário.
 
 Só usa a biblioteca padrão. Dados em CSV, legíveis e editáveis.
 Uso: python3 faculdade.py --dir faculdade <comando> [...]
@@ -60,13 +60,19 @@ CAMPOS = {
     "cadeiras": ["cadeira", "ano", "semestre", "estado", "tipo", "avaliacao", "data_exame"],
     "horario": ["cadeira", "dia", "inicio", "fim", "tipo", "sala"],
     "aulas": ["id", "data", "cadeira", "tipo", "materia", "dominio", "presenca",
-              "estudada", "resumo", "notas"],
+              "etapa", "aprendida_em", "verificada_em", "nota_verif", "resumo", "notas"],
     "cartoes": ["id", "cadeira", "dominio", "subdominio", "aula", "frente", "verso", "fonte",
                 "estabilidade", "dificuldade", "proxima", "ultima", "revisoes", "erros", "criado"],
     "resultados": ["data", "cadeira", "dominio", "subdominio", "origem", "acerto", "ref"],
 }
 DIAS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
-PESO_ORIGEM = {"cartao": 1.0, "quiz": 1.5, "explicacao": 1.5, "exercicio": 2.0, "simulacao": 3.0}
+PESO_ORIGEM = {"cartao": 1.0, "quiz": 1.5, "explicacao": 1.5, "exercicio": 2.0,
+               "verificacao": 3.0, "simulacao": 3.0}
+# Etapas de cada aula: aprender → estudar → dominada (se a verificação falhar: recordar → estudar)
+ETAPAS = ["aprender", "recordar", "estudar", "dominada"]
+MARCA_ETAPA = {"aprender": "① aprender", "recordar": "① recordar", "estudar": "② estudar",
+               "dominada": "✅ dominada"}
+LIMIAR_DOMINIO = 0.80
 ACERTO_NOTA = {0: 0.0, 1: 0.6, 2: 1.0, 3: 1.0}
 MEIA_VIDA_DIAS = 21
 NOVOS_POR_DIA = 20
@@ -191,7 +197,8 @@ def cmd_aula(a):
         l = {"id": novo_id(linhas), "data": a.data or hoje().isoformat(),
              "cadeira": cadeira_canonica(a.cadeira), "tipo": a.tipo or "",
              "materia": a.materia, "dominio": a.dominio or "", "presenca": a.presenca or "",
-             "estudada": "nao", "resumo": "", "notas": a.notas or ""}
+             "etapa": "aprender", "aprendida_em": "", "verificada_em": "", "nota_verif": "",
+             "resumo": "", "notas": a.notas or ""}
         data(l["data"])
         linhas.append(l)
         escrever("aulas", linhas)
@@ -200,26 +207,93 @@ def cmd_aula(a):
         l = next((l for l in linhas if l["id"] == str(a.id)), None)
         if l is None:
             sys.exit(f"Aula {a.id} não existe.")
-        for campo in ("materia", "dominio", "presenca", "estudada", "resumo", "notas", "tipo"):
+        for campo in ("materia", "dominio", "presenca", "etapa", "resumo", "notas", "tipo"):
             v = getattr(a, campo, None)
             if v is not None:
                 l[campo] = v
         escrever("aulas", linhas)
-        print(f"Aula {l['id']} atualizada.")
+        print(f"Aula {l['id']} atualizada ({MARCA_ETAPA.get(l['etapa'], l['etapa'])}).")
     else:
         sel = [l for l in linhas if (not a.cadeira or mesma(l["cadeira"], a.cadeira))
-               and (not a.pendentes or l["estudada"] != "sim")]
+               and (not a.pendentes or l["etapa"] != "dominada")]
         sel.sort(key=lambda l: (l["cadeira"], l["data"]))
         atual = None
         for l in sel:
             if l["cadeira"] != atual:
                 atual = l["cadeira"]
                 print(f"\n== {atual}")
-            marca = "✅" if l["estudada"] == "sim" else ("❗faltei" if l["presenca"] == "faltei" else "⏳")
+            marca = MARCA_ETAPA.get(l["etapa"], l["etapa"])
+            falta = " ❗faltei" if l["presenca"] == "faltei" else ""
             dom = f" [{l['dominio']}]" if l["dominio"] else ""
-            print(f"  #{l['id']} {l['data']} {l['tipo']} {marca} {l['materia']}{dom}")
+            verif = f" · verificação {float(l['nota_verif']):.0%}" if l["nota_verif"] else ""
+            print(f"  #{l['id']} {l['data']} {l['tipo']} {marca}{falta} · {l['materia']}{dom}{verif}")
         if not sel:
             print("Sem aulas registadas.")
+
+
+def obter_aula(linhas, aid):
+    l = next((l for l in linhas if l["id"] == str(aid)), None)
+    if l is None:
+        sys.exit(f"Aula {aid} não existe.")
+    return l
+
+
+def cmd_aprendida(a):
+    """Fim da etapa 1: a aula foi aprendida (ou recordada) e passa a 'estudar'."""
+    linhas = ler("aulas")
+    l = obter_aula(linhas, a.id)
+    l["etapa"] = "estudar"
+    l["aprendida_em"] = hoje().isoformat()
+    if a.resumo:
+        l["resumo"] = a.resumo
+    escrever("aulas", linhas)
+    print(f"Aula {l['id']} → ② estudar. Verificação possível a partir de "
+          f"{(hoje() + dt.timedelta(days=1)).isoformat()}.")
+
+
+def aplicar_verificacao(linhas, aid, itens, cadeira_def=""):
+    """Regista a verificação de uma aula e decide a etapa seguinte."""
+    l = obter_aula(linhas, aid)
+    for i in itens:
+        registar_resultado(i.get("cadeira") or cadeira_def or l["cadeira"],
+                           i.get("dominio") or l["dominio"], i.get("subdominio", ""),
+                           "verificacao", i["acerto"], i.get("ref", f"aula#{aid}"))
+    media = sum(float(i["acerto"]) for i in itens) / len(itens)
+    h = hoje()
+    l["nota_verif"] = f"{media:.2f}"
+    l["verificada_em"] = h.isoformat()
+    mesmo_dia = not l["aprendida_em"] or data(l["aprendida_em"]) >= h
+    por_sub = {}
+    for i in itens:
+        por_sub.setdefault(i.get("subdominio", "") or "(geral)", []).append(float(i["acerto"]))
+    fracos_sub = sorted(k for k, v in por_sub.items() if sum(v) / len(v) < 0.5)
+    if media >= LIMIAR_DOMINIO and not mesmo_dia and not fracos_sub:
+        l["etapa"] = "dominada"
+        msg = f"✅ Aula {aid} dominada ({media:.0%}). Fica em manutenção (flashcards + verificações intercaladas)."
+    elif media >= LIMIAR_DOMINIO and mesmo_dia:
+        l["etapa"] = "estudar"
+        msg = (f"Aula {aid}: {media:.0%}, mas no mesmo dia em que foi aprendida não conta. "
+               f"Repete a verificação amanhã ou depois.")
+    elif media >= LIMIAR_DOMINIO:
+        l["etapa"] = "estudar"
+        msg = f"Aula {aid}: {media:.0%} no total, mas há pontos que falharam. Treina-os e reverifica só esses."
+    elif media >= 0.5:
+        l["etapa"] = "estudar"
+        msg = f"Aula {aid}: {media:.0%}. Continua na etapa ② e treina os pontos falhados antes de reverificar."
+    else:
+        l["etapa"] = "recordar"
+        msg = f"Aula {aid}: {media:.0%}. Volta à etapa ① (recordar) nos pontos falhados."
+    if fracos_sub:
+        msg += " Pontos a trabalhar: " + ", ".join(fracos_sub) + "."
+    return msg
+
+
+def cmd_verificar(a):
+    linhas = ler("aulas")
+    msg = aplicar_verificacao(linhas, a.id, [{"subdominio": a.subdominio or "", "acerto": a.acerto,
+                                               "dominio": a.dominio or ""}])
+    escrever("aulas", linhas)
+    print(msg)
 
 
 # ---------------------------------------------------------------- cartões
@@ -367,6 +441,10 @@ def cmd_registar(a):
         for cid, nota in dados["notas"].items():
             print(rever(cartoes, int(cid), int(nota), exs))
         escrever("cartoes", cartoes)
+    elif dados.get("tipo") == "verificacao":
+        linhas = ler("aulas")
+        print(aplicar_verificacao(linhas, dados["aula"], dados["itens"], dados.get("cadeira", "")))
+        escrever("aulas", linhas)
     elif dados.get("tipo") in ("quiz", "exercicio", "simulacao"):
         origem = "quiz" if dados["tipo"] == "quiz" else dados["tipo"]
         for i in dados["itens"]:
@@ -497,29 +575,51 @@ def cmd_hoje(a):
     else:
         print("- Sem aulas no horário.")
 
+    exs = {c: d for c, d in exames().items() if d and 0 <= (d - h).days <= 30}
+    aulas = ler("aulas")
+
+    def prio(l):
+        ex = exs.get(l["cadeira"])
+        return ((ex - h).days if ex else 999, l["presenca"] != "faltei", l["data"])
+
+    et1 = sorted((l for l in aulas if l["etapa"] in ("aprender", "recordar")), key=prio)
+    print("\n## Etapa ① Aprender / recordar")
+    if et1:
+        for l in et1[:5]:
+            extra = " (faltaste)" if l["presenca"] == "faltei" else ""
+            extra += " (recordar: falhou a verificação)" if l["etapa"] == "recordar" else ""
+            print(f"- #{l['id']} {l['cadeira']}: {l['materia']}{extra}")
+        if len(et1) > 5:
+            print(f"- … e mais {len(et1) - 5}")
+    else:
+        print("- Nada em atraso.")
+
+    et2 = sorted((l for l in aulas if l["etapa"] == "estudar"), key=prio)
+    print("\n## Etapa ② Estudar e verificar")
+    if et2:
+        for l in et2[:5]:
+            pronta = l["aprendida_em"] and data(l["aprendida_em"]) < h
+            estado = "pronta para verificação" if pronta else "treinar (exercícios); verificar amanhã"
+            nota = f" · última verificação {float(l['nota_verif']):.0%}" if l["nota_verif"] else ""
+            print(f"- #{l['id']} {l['cadeira']}: {l['materia']} → {estado}{nota}")
+        if len(et2) > 5:
+            print(f"- … e mais {len(et2) - 5}")
+    else:
+        print("- Nada por verificar.")
+
     sel, n_rev, n_nov = para_hoje()
-    print(f"\n## Revisões (spaced repetition): {n_rev} revisões + {n_nov} novos "
-          f"(~{round(n_rev * 0.5 + n_nov * 1.5)} min)")
+    print(f"\n## Manutenção: flashcards ({n_rev + n_nov}, ~{round(n_rev * 0.5 + n_nov * 1.5)} min)")
     grupos = {}
     for c in sel:
         grupos.setdefault((c["cadeira"], c["dominio"] or "(geral)"), []).append(c)
-    for (cad, dom), cs in sorted(grupos.items(), key=lambda x: -len(x[1])):
+    for (cad, dom), cs in sorted(grupos.items(), key=lambda x: -len(x[1]))[:4]:
         print(f"- {cad} › {dom}: {len(cs)}")
 
-    exs = {c: d for c, d in exames().items() if d and 0 <= (d - h).days <= 30}
     if exs:
         print("\n## Avaliações próximas")
         for c, d in sorted(exs.items(), key=lambda x: x[1]):
             print(f"- {c}: {d.strftime('%d/%m')} (faltam {(d - h).days} dias)")
 
-    pend = [l for l in ler("aulas") if l["estudada"] != "sim"]
-    if pend:
-        print("\n## Aulas por estudar")
-        for l in sorted(pend, key=lambda l: (l["presenca"] != "faltei", l["data"]))[:6]:
-            marca = " (faltaste)" if l["presenca"] == "faltei" else ""
-            print(f"- #{l['id']} {l['data']} · {l['cadeira']}: {l['materia']}{marca}")
-        if len(pend) > 6:
-            print(f"- … e mais {len(pend) - 6}")
 
     fr = fracos()
     if fr:
@@ -584,11 +684,23 @@ def main():
     s.add_argument("--materia")
     s.add_argument("--dominio")
     s.add_argument("--presenca", choices=["assisti", "faltei"])
-    s.add_argument("--estudada", choices=["sim", "nao"])
+    s.add_argument("--etapa", choices=ETAPAS)
     s.add_argument("--resumo")
     s.add_argument("--notas")
     s.add_argument("--pendentes", action="store_true")
     s.set_defaults(f=cmd_aula)
+
+    s = sub.add_parser("aprendida")
+    s.add_argument("id")
+    s.add_argument("--resumo")
+    s.set_defaults(f=cmd_aprendida)
+
+    s = sub.add_parser("verificar")
+    s.add_argument("id")
+    s.add_argument("--acerto", type=float, required=True, help="0 a 1 (média da verificação)")
+    s.add_argument("--dominio")
+    s.add_argument("--subdominio")
+    s.set_defaults(f=cmd_verificar)
 
     s = sub.add_parser("add")
     for campo in ("cadeira", "frente", "verso", "fonte"):
