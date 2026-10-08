@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--txt:#1d1d1f;--sub:#6b6b70;--line:#e3e1dc;--acc:#2f5bd3;--ok:#2f9e5b;--ko:#d64545;--okbg:#e7f5ec;--kobg:#fbeaea;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;--line:#2e2e34;--acc:#7c9cff;--okbg:#17301f;--kobg:#3a1c1c;}}
+:root[data-theme="dark"]{--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;--line:#2e2e34;--acc:#7c9cff;--okbg:#17301f;--kobg:#3a1c1c;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:680px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}.meta{color:var(--sub);font-size:14px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:12px}
+.tag{font-size:12px;color:var(--sub)}
+.enun{font-weight:600;margin:6px 0 12px}
+.op{display:block;width:100%;text-align:left;border:1px solid var(--line);background:transparent;color:var(--txt);
+  border-radius:10px;padding:10px 12px;margin:6px 0;font:inherit;cursor:pointer}
+.op.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.op.ok{background:var(--okbg);border-color:var(--ok)}.op.ko{background:var(--kobg);border-color:var(--ko)}
+input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:transparent;color:var(--txt);font:inherit}
+.fb{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:15px}
+.fb.ok{background:var(--okbg)}.fb.ko{background:var(--kobg)}
+.fonte{font-size:13px;color:var(--sub);font-style:italic;margin-top:6px}
+.btn{border:0;border-radius:10px;padding:12px 16px;font:600 15px system-ui;cursor:pointer;color:#fff;background:var(--acc);width:100%;margin-top:10px}
+.code{width:100%;font:13px ui-monospace,monospace;min-height:90px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--txt);padding:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="titulo"></h1>
+  <div class="meta" id="meta"></div>
+  <div id="perguntas"></div>
+  <button class="btn hidden" id="b-corrigir" onclick="corrigirTudo()">Entregar e corrigir</button>
+  <div id="fim" class="card hidden">
+    <div class="enun" id="nota"></div>
+    <table id="tabela"></table>
+    <p>Copia o código e cola-o no chat para eu registar na tua proficiência.</p>
+    <textarea class="code" id="codigo" readonly></textarea>
+    <button class="btn" onclick="copiar(this)">Copiar código</button>
+  </div>
+</div>
+<script>
+// Claude substitui QUIZ. modo: "treino" (correção imediata) ou "exame" (correção no fim).
+// tipos: "escolha" (correta = índice), "vf" (correta = true/false), "numero" (correta = valor, tolerancia opcional)
+const QUIZ = /*QUIZ*/{
+ "titulo":"Quiz de exemplo","cadeira":"Exemplo","modo":"treino",
+ "perguntas":[
+  {"id":"q1","dominio":"Domínio","subdominio":"Sub","tipo":"escolha","enunciado":"Pergunta?","opcoes":["A","B","C"],"correta":1,"explicacao":"Porque B.","fonte":"Slides Cap. 1, slide 3"},
+  {"id":"q2","dominio":"Domínio","subdominio":"Sub 2","tipo":"numero","enunciado":"Se $P=2$ e $Q=10-2P$, quanto vale $Q$?","correta":6,"tolerancia":0.01,"explicacao":"$Q=10-4=6$.","fonte":"Ficha 1, ex. 2"}
+ ]}/*FIM*/;
+
+const $ = id => document.getElementById(id);
+const resp = {}, resultado = {};
+const exame = QUIZ.modo === "exame";
+function render(el){ if (window.renderMathInElement) renderMathInElement(el,{delimiters:[
+  {left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false}); }
+const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function montar(){
+  $("titulo").textContent = QUIZ.titulo;
+  $("meta").textContent = `${QUIZ.cadeira} · ${QUIZ.perguntas.length} perguntas · modo ${exame ? "exame (correção no fim)" : "treino (correção imediata)"}`;
+  $("perguntas").innerHTML = QUIZ.perguntas.map((q,i) => {
+    let corpo = "";
+    if(q.tipo === "escolha") corpo = q.opcoes.map((o,j)=>`<button class="op" data-q="${i}" data-v="${j}">${esc(o)}</button>`).join("");
+    else if(q.tipo === "vf") corpo = ["Verdadeiro","Falso"].map((o,j)=>`<button class="op" data-q="${i}" data-v="${j===0}">${o}</button>`).join("");
+    else corpo = `<input type="text" inputmode="decimal" data-q="${i}" placeholder="A tua resposta (número)">` +
+      (exame ? "" : `<button class="btn" onclick="corrigir(${i})">Verificar</button>`);
+    return `<div class="card" id="c${i}"><div class="tag">${i+1}. ${esc(q.dominio||"")} › ${esc(q.subdominio||"")}</div>
+      <div class="enun">${esc(q.enunciado)}</div>${corpo}<div id="fb${i}"></div></div>`;
+  }).join("");
+  document.querySelectorAll(".op").forEach(b => b.onclick = () => escolher(+b.dataset.q, b.dataset.v));
+  document.querySelectorAll("input[data-q]").forEach(inp => inp.oninput = () => resp[+inp.dataset.q] = inp.value);
+  if(exame) $("b-corrigir").classList.remove("hidden");
+  render(document.body);
+}
+function escolher(i, v){
+  if(i in resultado) return;
+  resp[i] = v;
+  document.querySelectorAll(`.op[data-q="${i}"]`).forEach(b => b.classList.toggle("sel", b.dataset.v === v));
+  if(!exame) corrigir(i);
+}
+function certo(q, r){
+  if(r === undefined || r === "") return false;
+  if(q.tipo === "escolha") return +r === q.correta;
+  if(q.tipo === "vf") return (r === "true") === q.correta;
+  const x = parseFloat(String(r).replace(",", "."));
+  return !isNaN(x) && Math.abs(x - q.correta) <= (q.tolerancia ?? 1e-6);
+}
+function corrigir(i){
+  if(i in resultado) return;
+  const q = QUIZ.perguntas[i], ok = certo(q, resp[i]);
+  resultado[i] = ok ? 1 : 0;
+  document.querySelectorAll(`.op[data-q="${i}"]`).forEach(b => {
+    const v = b.dataset.v;
+    const isCorreta = q.tipo === "escolha" ? +v === q.correta : (v === "true") === q.correta;
+    if(isCorreta) b.classList.add("ok"); else if(b.classList.contains("sel")) b.classList.add("ko");
+    b.disabled = true;
+  });
+  const sol = q.tipo === "numero" ? ` Resposta: ${q.correta}.` : "";
+  $("fb"+i).innerHTML = `<div class="fb ${ok?"ok":"ko"}"><b>${ok?"Certo ✓":"Errado ✗"}</b>${sol} ${esc(q.explicacao||"")}
+    <div class="fonte">Fonte: ${esc(q.fonte||"")}</div></div>`;
+  render($("fb"+i));
+  if(Object.keys(resultado).length === QUIZ.perguntas.length) terminar();
+}
+function corrigirTudo(){ QUIZ.perguntas.forEach((_,i)=>corrigir(i)); $("b-corrigir").classList.add("hidden"); }
+function terminar(){
+  const n = QUIZ.perguntas.length, c = Object.values(resultado).reduce((a,b)=>a+b,0);
+  $("nota").textContent = `Resultado: ${c}/${n} (${Math.round(100*c/n)}%) · ≈ ${(20*c/n).toFixed(1)} valores`;
+  const por = {};
+  QUIZ.perguntas.forEach((q,i)=>{const k=q.subdominio||q.dominio||"—"; por[k]=por[k]||[0,0]; por[k][1]++; por[k][0]+=resultado[i];});
+  $("tabela").innerHTML = Object.entries(por).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1])
+    .map(([k,[x,t]])=>`<tr><td>${esc(k)}</td><td style="text-align:right">${x}/${t}</td></tr>`).join("");
+  const itens = QUIZ.perguntas.map((q,i)=>({dominio:q.dominio, subdominio:q.subdominio, acerto:resultado[i], ref:q.id}));
+  $("codigo").value = "RESULTADOS:" + JSON.stringify({tipo: exame ? "simulacao" : "quiz", cadeira: QUIZ.cadeira, itens});
+  $("fim").classList.remove("hidden");
+  $("fim").scrollIntoView({behavior:"smooth"});
+}
+function copiar(b){
+  const t = $("codigo"); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject())
+    .then(()=>b.textContent="Copiado ✓").catch(()=>{document.execCommand("copy");b.textContent="Copiado ✓";});
+}
+window.addEventListener("load", montar);
+</script>
+</body>
+</html>

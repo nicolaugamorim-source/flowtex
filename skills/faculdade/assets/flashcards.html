@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisão de hoje</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--txt:#1d1d1f;--sub:#6b6b70;--line:#e3e1dc;--acc:#2f5bd3;
+  --r0:#d64545;--r1:#d9822b;--r2:#2f9e5b;--r3:#2f5bd3;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151517;--card:#1f1f23;--txt:#ededf0;
+  --sub:#9a9aa3;--line:#2e2e34;--acc:#7c9cff;}}
+:root[data-theme="dark"]{--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;--line:#2e2e34;--acc:#7c9cff;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--sub)}
+.bar{height:6px;background:var(--line);border-radius:3px;margin:8px 0 16px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--acc);width:0;transition:width .3s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;min-height:220px}
+.tag{font-size:13px;color:var(--sub);margin-bottom:10px}
+.novo{display:inline-block;font-size:11px;padding:1px 6px;border-radius:6px;background:var(--acc);color:#fff;margin-left:6px}
+.frente{font-size:20px;font-weight:600}
+textarea{width:100%;margin-top:14px;min-height:70px;border:1px solid var(--line);border-radius:10px;padding:10px;
+  background:transparent;color:var(--txt);font:inherit;resize:vertical}
+.verso{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);font-size:18px}
+.fonte{margin-top:10px;font-size:13px;color:var(--sub);font-style:italic}
+.btns{display:grid;gap:8px;margin-top:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+button{border:0;border-radius:10px;padding:12px 8px;font:600 15px system-ui;cursor:pointer;color:#fff;background:var(--acc)}
+button small{display:block;font-weight:400;font-size:11px;opacity:.85}
+.b0{background:var(--r0)}.b1{background:var(--r1)}.b2{background:var(--r2)}.b3{background:var(--r3)}
+.hint{font-size:12px;color:var(--sub);text-align:center;margin-top:8px}
+.code{width:100%;font:13px ui-monospace,monospace;min-height:90px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.hidden{display:none}
+@media (max-width:420px){.g4{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span id="titulo">Revisão de hoje</span><span id="cont"></span></div>
+  <div class="bar"><i id="prog"></i></div>
+
+  <div id="sessao">
+    <div class="card">
+      <div class="tag" id="tag"></div>
+      <div class="frente" id="frente"></div>
+      <textarea id="resp" placeholder="Escreve (ou pensa) a tua resposta antes de virar…"></textarea>
+      <div id="verso-box" class="hidden">
+        <div class="verso" id="verso"></div>
+        <div class="fonte" id="fonte"></div>
+      </div>
+    </div>
+    <div class="btns" id="b-mostrar"><button onclick="mostrar()">Mostrar resposta</button></div>
+    <div class="btns g4 hidden" id="b-nota">
+      <button class="b0" onclick="nota(0)">Errei<small>0 · tecla 1</small></button>
+      <button class="b1" onclick="nota(1)">Difícil<small>1 · tecla 2</small></button>
+      <button class="b2" onclick="nota(2)">Bem<small>2 · tecla 3</small></button>
+      <button class="b3" onclick="nota(3)">Fácil<small>3 · tecla 4</small></button>
+    </div>
+    <div class="hint">Espaço = mostrar · 1–4 = nota · Os cartões errados voltam no fim.</div>
+  </div>
+
+  <div id="fim" class="hidden">
+    <div class="card">
+      <div class="frente">Sessão concluída 🎉</div>
+      <p id="resumo"></p>
+      <table id="tabela"></table>
+      <p><b>Último passo:</b> copia o código e cola-o no chat para eu registar as tuas respostas e agendar as próximas revisões.</p>
+      <textarea class="code" id="codigo" readonly></textarea>
+      <div class="btns"><button onclick="copiar()" id="b-copiar">Copiar código</button></div>
+    </div>
+  </div>
+</div>
+<script>
+// Claude substitui o array abaixo pelo output de: faculdade.py deck
+const DECK = /*DECK*/[
+ {"id":"1","cadeira":"Exemplo","dominio":"Domínio","subdominio":"Subdomínio","frente":"Pergunta de exemplo com fórmula $\\varepsilon = \\frac{\\Delta Q/Q}{\\Delta P/P}$?","verso":"Resposta de exemplo","fonte":"Slides Cap. 1, slide 1","novo":true}
+]/*FIM*/;
+
+const fila = DECK.map(c => ({...c, repeticao:false}));
+const notas = {};          // só a primeira resposta conta para o agendamento
+let atual = null, virado = false, feitos = 0;
+const total = DECK.length;
+const $ = id => document.getElementById(id);
+
+function render(el){ if (window.renderMathInElement) renderMathInElement(el,{delimiters:[
+  {left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false}); }
+
+function proximo(){
+  atual = fila.shift();
+  if(!atual) return terminar();
+  virado = false;
+  $("tag").innerHTML = `${atual.cadeira} › ${atual.dominio || "—"} › ${atual.subdominio || "—"}` +
+    (atual.novo && !atual.repeticao ? '<span class="novo">novo</span>' : "") +
+    (atual.repeticao ? '<span class="novo" style="background:var(--r1)">repetição</span>' : "");
+  $("frente").textContent = atual.frente;
+  $("verso").textContent = atual.verso;
+  $("fonte").textContent = "Fonte: " + atual.fonte;
+  $("resp").value = "";
+  $("verso-box").classList.add("hidden");
+  $("b-mostrar").classList.remove("hidden");
+  $("b-nota").classList.add("hidden");
+  $("cont").textContent = `${Math.min(feitos+1,total)}/${total}` + (fila.length && feitos>=total ? " (repetições)" : "");
+  $("prog").style.width = (100*feitos/Math.max(total,1)) + "%";
+  render($("sessao"));
+  $("resp").focus();
+}
+function mostrar(){
+  if(!atual || virado) return;
+  virado = true;
+  $("verso-box").classList.remove("hidden");
+  $("b-mostrar").classList.add("hidden");
+  $("b-nota").classList.remove("hidden");
+}
+function nota(n){
+  if(!atual || !virado) return;
+  if(!(atual.id in notas)){ notas[atual.id] = n; feitos++; }
+  if(n === 0) fila.push({...atual, repeticao:true});
+  proximo();
+}
+function terminar(){
+  $("sessao").classList.add("hidden");
+  $("fim").classList.remove("hidden");
+  $("prog").style.width = "100%";
+  $("cont").textContent = `${total}/${total}`;
+  const vals = Object.values(notas);
+  const certos = vals.filter(v => v >= 2).length;
+  $("resumo").textContent = `${total} cartões · ${certos} certos à primeira (${total?Math.round(100*certos/total):0}%).`;
+  const porDom = {};
+  DECK.forEach(c => { const k = `${c.cadeira} › ${c.subdominio || c.dominio || "—"}`;
+    porDom[k] = porDom[k] || [0,0]; porDom[k][1]++; if(notas[c.id] >= 2) porDom[k][0]++; });
+  $("tabela").innerHTML = Object.entries(porDom).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1])
+    .map(([k,[c,t]]) => `<tr><td>${k}</td><td style="text-align:right">${c}/${t}</td></tr>`).join("");
+  $("codigo").value = "RESULTADOS:" + JSON.stringify({tipo:"flashcards", notas});
+}
+function copiar(){
+  const t = $("codigo"); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject())
+    .then(()=>{$("b-copiar").textContent="Copiado ✓";}).catch(()=>{document.execCommand("copy");$("b-copiar").textContent="Copiado ✓";});
+}
+document.addEventListener("keydown", e => {
+  if(document.activeElement === $("resp") && e.key !== "Enter") return;
+  if(e.key === " " || e.key === "Enter"){ e.preventDefault(); mostrar(); }
+  if(virado && ["1","2","3","4"].includes(e.key)) nota(+e.key - 1);
+});
+$("resp").addEventListener("keydown", e => { if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); mostrar(); $("resp").blur(); } });
+window.addEventListener("load", () => total ? proximo() : terminar());
+</script>
+</body>
+</html>

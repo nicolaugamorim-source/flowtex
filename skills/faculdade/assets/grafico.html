@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gráfico interativo</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--txt:#1d1d1f;--sub:#6b6b70;--line:#e3e1dc;--grid:#eeece7;--acc:#2f5bd3;
+  --c1:#2f5bd3;--c2:#d64545;--c3:#2f9e5b;--c4:#d9822b;--c5:#8e44ad;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;
+  --line:#3a3a42;--grid:#26262b;--acc:#7c9cff;--c1:#7c9cff;--c2:#ff7b7b;--c3:#5fd08e;--c4:#f0a85a;--c5:#c58af0;}}
+:root[data-theme="dark"]{--bg:#151517;--card:#1f1f23;--txt:#ededf0;--sub:#9a9aa3;--line:#3a3a42;--grid:#26262b;
+  --acc:#7c9cff;--c1:#7c9cff;--c2:#ff7b7b;--c3:#5fd08e;--c4:#f0a85a;--c5:#c58af0;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:19px;margin:0}.fonte{font-size:13px;color:var(--sub);font-style:italic;margin:2px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.desafio{border-left:4px solid var(--acc)}
+svg{width:100%;height:auto;display:block}
+.ctrl{display:grid;grid-template-columns:1fr;gap:10px}
+.ctrl label{display:flex;justify-content:space-between;font-size:14px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.legenda{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-top:6px}
+.legenda span::before{content:"";display:inline-block;width:14px;height:3px;margin-right:5px;vertical-align:middle;background:var(--c)}
+.leituras{font-size:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+.leituras div{background:var(--bg);border-radius:8px;padding:6px 10px}
+button{border:0;border-radius:8px;padding:8px 12px;font:600 14px system-ui;cursor:pointer;color:#fff;background:var(--acc)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="titulo"></h1>
+  <div class="fonte" id="fonte"></div>
+  <div class="card desafio hidden" id="desafio">
+    <b>Antes de mexer:</b> <span id="pergunta"></span>
+    <div style="margin-top:8px"><button onclick="revelar()">Já previ — mostrar explicação</button></div>
+    <div id="explicacao" class="hidden" style="margin-top:8px"></div>
+  </div>
+  <div class="card"><svg id="g" viewBox="0 0 640 420" role="img"></svg><div class="legenda" id="legenda"></div></div>
+  <div class="card"><div class="leituras" id="leituras"></div></div>
+  <div class="card"><div class="ctrl" id="ctrl"></div>
+    <div style="margin-top:10px"><button onclick="repor()">Repor valores iniciais</button></div></div>
+</div>
+<script>
+// Claude adapta só o CONFIG. Funções e parâmetros têm de vir dos materiais (notação do professor).
+const CONFIG = /*CONFIG*/{
+  titulo: "Mercado: procura e oferta (exemplo)",
+  fonte: "Fonte: Slides Cap. 2, slides 10–14",
+  x: {label: "Q", min: 0, max: 100},
+  y: {label: "P", min: 0, max: 100},
+  params: [
+    {id: "a", label: "Intercepto da procura (a)", min: 40, max: 100, step: 1, valor: 80},
+    {id: "b", label: "Inclinação da procura (b)", min: 0.2, max: 2, step: 0.05, valor: 1},
+    {id: "c", label: "Intercepto da oferta (c)", min: 0, max: 40, step: 1, valor: 10},
+    {id: "d", label: "Inclinação da oferta (d)", min: 0.2, max: 2, step: 0.05, valor: 0.75}
+  ],
+  // f(x, p) devolve y. Para curvas definidas como x = g(y), usar "inversa: true" e f(y, p) devolve x.
+  curvas: [
+    {nome: "Procura: P = a − bQ", f: (q, p) => p.a - p.b * q},
+    {nome: "Oferta: P = c + dQ", f: (q, p) => p.c + p.d * q}
+  ],
+  pontos: [
+    {nome: "E", calc: p => { const q = (p.a - p.c) / (p.b + p.d); return {x: q, y: p.a - p.b * q}; }, guias: true}
+  ],
+  leituras: p => {
+    const q = (p.a - p.c) / (p.b + p.d), pe = p.a - p.b * q;
+    return {"Q*": q.toFixed(2), "P*": pe.toFixed(2), "Excedente consumidor": (0.5 * q * (p.a - pe)).toFixed(1)};
+  },
+  desafio: {pergunta: "Se o rendimento aumentar e o bem for normal, o que acontece a P* e Q*? Prevê e depois mexe em (a).",
+            explicacao: "A procura desloca-se para a direita (↑a): P* e Q* sobem. [Slides Cap. 2, slide 13]"}
+}/*FIM*/;
+
+const $ = id => document.getElementById(id);
+const W = 640, H = 420, M = {l: 52, r: 16, t: 14, b: 44};
+const cores = ["--c1", "--c2", "--c3", "--c4", "--c5"];
+let p = {};
+const sx = x => M.l + (x - CONFIG.x.min) / (CONFIG.x.max - CONFIG.x.min) * (W - M.l - M.r);
+const sy = y => H - M.b - (y - CONFIG.y.min) / (CONFIG.y.max - CONFIG.y.min) * (H - M.t - M.b);
+const dentro = (x, y) => x >= CONFIG.x.min && x <= CONFIG.x.max && y >= CONFIG.y.min && y <= CONFIG.y.max;
+const el = (t, a) => `<${t} ${Object.entries(a).map(([k, v]) => `${k}="${v}"`).join(" ")}/>`;
+
+function ticks(min, max){ const n = 5, st = (max - min) / n; return [...Array(n + 1)].map((_, i) => +(min + i * st).toFixed(2)); }
+
+function desenhar(){
+  let s = "";
+  ticks(CONFIG.x.min, CONFIG.x.max).forEach(t => {
+    s += el("line", {x1: sx(t), x2: sx(t), y1: M.t, y2: H - M.b, stroke: "var(--grid)"});
+    s += `<text x="${sx(t)}" y="${H - M.b + 18}" text-anchor="middle" font-size="12" fill="var(--sub)">${t}</text>`;
+  });
+  ticks(CONFIG.y.min, CONFIG.y.max).forEach(t => {
+    s += el("line", {x1: M.l, x2: W - M.r, y1: sy(t), y2: sy(t), stroke: "var(--grid)"});
+    s += `<text x="${M.l - 8}" y="${sy(t) + 4}" text-anchor="end" font-size="12" fill="var(--sub)">${t}</text>`;
+  });
+  s += el("line", {x1: M.l, x2: W - M.r, y1: H - M.b, y2: H - M.b, stroke: "var(--sub)"});
+  s += el("line", {x1: M.l, x2: M.l, y1: M.t, y2: H - M.b, stroke: "var(--sub)"});
+  s += `<text x="${W - M.r}" y="${H - 6}" text-anchor="end" font-size="13" fill="var(--txt)">${CONFIG.x.label}</text>`;
+  s += `<text x="12" y="${M.t + 10}" font-size="13" fill="var(--txt)">${CONFIG.y.label}</text>`;
+
+  CONFIG.curvas.forEach((c, i) => {
+    const cor = `var(${c.cor || cores[i % cores.length]})`, N = 240, pts = [];
+    const [a0, a1] = c.inversa ? [CONFIG.y.min, CONFIG.y.max] : [CONFIG.x.min, CONFIG.x.max];
+    for(let k = 0; k <= N; k++){
+      const u = a0 + (a1 - a0) * k / N, v = c.f(u, p);
+      const [x, y] = c.inversa ? [v, u] : [u, v];
+      pts.push(isFinite(x) && isFinite(y) && dentro(x, y) ? `${sx(x).toFixed(1)},${sy(y).toFixed(1)}` : null);
+    }
+    let seg = [];
+    pts.concat([null]).forEach(q => { if(q) seg.push(q); else { if(seg.length > 1) s += el("polyline", {points: seg.join(" "), fill: "none", stroke: cor, "stroke-width": 2.5, "stroke-dasharray": c.tracejado ? "6 4" : "none"}); seg = []; } });
+  });
+  (CONFIG.pontos || []).forEach(pt => {
+    const {x, y} = pt.calc(p);
+    if(!isFinite(x) || !isFinite(y) || !dentro(x, y)) return;
+    if(pt.guias){
+      s += el("line", {x1: sx(x), x2: sx(x), y1: sy(y), y2: H - M.b, stroke: "var(--sub)", "stroke-dasharray": "4 4"});
+      s += el("line", {x1: M.l, x2: sx(x), y1: sy(y), y2: sy(y), stroke: "var(--sub)", "stroke-dasharray": "4 4"});
+    }
+    s += el("circle", {cx: sx(x), cy: sy(y), r: 5, fill: "var(--txt)"});
+    s += `<text x="${sx(x) + 8}" y="${sy(y) - 8}" font-size="13" font-weight="600" fill="var(--txt)">${pt.nome}</text>`;
+  });
+  $("g").innerHTML = s;
+  const L = CONFIG.leituras ? CONFIG.leituras(p) : {};
+  $("leituras").innerHTML = Object.entries(L).map(([k, v]) => `<div>${k}: <b>${v}</b></div>`).join("");
+}
+function controlos(){
+  $("ctrl").innerHTML = CONFIG.params.map(q => `<div><label><span>${q.label}</span><b id="v_${q.id}"></b></label>
+    <input type="range" id="r_${q.id}" min="${q.min}" max="${q.max}" step="${q.step}" value="${q.valor}"></div>`).join("");
+  CONFIG.params.forEach(q => { $("r_" + q.id).oninput = e => { p[q.id] = +e.target.value; $("v_" + q.id).textContent = p[q.id]; desenhar(); }; });
+}
+function repor(){ CONFIG.params.forEach(q => { p[q.id] = q.valor; $("r_" + q.id).value = q.valor; $("v_" + q.id).textContent = q.valor; }); desenhar(); }
+function revelar(){ $("explicacao").textContent = CONFIG.desafio.explicacao; $("explicacao").classList.remove("hidden"); }
+
+$("titulo").textContent = CONFIG.titulo;
+$("fonte").textContent = CONFIG.fonte;
+$("legenda").innerHTML = CONFIG.curvas.map((c, i) => `<span style="--c:var(${c.cor || cores[i % cores.length]})">${c.nome}</span>`).join("");
+if(CONFIG.desafio){ $("pergunta").textContent = CONFIG.desafio.pergunta; $("desafio").classList.remove("hidden"); }
+controlos(); repor();
+</script>
+</body>
+</html>
